@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 1.1.1 - 2026-10-14 (GitHub Actions Android SDK setup)
+
+- Corrected the GitHub Actions Android SDK setup to install `platform-tools` explicitly without requesting the obsolete SDK `tools` package, which prevented the first Pages build from starting.
+- Updated the GitHub-maintained checkout, Node.js, and Java setup actions to current major versions.
+- Incremented Android `versionCode` to 5 for the rebuilt APK.
+
 ## 1.1.0 - 2026-10-14 (rounded responsive sort picker)
 
 - Replaced the library sort field's oversized platform-native dropdown with a compact rounded custom picker that matches the dark app surfaces.
