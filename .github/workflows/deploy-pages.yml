@@ -1,0 +1,98 @@
+name: Build and deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK platform
+        run: sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests and typechecks
+        run: |
+          npm test
+          npm run typecheck
+          pnpm typecheck:web
+
+      - name: Build the PWA
+        run: pnpm build:web
+
+      - name: Build and lint the Android APK
+        working-directory: apps/android-file-access-spike
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug lintDebug
+
+      - name: Assemble GitHub Pages site
+        shell: bash
+        run: |
+          mkdir -p site/downloads
+          cp -a apps/player-web/dist/. site/
+          cp apps/android-file-access-spike/app/build/outputs/apk/debug/app-debug.apk \
+            site/downloads/offline-music-player-android-debug.apk
+          {
+            echo "Offline Music Player development download"
+            echo "Version: $(tr -d '\r\n' < VERSION)"
+            echo "The APK is debug-signed and is not a production release."
+            echo
+            cd site/downloads
+            sha256sum offline-music-player-android-debug.apk
+          } > site/downloads/SHA256SUMS.txt
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

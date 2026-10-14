@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Offline Music Player File Access Test",
+  "short_name": "File Access Test",
+  "description": "Local-only iOS PWA file selection and playback feasibility test.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#070b14",
+  "theme_color": "#101827",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

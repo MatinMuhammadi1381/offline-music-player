@@ -1,0 +1,111 @@
+﻿# Changelog
+
+## 1.1.0 - 2026-10-14 (rounded responsive sort picker)
+
+- Replaced the library sort field's oversized platform-native dropdown with a compact rounded custom picker that matches the dark app surfaces.
+- Added keyboard-accessible selection and constrained the mobile menu height and width so options remain within the phone viewport.
+
+## 1.0.1 - 2026-10-14 (development service-worker cache fix)
+
+- Prevented the PWA service worker from intercepting Vite development requests; an existing app worker and its shell cache are removed in development mode to avoid stale scripts after code changes.
+- Kept service-worker registration enabled for production PWA builds.
+- Versioned this compatible development fix as a patch release; real-device and production acceptance remain outstanding.
+
+## 1.0.0 - 2026-10-14 (owner-requested project version)
+
+- Set the current project, PWA, workspace package, Android APK, and Settings → About version to `1.0.0` at the owner's direction.
+- Increased Android `versionCode` to `2` so the rebuilt APK can be recognized as an upgrade from the prior development APK.
+- This version change does not claim production readiness or completed real-device acceptance; see the development handoff for outstanding release blockers.
+
+## Versioning policy
+
+- Follow Semantic Versioning: PATCH for compatible fixes, MINOR for backward-compatible features, and MAJOR for breaking changes.
+- Keep `VERSION`, workspace packages, Android `versionName`, app display, README, changelog, handoff metadata, and regenerated build checksums aligned. Increment Android `versionCode` for each distributable APK.
+
+## 0.0.1 - 2026-10-14 (development baseline)
+
+- Added repository hygiene, project overview, and a single authoritative development version file.
+- Recorded the existing project and UI/UX specification packs in the root README.
+- No application code, dependencies, platform tests, or release artifacts are included in this baseline.
+
+## 0.0.1 - 2026-10-14 (iOS file-access feasibility harness)
+
+- Added a dependency-free local test page for selecting and playing audio files in a browser/PWA.
+- Added app-shell-only offline caching, storage API diagnostics, and a local-only test report.
+- No device feasibility results have been recorded; an owner-approved HTTPS test origin and target iPhone are still required.
+- No audio is uploaded, copied to browser storage, or included in test reports. No dependencies were added.
+
+## 0.0.1 - 2026-10-14 (Android file-access feasibility harness)
+
+- Added a temporary Android test APK harness using the system document picker, persisted user-granted URIs, a media playback foreground service, and a media-session notification.
+- The APK has no Internet permission and uses no third-party runtime libraries. The Android Gradle Plugin is a build-only dependency.
+- Recorded mobile-first responsive acceptance widths and landscape/text-scaling checks for the shared production UI.
+- The test APK builds locally, but no Android phone/emulator is connected; picker, URI-retention, reboot, and screen-locked playback results remain unverified.
+
+## 0.0.1 - 2026-10-14 (shared domain core)
+
+- Added shared TypeScript track, playlist, queue, and metadata models; platform file/storage/playback/backup interfaces; and immutable search/sorting/queue/playlist logic.
+- Added 16 built-in Node.js domain tests and a strict shared-source TypeScript check.
+- No platform adapter, metadata persistence, backup import/export, production UI, or production playback engine is included in this phase.
+
+## 0.0.1 - 2026-10-14 (metadata persistence and recovery)
+
+- Added a session-only browser file-selection adapter with an explicit reselect path when page-local `File` references are lost.
+- Added a strict, versioned, size-limited metadata-only JSON backup format with cross-reference validation and restore-after-validation semantics.
+- Added transactional browser IndexedDB library and player-settings persistence, truthful browser persistent-storage status/request adapters, and a validated sort/repeat/shuffle settings model.
+- Added atomic Android SQLite library and settings persistence, validated SAF-based metadata-only backup export/import, and track access/metadata recovery summaries in the Android feasibility harness.
+- Expanded unit tests for valid and invalid backup data, restore safety, settings validation, and browser-storage outcomes.
+- The user reports completing Android/iPhone feasibility checks without issues; no model/OS-level evidence is recorded, and the updated Android backup UI/database requires rechecking on a physical device.
+- No audio files or file-picker permissions are included in backups; no audio bytes are persisted in IndexedDB/SQLite by these adapters.
+
+## 0.0.1 - 2026-10-14 (core playback implementation)
+
+- Added a shared playback controller that drives queue navigation, automatic end-of-track advance, repeat, shuffle, previous-track restart behavior, and recoverable missing-file errors.
+- Added a browser HTML audio adapter that streams selected files through temporary object URLs, reports progress and playback failures, and releases URLs when playback stops.
+- Extended the Android feasibility service with seek, queue next/previous, repeat/shuffle application, and lock-screen/media-notification transport controls.
+- Added unit coverage for queue playback, repeat modes, error recovery, browser progress, object-URL cleanup, and autoplay blocks.
+- Node tests, strict TypeScript check, Android debug APK build, and Android lint pass. No Android device is connected; physical playback, codec, queue, and lock-screen acceptance remains unverified. The production UI has not yet integrated these adapters.
+
+## 0.0.1 - 2026-10-14 (library workflow implementation)
+
+- Added a shared library controller for persisted selected-file additions, case/accent-insensitive search, sorting, playlist CRUD/order, and cleanup of playlist references when a track is removed.
+- Added explicit file relinking by unique filename-and-size match, session-only access recovery checks, and safe reporting of ambiguous or unmatched files.
+- Serialized library writes to prevent overlapping metadata mutations from silently overwriting each other; added tests for CRUD, concurrent writes, relink recovery, ambiguous matches, and invalid playlist members.
+- The library controller is core infrastructure, not a finished user-facing library screen; production UI integration and physical-device acceptance remain pending.
+
+## 0.0.1 - 2026-10-14 (shared React player UI)
+
+- Added the phone-first React PWA with library, playback, queue, playlist, settings, recovery, storage diagnostics, and metadata backup workflows.
+- Added an Android launcher activity that packages and renders the same production UI through a secure offline WebView asset origin and forwards audio file selection to Android's system picker.
+- Added responsive styling, safe-area support, keyboard focus treatment, reduced-motion behavior, offline app-shell caching, and Android asset-sync build wiring.
+- Expanded validation for relinking and tightened explicit file matching to filename and size.
+- Android foreground-service/media-session playback is still a feasibility harness and is not wired to the shared UI. iPhone/Android device acceptance, accessibility/performance acceptance, and release handoff remain incomplete.
+
+## 0.0.1 - 2026-10-14 (phase 9 local validation)
+
+- Added synthetic 1,000-track responsiveness and 3 GB file-reference tests that guard against reading audio bytes into memory.
+- Checked production responsive layouts, app-shell offline reload, keyboard focus, reduced-motion behavior, accessible button names, and button contrast in headless Edge.
+- Increased mobile primary-button touch targets to 44 px and darkened their blue gradient to meet a 4.5:1 text contrast target.
+- Routed Android WebView metadata-backup import and export through the correctly filtered SAF document pickers after review exposed an audio-only picker path.
+- Core tests, strict TypeScript checks, PWA production build, and Android APK build/lint pass locally.
+- Phase 9 remains open pending iPhone and Android real-device, audio, safe-area, and system-control acceptance; see `music-player-agent-docs/07-TESTING-AND-ACCEPTANCE.md`.
+
+## 0.0.1 - 2026-10-14 (phase 10 development handoff preparation)
+
+- Recorded reproducible local build commands, tool versions, development artifact checksums, install/deploy instructions, and explicit release blockers in `music-player-agent-docs/10-DEVELOPMENT-HANDOFF.md`.
+- Prepared a zipped static PWA build and a debug-signed Android APK as local development handoff artifacts; the APK is not production-signed.
+- Added `npm run package:development` to rerun tests/typechecks, build and lint Android (including the shared PWA bundle), verify the PWA archive structure, and write artifact SHA-256 checksums.
+- Recorded the owner's authorization to defer real-device checks until later; this deferral is not described as passed device acceptance.
+- No production-signed release candidate, release tag, public deployment, or real-device acceptance is claimed. Production release remains deferred pending later device testing, owner review, and production signing.
+
+## 0.0.1 - 2026-10-14 (floating mobile navigation)
+
+- Reworked the phone bottom navigation into a centered floating capsule with full rounded corners, a clear gap above the screen edge, and spacing adjusted to stay above the safe-area inset.
+- Raised the mini-player and content clearance to prevent overlap with the floating navigation.
+- PWA UI typecheck and production build pass.
+
+## 0.0.1 - 2026-10-14 (version format correction)
+
+- Corrected the current app/project version to the semantic version `0.0.1` across the authoritative version file, workspace packages, Android APK metadata, and Settings → About.
+- Bundled the displayed web version from the root `VERSION` file during the Vite build to keep the website aligned with the project version.
+- Rebuilt development artifacts and refreshed their checksums after the version correction.

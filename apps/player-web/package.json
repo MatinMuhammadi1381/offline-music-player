@@ -1,0 +1,26 @@
+{
+  "name": "@offline-music-player/player-web",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@offline-music-player/music-core": "workspace:*",
+    "@offline-music-player/platform-contracts": "workspace:*",
+    "@offline-music-player/shared-types": "workspace:*",
+    "@offline-music-player/web-platform": "workspace:*",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "typescript": "5.9.3",
+    "vite": "8.3.4"
+  }
+}

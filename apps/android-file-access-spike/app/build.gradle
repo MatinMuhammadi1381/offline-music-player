@@ -1,0 +1,41 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "com.offlinemusicplayer.spike"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.offlinemusicplayer.spike"
+        minSdk 23
+        targetSdk 34
+        versionCode 4
+        versionName "1.1.0"
+    }
+
+    sourceSets {
+        main.assets.srcDir("$buildDir/generated/player-assets")
+    }
+}
+
+def webAppRoot = rootProject.projectDir.parentFile.parentFile
+
+tasks.register("buildPlayerWeb", Exec) {
+    workingDir webAppRoot
+    if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+        commandLine "cmd", "/c", "pnpm --filter @offline-music-player/player-web build"
+    } else {
+        commandLine "pnpm", "--filter", "@offline-music-player/player-web", "build"
+    }
+}
+
+tasks.register("syncPlayerWebAssets", Sync) {
+    dependsOn tasks.named("buildPlayerWeb")
+    from new File(webAppRoot, "apps/player-web/dist")
+    into "$buildDir/generated/player-assets/player"
+}
+
+tasks.named("preBuild").configure {
+    dependsOn tasks.named("syncPlayerWebAssets")
+}

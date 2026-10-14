@@ -1,0 +1,409 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { createTrack } from "../../music-core/src/tracks.ts";
+import {
+  DEFAULT_PLAYER_SETTINGS,
+  validatePlayerSettings,
+} from "../../music-core/src/settings.ts";
+import type { LibraryMetadata, PlayerSettings } from "../../shared-types/src/index.ts";
+import type { AudioElementPort, ObjectUrlPort } from "../src/html-audio-playback-engine.ts";
+import { BrowserAudioFileSource } from "../src/browser-audio-file-source.ts";
+import { IndexedDbLibraryRepository } from "../src/index.ts";
+import { HtmlAudioPlaybackEngine } from "../src/html-audio-playback-engine.ts";
+import {
+  getBrowserStoragePersistenceStatus,
+  requestBrowserStoragePersistence,
+} from "../src/storage-persistence.ts";
+
+type CallbackRequest = {
+  result: unknown;
+  error: DOMException | null;
+  onsuccess: (() => void) | null;
+  onerror: (() => void) | null;
+};
+
+class FakeDatabase {
+  private readonly stores = new Map<string, Map<string, unknown>>();
+  readonly objectStoreNames = {
+    contains: (name: string) => this.stores.has(name),
+  };
+  onversionchange: (() => void) | null = null;
+
+  createObjectStore(name: string): void {
+    this.stores.set(name, new Map());
+  }
+
+  transaction(storeName: string, _mode?: string): {
+    objectStore: () => { get: (key: string) => CallbackRequest; put: (value: unknown, key: string) => void };
+    oncomplete: (() => void) | null;
+    onerror: (() => void) | null;
+    onabort: (() => void) | null;
+    error: DOMException | null;
+  } {
+    const store = this.stores.get(storeName);
+    if (!store) throw new DOMException("Object store does not exist.", "NotFoundError");
+    const transaction = {
+      oncomplete: null as (() => void) | null,
+      onerror: null as (() => void) | null,
+      onabort: null as (() => void) | null,
+      error: null as DOMException | null,
+      objectStore: () => ({
+        get: (key: string) => {
+          const request: CallbackRequest = { result: undefined, error: null, onsuccess: null, onerror: null };
+          queueMicrotask(() => {
+            request.result = store.get(key);
+            request.onsuccess?.();
+            queueMicrotask(() => transaction.oncomplete?.());
+          });
+          return request;
+        },
+        put: (value: unknown, key: string) => {
+          store.set(key, value);
+          queueMicrotask(() => transaction.oncomplete?.());
+        },
+      }),
+    };
+    return transaction;
+  }
+
+  close(): void {}
+}
+
+class FakeAudioElement implements AudioElementPort {
+  currentTime = 0;
+  duration = 4;
+  error: MediaError | null = null;
+  playError: Error | undefined;
+  src = "";
+  private readonly listeners = new Map<string, Set<EventListener>>();
+
+  load(): void {}
+
+  async play(): Promise<void> {
+    if (this.playError !== undefined) throw this.playError;
+    this.dispatch("play");
+  }
+
+  pause(): void {
+    this.dispatch("pause");
+  }
+
+  removeAttribute(name: string): void {
+    if (name === "src") this.src = "";
+  }
+
+  addEventListener(type: string, listener: EventListener): void {
+    const listeners = this.listeners.get(type) ?? new Set<EventListener>();
+    listeners.add(listener);
+    this.listeners.set(type, listeners);
+  }
+
+  removeEventListener(type: string, listener: EventListener): void {
+    this.listeners.get(type)?.delete(listener);
+  }
+
+  dispatch(type: string): void {
+    const event = new Event(type);
+    for (const listener of this.listeners.get(type) ?? []) listener(event);
+  }
+}
+
+function fakeIndexedDb(): IDBFactory {
+  const databases = new Map<string, FakeDatabase>();
+  return {
+    open(name: string) {
+      const request: {
+        result: FakeDatabase | undefined;
+        error: DOMException | null;
+        onupgradeneeded: (() => void) | null;
+        onblocked: (() => void) | null;
+        onerror: (() => void) | null;
+        onsuccess: (() => void) | null;
+      } = {
+        result: undefined,
+        error: null,
+        onupgradeneeded: null,
+        onblocked: null,
+        onerror: null,
+        onsuccess: null,
+      };
+      queueMicrotask(() => {
+        let database = databases.get(name);
+        if (!database) {
+          database = new FakeDatabase();
+          databases.set(name, database);
+          request.result = database;
+          request.onupgradeneeded?.();
+        } else {
+          request.result = database;
+        }
+
+        request.onsuccess?.();
+      });
+      return request;
+    },
+  } as unknown as IDBFactory;
+}
+
+const library: LibraryMetadata = {
+  schemaVersion: 1,
+  tracks: [{
+    ...createTrack({
+      id: "track-1",
+      title: "Offline",
+      fileName: "offline.mp3",
+      fileSizeBytes: 100,
+      addedAt: 1,
+    }),
+  }],
+  playlists: [],
+};
+
+test("reports browser persistent-storage unsupported, granted and denied states", async () => {
+  assert.deepEqual(await getBrowserStoragePersistenceStatus(undefined), {
+    status: "unsupported",
+    requestAvailable: false,
+  });
+  assert.deepEqual(await getBrowserStoragePersistenceStatus({
+    async persisted() { return true; },
+    async persist() { return true; },
+  }), { status: "supported", granted: true, requestAvailable: true });
+  assert.deepEqual(await getBrowserStoragePersistenceStatus({
+    async persisted() { return false; },
+    async persist() { return false; },
+  }), { status: "not-granted", granted: false, requestAvailable: true });
+  assert.equal((await getBrowserStoragePersistenceStatus({
+    async persisted() { return false; },
+  })).status, "not-granted");
+});
+
+test("requests browser persistence and reports denial without treating it as success", async () => {
+  let requests = 0;
+  assert.deepEqual(await requestBrowserStoragePersistence({
+    async persist() {
+      requests++;
+      return false;
+    },
+  }), { status: "not-granted", granted: false, requestAvailable: true });
+  assert.equal(requests, 1);
+  assert.deepEqual(await requestBrowserStoragePersistence(undefined), {
+    status: "unsupported",
+    requestAvailable: false,
+  });
+});
+
+test("reports unavailable browser persistence errors explicitly", async () => {
+  const status = await requestBrowserStoragePersistence({
+    async persist() {
+      throw new Error("storage is blocked");
+    },
+  });
+  assert.deepEqual(status, {
+    status: "unknown",
+    requestAvailable: true,
+    message: "storage is blocked",
+  });
+});
+
+test("tracks selected File objects only in memory and reports lost session references", async () => {
+  const file = new File(["sample audio bytes"], "demo-track.mp3", { type: "audio/mpeg" });
+  const source = new BrowserAudioFileSource(async () => [file]);
+  const result = await source.selectAudioFiles();
+  assert.equal(result.status, "selected");
+  if (result.status !== "selected") throw new Error("Expected a successful file selection.");
+  const [selected] = result.files;
+  assert.ok(selected);
+  assert.equal(selected.track.title, "demo-track");
+  assert.equal(selected.track.fileSizeBytes, file.size);
+  assert.equal(selected.reference.persistence, "session-only");
+  assert.equal(await source.checkReference(selected.reference), "available");
+  assert.equal(source.getFile(selected.reference), file);
+
+  const newPageSession = new BrowserAudioFileSource(async () => null);
+  assert.equal(await newPageSession.checkReference(selected.reference), "permission-lost");
+  source.release(selected.reference);
+  assert.equal(source.getFile(selected.reference), undefined);
+});
+
+test("keeps a simulated 3 GB, 1,000-file collection as file handles and small metadata", async () => {
+  const files = Array.from({ length: 1_000 }, (_, index) => {
+    const file = new File([], `track-${index}.mp3`, { type: "audio/mpeg" });
+    Object.defineProperty(file, "size", { value: 3_000_000 });
+    Object.defineProperty(file, "arrayBuffer", { value: async () => {
+      reads++;
+      throw new Error("Audio bytes must not be read into memory.");
+    } });
+    Object.defineProperty(file, "stream", { value: () => {
+      reads++;
+      throw new Error("Audio bytes must not be read into memory.");
+    } });
+    return file;
+  });
+  let reads = 0;
+  const source = new BrowserAudioFileSource(async () => files);
+  const selection = await source.selectAudioFiles();
+  assert.equal(selection.status, "selected");
+  if (selection.status !== "selected") throw new Error("Expected a successful file selection.");
+
+  const librarySnapshot: LibraryMetadata = {
+    schemaVersion: 1,
+    tracks: selection.files.map(({ track }) => track),
+    playlists: [],
+  };
+  const serialized = JSON.stringify(librarySnapshot);
+  const repository = new IndexedDbLibraryRepository("three-gigabyte-test", fakeIndexedDb());
+  await repository.saveLibrary(librarySnapshot);
+  const restored = await repository.loadLibrary();
+
+  assert.equal(restored.tracks.length, 1_000);
+  assert.equal(restored.tracks.reduce((total, track) => total + track.fileSizeBytes, 0), 3_000_000_000);
+  assert.equal(source.getFile(selection.files[999]!.reference), files[999]);
+  assert.equal(reads, 0);
+  assert.ok(serialized.length < 1_000_000);
+  assert.doesNotMatch(serialized, /audioBytes|data:audio|blob:/i);
+  await repository.close();
+});
+
+test("reports browser file-picker cancellation and directory limitations honestly", async () => {
+  const cancelled = new BrowserAudioFileSource(async () => null);
+  assert.deepEqual(await cancelled.selectAudioFiles(), { status: "cancelled" });
+  assert.equal((await cancelled.selectAudioDirectory()).status, "failed");
+  const capabilities = cancelled.getCapabilities();
+  assert.equal(capabilities.directorySelection.status, "unsupported");
+  assert.equal(capabilities.persistentFileReferences.status, "unsupported");
+  assert.equal(capabilities.multipleFileSelection.status, "unknown");
+});
+
+test("persists only validated metadata using a single IndexedDB transaction", async () => {
+  const factory = fakeIndexedDb();
+  const repository = new IndexedDbLibraryRepository("library-test", factory);
+  await repository.saveLibrary(library);
+  assert.deepEqual(await repository.loadLibrary(), library);
+  await repository.close();
+});
+
+test("persists validated player settings separately from library metadata", async () => {
+  const repository = new IndexedDbLibraryRepository("settings-test", fakeIndexedDb());
+  assert.deepEqual(await repository.loadSettings(), DEFAULT_PLAYER_SETTINGS);
+  const settings: PlayerSettings = {
+    schemaVersion: 1,
+    librarySort: { field: "artist", direction: "descending" },
+    repeatMode: "queue",
+    shuffleEnabled: true,
+  };
+  await repository.saveSettings(settings);
+  assert.deepEqual(await repository.loadSettings(), settings);
+  await repository.saveLibrary(library);
+  assert.deepEqual(await repository.loadSettings(), settings);
+});
+
+test("rejects invalid player settings before replacing stored settings", async () => {
+  const repository = new IndexedDbLibraryRepository("invalid-settings-test", fakeIndexedDb());
+  await repository.saveSettings(DEFAULT_PLAYER_SETTINGS);
+  const invalid = {
+    ...DEFAULT_PLAYER_SETTINGS,
+    repeatMode: "sometimes",
+  };
+  await assert.rejects(
+    repository.saveSettings(invalid as unknown as PlayerSettings),
+    /repeatMode/,
+  );
+  assert.deepEqual(await repository.loadSettings(), DEFAULT_PLAYER_SETTINGS);
+});
+
+test("initializes a new IndexedDB library without sample data", async () => {
+  const repository = new IndexedDbLibraryRepository("empty-library-test", fakeIndexedDb());
+  assert.deepEqual(await repository.loadLibrary(), { schemaVersion: 1, tracks: [], playlists: [] });
+});
+
+test("rejects invalid IndexedDB writes before replacing saved data", async () => {
+  const repository = new IndexedDbLibraryRepository("invalid-library-test", fakeIndexedDb());
+  await repository.saveLibrary(library);
+  await assert.rejects(
+    repository.saveLibrary({
+      schemaVersion: 1,
+      tracks: [{
+        ...library.tracks[0],
+        id: "",
+      }],
+      playlists: [],
+    }),
+    /invalid library metadata/,
+  );
+  assert.deepEqual(await repository.loadLibrary(), library);
+});
+
+test("rejects invalid IndexedDB database names", () => {
+  assert.throws(
+    () => new IndexedDbLibraryRepository("  ", fakeIndexedDb()),
+    /databaseName/,
+  );
+});
+
+test("HTML audio playback adapter streams selected files, reports progress, and releases its object URL", async () => {
+  const audioFile = new File(["audio"], "song.mp3", { type: "audio/mpeg" });
+  const source = new BrowserAudioFileSource(async () => [audioFile]);
+  const selected = await source.selectAudioFiles();
+  assert.equal(selected.status, "selected");
+  if (selected.status !== "selected") return;
+
+  const audio = new FakeAudioElement();
+  const revoked: string[] = [];
+  const objectUrls: ObjectUrlPort = {
+    createObjectURL: () => "blob:local-audio",
+    revokeObjectURL: (url) => revoked.push(url),
+  };
+  const engine = new HtmlAudioPlaybackEngine(source, audio, objectUrls);
+  await engine.play(selected.files[0]!);
+  assert.equal(engine.getSnapshot().state, "playing");
+  assert.equal(engine.getSnapshot().currentTrackId, selected.files[0]!.track.id);
+
+  audio.currentTime = 2;
+  audio.dispatch("timeupdate");
+  assert.equal(engine.getSnapshot().positionMs, 2_000);
+  assert.equal(engine.getSnapshot().durationMs, 4_000);
+  await engine.seek(9_000);
+  assert.equal(audio.currentTime, 4);
+
+  await engine.stop();
+  assert.equal(engine.getSnapshot().state, "idle");
+  assert.deepEqual(revoked, ["blob:local-audio"]);
+  engine.dispose();
+});
+
+test("HTML audio playback adapter identifies missing session-only file references", async () => {
+  const source = new BrowserAudioFileSource(async () => [new File(["audio"], "song.mp3")]);
+  const selected = await source.selectAudioFiles();
+  assert.equal(selected.status, "selected");
+  if (selected.status !== "selected") return;
+  source.release(selected.files[0]!.reference);
+
+  const engine = new HtmlAudioPlaybackEngine(source, new FakeAudioElement(), {
+    createObjectURL: () => "unused",
+    revokeObjectURL: () => {},
+  });
+  await assert.rejects(engine.play(selected.files[0]!), /no longer available/);
+  assert.equal(engine.getSnapshot().failure?.code, "reference-unavailable");
+  engine.dispose();
+});
+
+test("HTML audio playback adapter reports browser autoplay blocks instead of swallowing them", async () => {
+  const source = new BrowserAudioFileSource(async () => [new File(["audio"], "song.mp3")]);
+  const selected = await source.selectAudioFiles();
+  assert.equal(selected.status, "selected");
+  if (selected.status !== "selected") return;
+
+  const audio = new FakeAudioElement();
+  const blocked = new Error("Playback requires a user gesture.");
+  blocked.name = "NotAllowedError";
+  audio.playError = blocked;
+  const engine = new HtmlAudioPlaybackEngine(source, audio, {
+    createObjectURL: () => "blob:blocked-audio",
+    revokeObjectURL: () => {},
+  });
+  await assert.rejects(engine.play(selected.files[0]!), /user gesture/);
+  assert.equal(engine.getSnapshot().state, "error");
+  assert.equal(engine.getSnapshot().failure?.code, "playback-blocked");
+  engine.dispose();
+});

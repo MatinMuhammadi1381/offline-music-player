@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#101827">
+    <meta name="description" content="Local-only iOS PWA file access and playback feasibility test.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="File Access Test">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" href="./icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./styles.css">
+    <title>iOS File Access Test</title>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">OFFLINE MUSIC PLAYER · FEASIBILITY TEST</p>
+        <h1>iOS file access</h1>
+        <p class="intro">Test local audio selection and playback in Safari or an installed Home Screen app. Files stay on this device and are never uploaded or copied into app storage.</p>
+      </header>
+
+      <section class="panel" aria-labelledby="select-heading">
+        <h2 id="select-heading">Select audio files</h2>
+        <label class="file-picker" for="audio-files">Choose one or more audio files</label>
+        <input id="audio-files" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus" multiple>
+        <p id="selection-status" class="muted" aria-live="polite">No files selected.</p>
+        <p id="folder-support" class="muted"></p>
+        <label id="track-picker-label" for="track-picker" hidden>Select a selected file to play</label>
+        <select id="track-picker" hidden></select>
+        <audio id="audio-player" controls preload="metadata" hidden></audio>
+        <p id="playback-status" class="status" aria-live="polite"></p>
+      </section>
+
+      <section class="panel" aria-labelledby="storage-heading">
+        <h2 id="storage-heading">Browser storage</h2>
+        <p id="storage-status" class="muted" aria-live="polite">Checking available storage APIs…</p>
+        <button id="persist-button" type="button">Request persistent storage</button>
+        <p class="note">A grant is not a guarantee against user deletion or data loss. This test never writes audio to browser storage.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="report-heading">
+        <h2 id="report-heading">Test observations</h2>
+        <p id="secure-context-status" class="muted"></p>
+        <p id="install-status" class="muted"></p>
+        <label for="device-details">Device model and OS version</label>
+        <input id="device-details" type="text" autocomplete="off" placeholder="For example: iPhone 15 · iOS 18">
+        <label for="observations">What happened after reload, closing, and reopening?</label>
+        <textarea id="observations" rows="4" placeholder="Record what you observed on the device. This stays in this page."></textarea>
+        <button id="copy-report" type="button">Copy test report</button>
+        <p id="report-status" class="muted" aria-live="polite"></p>
+      </section>
+
+      <footer>Local test only · No analytics · No network audio · No account required</footer>
+    </main>
+  </body>
+</html>
