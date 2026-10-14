@@ -3,7 +3,7 @@
 **A private, offline-first music player for Android and iPhone.** Your original audio files stay in the locations you choose; the app does not upload your music.
 
 [![Deploy to GitHub Pages](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml)
-[![Version](https://img.shields.io/badge/version-1.1.1-1687ff)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.2.0-1687ff)](VERSION)
 
 **Web app:** [Open Offline Music Player](https://matinmuhammadi1381.github.io/offline-music-player/)
 
@@ -26,6 +26,7 @@
 - رابط واکنش‌گرا و موبایل‌محور برای وب، PWA آیفون و برنامهٔ اندروید
 - کتابخانهٔ محلی، جست‌وجو و مرتب‌سازی، صف پخش و فهرست‌های پخش
 - پخش فایل انتخاب‌شده از دستگاه؛ فایل صوتی در سرور بارگذاری یا در IndexedDB کپی نمی‌شود
+- نمایش تصویر کاور جاسازی‌شدهٔ فایل‌های MP3 دارای تگ ID3، بدون آپلود یا ذخیرهٔ تصویر در کتابخانه
 - نگهداری فراداده و تنظیمات در فضای محلی مرورگر و پشتیبان‌گیری JSON فقط از فراداده
 - پوستهٔ برنامهٔ وب پس از بارگیری اولیه برای اجرای آفلاین cache می‌شود
 
@@ -47,7 +48,7 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 
 ## وضعیت پروژه و محدودیت‌ها
 
-- نسخهٔ پروژه: **1.1.1** (طبق [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md)).
+- نسخهٔ پروژه: **1.2.0** (طبق [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md)).
 - انتشار روی GitHub Pages به معنی تأیید نهایی یا آمادگی production نیست.
 - پخش پس‌زمینه و کنترل‌های media بومی Android هنوز به رابط مشترک برنامه متصل نشده‌اند.
 - انتخاب دوبارهٔ فایل ممکن است پس از بستن برنامه یا پایان نشست لازم شود؛ پشتیبان JSON فقط فراداده و فهرست‌ها را نگه می‌دارد، نه صدا یا مجوز دسترسی فایل.
@@ -60,6 +61,7 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 
 - Responsive, phone-first shared interface for the web, iPhone Home Screen PWA, and Android app.
 - Local library, search and sorting, playback queue, and playlists.
+- Displays embedded ID3 cover artwork for MP3 files when present; images are read locally and are not uploaded or saved in library metadata.
 - Audio is selected from the device and is not uploaded or copied into IndexedDB.
 - Local metadata/settings persistence and JSON metadata-only backups.
 - The PWA shell is cached after the first successful load for offline app launch.
@@ -79,11 +81,12 @@ Open the [web app](https://matinmuhammadi1381.github.io/offline-music-player/) i
 
 ### Project status and limitations
 
-- Project version: **1.1.1**, following [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md).
+- Project version: **1.2.0**, following [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md).
 - GitHub Pages availability does not mean the app has passed production or final acceptance.
 - Native Android background playback and media-session controls are not yet connected to the shared UI.
 - File access may need to be restored after an app/browser session ends. JSON backups include metadata and playlists, not audio or file permissions.
 - Full physical-device testing on iPhone and Android remains outstanding.
+- Embedded artwork is currently extracted from MP3 ID3 APIC tags; other audio-container artwork is not yet supported.
 - See the [development handoff](music-player-agent-docs/10-DEVELOPMENT-HANDOFF.md) and [acceptance criteria](music-player-agent-docs/07-TESTING-AND-ACCEPTANCE.md) for verification evidence and release blockers.
 
 ## Run locally

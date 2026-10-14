@@ -13,6 +13,7 @@ import {
   moveQueueTrack,
   removeQueueTrack,
   retreatQueue,
+  seekQueueTo,
   setQueueShuffle,
   setRepeatMode,
 } from "./queue.ts";
@@ -71,6 +72,12 @@ export class PlaybackController {
     const currentIndex = this.queue.trackIds.indexOf(trackId);
     if (currentIndex < 0) this.queue = createQueue([trackId]);
     else this.queue = { ...this.queue, currentIndex };
+    this.notify();
+    await this.playCurrent();
+  }
+
+  async playQueueItem(index: number): Promise<void> {
+    this.queue = seekQueueTo(this.queue, index);
     this.notify();
     await this.playCurrent();
   }

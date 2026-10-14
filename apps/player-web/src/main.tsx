@@ -11,6 +11,7 @@ import {
 } from "@offline-music-player/music-core";
 import type { LibraryMetadata, PlayerSettings, Playlist, SortField, TrackMetadata } from "@offline-music-player/shared-types";
 import { BrowserAudioFileSource, createInputFileChooser, HtmlAudioPlaybackEngine, IndexedDbLibraryRepository } from "@offline-music-player/web-platform";
+import { extractEmbeddedArtwork } from "@offline-music-player/web-platform";
 import type { PlayerSnapshot, TrackIntegrity } from "@offline-music-player/music-core";
 import {
   getBrowserStoragePersistenceStatus,
@@ -73,13 +74,57 @@ function Icon({ name, size = 21 }: { readonly name: IconName; readonly size?: nu
   return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
 
-function Artwork({ track, large = false }: { readonly track?: TrackMetadata; readonly large?: boolean }): ReactNode {
+function Artwork({ track, file, large = false }: { readonly track?: TrackMetadata; readonly file: File | undefined; readonly large?: boolean }): ReactNode {
+  const artworkRef = useRef<HTMLDivElement>(null);
+  const [coverUrl, setCoverUrl] = useState<string>();
   const seed = track?.id.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0) ?? 3;
   const hue = seed % 360;
+  useEffect(() => {
+    if (!file) {
+      setCoverUrl(undefined);
+      return;
+    }
+    const element = artworkRef.current;
+    let disposed = false;
+    let objectUrl: string | undefined;
+    let started = false;
+    const loadArtwork = (): void => {
+      if (started) return;
+      started = true;
+      void extractEmbeddedArtwork(file).then((artwork) => {
+        if (!artwork || disposed) return;
+        objectUrl = URL.createObjectURL(artwork);
+        setCoverUrl(objectUrl);
+      }).catch(() => {
+        if (!disposed) setCoverUrl(undefined);
+      });
+    };
+    if (!element || !("IntersectionObserver" in window)) {
+      loadArtwork();
+    } else {
+      const observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          observer.disconnect();
+          loadArtwork();
+        }
+      }, { rootMargin: "120px" });
+      observer.observe(element);
+      return () => {
+        disposed = true;
+        observer.disconnect();
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+      };
+    }
+    return () => {
+      disposed = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [file]);
   return (
-    <div className={`artwork${large ? " artwork-large" : ""}`} style={{ background: `linear-gradient(145deg, hsl(${hue} 72% 38%), hsl(${(hue + 54) % 360} 66% 16%))` }}>
-      <span className="artwork-shine" />
-      <Icon name="music" size={large ? 54 : 23} />
+    <div ref={artworkRef} className={`artwork${large ? " artwork-large" : ""}${coverUrl ? " artwork-has-cover" : ""}`} style={{ background: `linear-gradient(145deg, hsl(${hue} 72% 38%), hsl(${(hue + 54) % 360} 66% 16%))` }}>
+      {coverUrl && <img className="artwork-cover" src={coverUrl} alt="" />}
+      <span className="artwork-shine" aria-hidden="true" />
+      {!coverUrl && <Icon name="music" size={large ? 54 : 23} />}
       {large && <span className="artwork-label">{track?.album ?? "Local collection"}</span>}
     </div>
   );
@@ -479,16 +524,25 @@ export function App(): ReactNode {
     { id: "settings", label: "Settings", icon: "settings" },
   ];
 
-  const trackRows = (tracks: readonly TrackMetadata[], options: { readonly queueControls?: boolean; readonly playlistId?: string } = {}): ReactNode => (
+  const getAudioFile = (trackId: string): File | undefined => {
+    const app = runtime.current;
+    if (!app) return undefined;
+    const selected = app.library.getFile(trackId);
+    return selected ? app.files.getFile(selected.reference) : undefined;
+  };
+
+  const trackRows = (tracks: readonly TrackMetadata[], options: { readonly queueControls?: boolean; readonly queueIndices?: readonly number[]; readonly playlistId?: string } = {}): ReactNode => (
     <>
     <ul className="track-list">
-      {tracks.slice(0, listLimit).map((track) => {
-        const queueIndex = player.queue.trackIds.indexOf(track.id);
+      {tracks.slice(0, listLimit).map((track, rowIndex) => {
+        const queueIndex = options.queueControls
+          ? options.queueIndices?.[rowIndex] ?? player.queue.trackIds.indexOf(track.id)
+          : player.queue.trackIds.indexOf(track.id);
         return (
-          <li className={`track-row${player.playback.currentTrackId === track.id ? " track-row-current" : ""}`} key={track.id}>
-            <Artwork track={track} />
+          <li className={`track-row${player.playback.currentTrackId === track.id ? " track-row-current" : ""}`} key={`${track.id}-${rowIndex}`}>
+            <Artwork track={track} file={getAudioFile(track.id)} />
             <button type="button" className="track-copy" onClick={() => {
-              if (options.queueControls) run(() => runtime.current?.playback.playTrack(track.id) ?? Promise.resolve());
+              if (options.queueControls) run(() => runtime.current?.playback.playQueueItem(queueIndex) ?? Promise.resolve());
               else playTrack(track.id, options.playlistId ? selectedPlaylist?.trackIds : undefined);
             }} aria-label={`Play ${track.title}${track.artist ? ` by ${track.artist}` : ""}`}>
               <span className="track-title">{track.title}</span>
@@ -497,7 +551,7 @@ export function App(): ReactNode {
             {options.queueControls ? (
               <div className="row-actions">
                 <IconButton label={`Move ${track.title} up`} icon="back" disabled={queueIndex <= 0} onClick={() => run(() => runtime.current?.playback.moveQueueItem(queueIndex, queueIndex - 1) ?? Promise.resolve())} />
-                <IconButton label={`Move ${track.title} down`} icon="back" disabled={queueIndex < 0 || queueIndex >= player.queue.trackIds.length - 1} onClick={() => run(() => runtime.current?.playback.moveQueueItem(queueIndex, queueIndex + 1) ?? Promise.resolve())} />
+                <IconButton label={`Move ${track.title} down`} icon="back" className="rotate-icon" disabled={queueIndex < 0 || queueIndex >= player.queue.trackIds.length - 1} onClick={() => run(() => runtime.current?.playback.moveQueueItem(queueIndex, queueIndex + 1) ?? Promise.resolve())} />
                 <IconButton label={`Remove ${track.title} from queue`} icon="close" onClick={() => queueIndex >= 0 && run(() => runtime.current?.playback.removeQueueItem(queueIndex) ?? Promise.resolve())} />
               </div>
             ) : options.playlistId ? (
@@ -705,7 +759,7 @@ export function App(): ReactNode {
               <section className="player-view" aria-label="Now Playing">
                 {currentTrack ? (
                   <>
-                    <Artwork track={currentTrack} large />
+                    <Artwork track={currentTrack} file={getAudioFile(currentTrack.id)} large />
                     <div className="player-track"><h2>{currentTrack.title}</h2><p>{currentTrack.artist ?? "Unknown artist"}{currentTrack.album ? ` · ${currentTrack.album}` : ""}</p></div>
                     {player.playback.failure && <div className="player-error" role="alert"><strong>Playback needs attention</strong><p>{player.playback.failure.message}</p><button type="button" className="button button-secondary" onClick={recoverFiles}>Reselect audio</button></div>}
                     <div className="progress-control">
@@ -727,11 +781,11 @@ export function App(): ReactNode {
 
             {destination === "queue" && (
               <section className="view-section">
-                <div className="section-heading"><div><p className="section-kicker">UP NEXT</p><h2>Queue</h2><p className="collection-count">{player.queue.trackIds.length} queued tracks</p></div><button type="button" className="button button-secondary" onClick={() => { runtime.current?.playback.enqueue(sortTracks(library.tracks, { field: sortField, direction: sortDirection }).map((track) => track.id)); tell("Library tracks added to the queue."); }} disabled={library.tracks.length === 0}><Icon name="plus" /> Add library</button></div>
+                <div className="section-heading"><div><p className="section-kicker">UP NEXT</p><h2>Queue</h2><p className="collection-count">{player.queue.trackIds.length} queued tracks</p></div><button type="button" className="button button-secondary" onClick={() => { const tracksToAdd = sortTracks(library.tracks, { field: sortField, direction: sortDirection }); runtime.current?.playback.enqueue(tracksToAdd.map((track) => track.id)); tell(`${tracksToAdd.length} track${tracksToAdd.length === 1 ? "" : "s"} added to the queue.`); }} disabled={library.tracks.length === 0}><Icon name="plus" /> Add library</button></div>
                 {player.queue.trackIds.length ? trackRows(player.queue.trackIds.flatMap((id) => {
                   const track = library.tracks.find((item) => item.id === id);
                   return track ? [track] : [];
-                }), { queueControls: true }) : <div className="empty-state compact-empty"><div className="empty-art"><Icon name="queue" size={30} /></div><h3>Your queue is clear</h3><p>Add tracks from your library or start a collection.</p><button type="button" className="button button-primary" onClick={() => setDestination("library")}>Browse library</button></div>}
+                }), { queueControls: true, queueIndices: player.queue.trackIds.flatMap((id, index) => library.tracks.some((track) => track.id === id) ? [index] : []) }) : <div className="empty-state compact-empty"><div className="empty-art"><Icon name="queue" size={30} /></div><h3>Your queue is clear</h3><p>Add tracks from your library or start a collection.</p><button type="button" className="button button-primary" onClick={() => setDestination("library")}>Browse library</button></div>}
               </section>
             )}
 
@@ -832,7 +886,7 @@ export function App(): ReactNode {
       {currentTrack && destination !== "player" && (
         <div className="mini-player">
           <button type="button" className="mini-open" onClick={() => setDestination("player")} aria-label={`Open player: ${currentTrack.title}`}>
-          <Artwork track={currentTrack} />
+          <Artwork track={currentTrack} file={getAudioFile(currentTrack.id)} />
           <span className="mini-copy"><strong>{currentTrack.title}</strong><small>{currentTrack.artist ?? currentTrack.fileName}</small></span>
           </button>
           <IconButton label={player.playback.state === "playing" ? "Pause playback" : "Resume playback"} icon={player.playback.state === "playing" ? "pause" : "play"} className="mini-state" onClick={() => run(() => runtime.current?.playback.togglePlayback() ?? Promise.resolve())} />

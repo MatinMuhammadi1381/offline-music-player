@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 1.2.0 - 2026-10-14 (artwork, playlists, and queue fixes)
+
+- Read embedded MP3 ID3 front-cover artwork locally and display it in the library, player, and mini-player without uploading artwork or adding it to persistent library metadata.
+- Made queue row actions target a specific queue position so duplicate tracks can be played, reordered, and removed independently.
+- Added regression tests for artwork extraction and index-addressed queue playback.
+- Real-device validation remains outstanding; embedded artwork extraction currently supports MP3 ID3 APIC tags.
+
 ## 1.1.1 - 2026-10-14 (GitHub Actions Android SDK setup)
 
 - Corrected the GitHub Actions Android SDK setup to install `platform-tools` explicitly without requesting the obsolete SDK `tools` package, which prevented the first Pages build from starting.

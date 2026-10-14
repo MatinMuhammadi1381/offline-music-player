@@ -9,6 +9,7 @@ import {
 import type { LibraryMetadata, PlayerSettings } from "../../shared-types/src/index.ts";
 import type { AudioElementPort, ObjectUrlPort } from "../src/html-audio-playback-engine.ts";
 import { BrowserAudioFileSource } from "../src/browser-audio-file-source.ts";
+import { extractEmbeddedArtwork } from "../src/embedded-artwork.ts";
 import { IndexedDbLibraryRepository } from "../src/index.ts";
 import { HtmlAudioPlaybackEngine } from "../src/html-audio-playback-engine.ts";
 import {
@@ -224,6 +225,40 @@ test("tracks selected File objects only in memory and reports lost session refer
   assert.equal(await newPageSession.checkReference(selected.reference), "permission-lost");
   source.release(selected.reference);
   assert.equal(source.getFile(selected.reference), undefined);
+});
+
+test("extracts embedded MP3 front-cover artwork without reading audio payload bytes", async () => {
+  const imageBytes = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+  const picturePayload = new Uint8Array([
+    0,
+    ...new TextEncoder().encode("image/jpeg"),
+    0,
+    3,
+    0,
+    ...imageBytes,
+  ]);
+  const frame = new Uint8Array(10 + picturePayload.length);
+  frame.set(new TextEncoder().encode("APIC"), 0);
+  frame.set([
+    (picturePayload.length >>> 24) & 0xff,
+    (picturePayload.length >>> 16) & 0xff,
+    (picturePayload.length >>> 8) & 0xff,
+    picturePayload.length & 0xff,
+  ], 4);
+  frame.set(picturePayload, 10);
+  const tag = new Uint8Array(10 + frame.length);
+  tag.set([0x49, 0x44, 0x33, 3, 0, 0, 0, 0, 0, frame.length]);
+  tag.set(frame, 10);
+
+  const artwork = await extractEmbeddedArtwork(new Blob([tag]));
+  assert.ok(artwork);
+  assert.equal(artwork.type, "image/jpeg");
+  assert.deepEqual(new Uint8Array(await artwork.arrayBuffer()), imageBytes);
+});
+
+test("returns no embedded artwork for unsupported or malformed audio tags", async () => {
+  assert.equal(await extractEmbeddedArtwork(new Blob(["audio bytes"])), undefined);
+  assert.equal(await extractEmbeddedArtwork(new Blob([[0x49, 0x44, 0x33, 2, 0, 0, 0, 0, 0, 0]])), undefined);
 });
 
 test("keeps a simulated 3 GB, 1,000-file collection as file handles and small metadata", async () => {

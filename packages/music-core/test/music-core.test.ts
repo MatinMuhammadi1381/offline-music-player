@@ -551,6 +551,25 @@ test("validates and normalizes stored player preferences without accepting unkno
     controller.dispose();
   });
 
+  test("playback controller targets duplicate queue entries by index", async () => {
+    const engine = new FakePlaybackEngine();
+    const files = new Map(["a", "b"].map((id) => [id, selectedFile(id)]));
+    const controller = new PlaybackController(engine, (id) => files.get(id));
+    await controller.playQueue(["a", "b", "a"]);
+
+    await controller.playQueueItem(2);
+    assert.equal(controller.getSnapshot().queue.currentIndex, 2);
+    assert.deepEqual(engine.playedTrackIds, ["a", "a"]);
+
+    controller.moveQueueItem(0, 2);
+    assert.deepEqual(controller.getSnapshot().queue.trackIds, ["b", "a", "a"]);
+    assert.equal(controller.getSnapshot().queue.currentIndex, 1);
+    await controller.removeQueueItem(2);
+    assert.deepEqual(controller.getSnapshot().queue.trackIds, ["b", "a"]);
+    assert.equal(currentTrackId(controller.getSnapshot().queue), "a");
+    controller.dispose();
+  });
+
   test("playback controller reports missing files and recovers when the user advances", async () => {
     const engine = new FakePlaybackEngine();
     const files = new Map([["available", selectedFile("available")]]);

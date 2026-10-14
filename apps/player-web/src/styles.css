@@ -516,6 +516,7 @@ button:disabled {
 
 .artwork-shine {
   position: absolute;
+  z-index: 2;
   inset: -35% 28% 50% -30%;
   transform: rotate(-22deg);
   border-radius: 50%;
@@ -527,6 +528,19 @@ button:disabled {
   position: relative;
   z-index: 1;
   filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.2));
+}
+
+.artwork-cover {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.artwork-label {
+  z-index: 3;
 }
 
 .track-copy {
