@@ -15,6 +15,9 @@
   --color-separator: rgba(218, 232, 255, 0.1);
   --surface-glass: rgba(18, 29, 48, 0.82);
   --surface-glass-border: rgba(220, 235, 255, 0.14);
+  --ui-scale: 1;
+  --ui-content-max-width: 1160px;
+  --ui-viewport-height: 100vh;
   --radius-card: 22px;
   --radius-control: 15px;
   --mobile-nav-height: 68px;
@@ -27,6 +30,26 @@
   color: var(--color-text-primary);
   font-size: 16px;
   font-weight: 400;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --ui-viewport-height: 100dvh;
+  }
+}
+
+@supports (zoom: 0.7) {
+  :root {
+    --ui-scale: 0.7;
+    --ui-content-max-width: 1657.143px;
+    --ui-viewport-height: 142.857143vh;
+  }
+}
+
+@supports (zoom: 0.7) and (height: 100dvh) {
+  :root {
+    --ui-viewport-height: 142.857143dvh;
+  }
 }
 
 * {
@@ -54,6 +77,7 @@ body {
 
 #root {
   height: 100%;
+  zoom: var(--ui-scale);
 }
 
 button,
@@ -82,17 +106,17 @@ button:disabled {
 }
 
 .app-shell {
-  height: 100vh;
-  height: 100dvh;
+  height: var(--ui-viewport-height);
   overflow: hidden;
 }
 
 .side-rail {
   position: fixed;
   z-index: 5;
-  inset: 0 auto 0 0;
+  inset: 0 auto auto 0;
   display: flex;
   width: 236px;
+  height: var(--ui-viewport-height);
   flex-direction: column;
   padding: calc(28px + var(--safe-top)) 18px 24px;
   border-right: 1px solid var(--color-separator);
@@ -169,9 +193,8 @@ button:disabled {
 .main-content {
   position: relative;
   display: flex;
-  width: min(100% - 236px, 1160px);
-  height: 100vh;
-  height: 100dvh;
+  width: min(100% - 236px, var(--ui-content-max-width));
+  height: var(--ui-viewport-height);
   min-height: 0;
   flex-direction: column;
   overflow: hidden;
@@ -1263,7 +1286,7 @@ button:disabled {
     bottom: calc(var(--mobile-nav-bottom-gap) + var(--safe-bottom));
     left: auto;
     display: grid;
-    width: min(440px, calc(100% - 32px));
+    width: min(440px, calc(100vw - 32px));
     min-height: var(--mobile-nav-height);
     grid-template-columns: repeat(4, 1fr);
     align-items: center;
@@ -1300,7 +1323,7 @@ button:disabled {
   }
 
   .mini-player {
-    width: min(390px, calc(100% - 28px));
+    width: min(390px, calc(100vw - 68px));
     align-self: center;
   }
 
@@ -1360,6 +1383,10 @@ button:disabled {
   .main-content {
     padding-right: 16px;
     padding-left: 16px;
+  }
+
+  .mini-player {
+    width: min(390px, calc(100vw - 60px));
   }
 
   .topbar-actions {
