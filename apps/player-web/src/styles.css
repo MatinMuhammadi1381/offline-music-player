@@ -1282,9 +1282,9 @@ button:disabled {
   .bottom-nav {
     position: fixed;
     z-index: 7;
-    right: max(8px, env(safe-area-inset-right, 0px));
+    right: max(4px, env(safe-area-inset-right, 0px));
     bottom: calc(var(--mobile-nav-bottom-gap) + var(--safe-bottom));
-    left: max(8px, env(safe-area-inset-left, 0px));
+    left: max(4px, env(safe-area-inset-left, 0px));
     display: grid;
     max-width: 440px;
     min-height: var(--mobile-nav-height);
