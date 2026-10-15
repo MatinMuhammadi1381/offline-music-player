@@ -17,6 +17,8 @@
   --surface-glass-border: rgba(220, 235, 255, 0.14);
   --radius-card: 22px;
   --radius-control: 15px;
+  --mobile-nav-height: 68px;
+  --mobile-nav-bottom-gap: 14px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
   background: var(--color-bg);
@@ -1186,7 +1188,7 @@ button:disabled {
   .main-content {
     width: 100%;
     margin: 0;
-    padding: calc(14px + var(--safe-top)) 20px calc(180px + var(--safe-bottom));
+    padding: calc(14px + var(--safe-top)) 20px calc(var(--mobile-nav-height) + var(--mobile-nav-bottom-gap) + var(--safe-bottom));
   }
 
   .topbar {
@@ -1205,18 +1207,19 @@ button:disabled {
 
   .scroll-panel {
     padding: 8px 12px;
-    border-radius: 20px;
+    border-bottom: 0;
+    border-radius: 20px 20px 0 0;
   }
 
   .bottom-nav {
     position: fixed;
     z-index: 7;
     right: 50%;
-    bottom: calc(14px + var(--safe-bottom));
+    bottom: calc(var(--mobile-nav-bottom-gap) + var(--safe-bottom));
     left: auto;
     display: grid;
     width: min(440px, calc(100% - 32px));
-    min-height: 68px;
+    min-height: var(--mobile-nav-height);
     grid-template-columns: repeat(4, 1fr);
     align-items: center;
     padding: 8px;
@@ -1422,7 +1425,7 @@ button:disabled {
 @media (max-height: 540px) and (orientation: landscape) {
   .main-content {
     padding-top: calc(10px + var(--safe-top));
-    padding-bottom: calc(96px + var(--safe-bottom));
+    padding-bottom: calc(var(--mobile-nav-height) + var(--mobile-nav-bottom-gap) + var(--safe-bottom));
   }
 
   .topbar {

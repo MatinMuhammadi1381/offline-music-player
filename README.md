@@ -3,7 +3,7 @@
 **A private, offline-first music player for Android and iPhone.** Your original audio files stay in the locations you choose; the app does not upload your music.
 
 [![Deploy to GitHub Pages](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml)
-[![Version](https://img.shields.io/badge/version-1.4.0-1687ff)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.4.1-1687ff)](VERSION)
 
 **Web app:** [Open Offline Music Player](https://matinmuhammadi1381.github.io/offline-music-player/)
 
@@ -25,7 +25,7 @@
 
 - رابط واکنش‌گرا و موبایل‌محور برای وب، PWA آیفون و برنامهٔ اندروید
 - کتابخانهٔ محلی، جست‌وجو و مرتب‌سازی، صف پخش و فهرست‌های پخش
-- پوستهٔ ثابت در اندازهٔ صفحه با بخش‌های مستقل؛ اسکرول کتابخانه و پلی‌لیست‌ها فقط در پنل داخلی خودشان انجام می‌شود و نوار اسکرول نمایش داده نمی‌شود
+- پوستهٔ ثابت در اندازهٔ صفحه با بخش‌های مستقل؛ در گوشی پنل‌های کتابخانه و پلی‌لیست تا درست بالای نوار پایین باز و بدون لبهٔ بستهٔ پایینی ادامه دارند. خطوط کناری تا نوار پایین می‌رسند و اسکرول فقط داخل پنل انجام می‌شود.
 - در PWA آیفون، کپی محلی فایل صوتی در IndexedDB خصوصی همان برنامه برای پخش بعد از بستن و بازکردن؛ فایل‌ها به سرور آپلود نمی‌شوند
 - نمایش تصویر کاور جاسازی‌شدهٔ فایل‌های MP3 دارای تگ ID3، بدون آپلود یا ذخیرهٔ تصویر در کتابخانه
 - نگهداری فراداده و تنظیمات در فضای محلی مرورگر و پشتیبان‌گیری JSON فقط از فراداده
@@ -45,11 +45,11 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 1. لینک [نسخهٔ وب](https://matinmuhammadi1381.github.io/offline-music-player/) را در Safari باز کنید.
 2. از منوی Share گزینهٔ **Add to Home Screen** را انتخاب کنید.
 3. بار اول برنامه را با اینترنت باز کنید تا پوستهٔ برنامه cache شود.
-4. فایل‌های صوتی را از دستگاه انتخاب کنید. رفتار دسترسی فایل، پخش پس‌زمینه و آفلاین باید روی دستگاه واقعی شما آزمایش شود.
+4. فایل‌های صوتی را از دستگاه انتخاب کنید.
 
 ## وضعیت پروژه و محدودیت‌ها
 
-- نسخهٔ پروژه: **1.4.0** (طبق [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md)).
+- نسخهٔ پروژه: **1.4.1** (طبق [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md)).
 - انتشار روی GitHub Pages به معنی تأیید نهایی یا آمادگی production نیست.
 - پخش پس‌زمینه و کنترل‌های media بومی Android هنوز به رابط مشترک برنامه متصل نشده‌اند.
 - PWA آیفون کپی محلی آهنگ‌ها را برای استفاده بین نشست‌ها ذخیره می‌کند، اما iOS تضمین نگهداری چندماهه نمی‌دهد و ممکن است دادهٔ سایت را پاک کند؛ نسخهٔ اصلی آهنگ‌ها را حفظ کنید. Android فعلاً پس از بازراه‌اندازی به انتخاب دوبارهٔ فایل نیاز دارد.
@@ -61,7 +61,7 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 ### Features
 
 - Responsive, phone-first shared interface for the web, iPhone Home Screen PWA, and Android app.
-- A fixed viewport shell with distinct library and playlist panels; only each panel's contents scroll, without a visible scrollbar.
+- A fixed viewport shell with library and playlist panels; on phones, the panels stay open to the bottom navigation and their side borders end flush above it while only panel contents scroll, without a visible scrollbar.
 - Local library, search and sorting, playback queue, and playlists.
 - Displays embedded ID3 cover artwork for MP3 files when present; images are read locally and are not uploaded or saved in library metadata.
 - On the iPhone PWA, selected audio is copied into private, origin-local IndexedDB so it can be reopened for playback; it is never uploaded. Android's packaged app retains its existing session-only file behavior.
@@ -83,7 +83,7 @@ Open the [web app](https://matinmuhammadi1381.github.io/offline-music-player/) i
 
 ### Project status and limitations
 
-- Project version: **1.4.0**, following [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md).
+- Project version: **1.4.1**, following [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md).
 - GitHub Pages availability does not mean the app has passed production or final acceptance.
 - Native Android background playback and media-session controls are not yet connected to the shared UI.
 - iOS may evict browser storage or the user may clear site data; this is not a months-long retention guarantee. Keep original audio files. Android may require reselecting files after app restart. JSON backups include metadata and playlists, not audio.

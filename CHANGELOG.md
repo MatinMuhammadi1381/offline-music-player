@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 1.4.1 - 2026-10-14 (open mobile library and playlist panels)
+
+- Extended mobile scroll panels to the top edge of the fixed bottom navigation; removed the lower border and rounded bottom corners so side lines continue flush to the navigation.
+- Kept the section headers and filters in place and confined list scrolling to the space above the navigation, accounting for the mobile safe-area inset in portrait and landscape.
+- Updated Android `versionCode` to 9 for the shared WebView UI refinement.
+
 ## 1.4.0 - 2026-10-14 (fixed app layout and contained library scrolling)
 
 - Kept the application shell anchored to the visible viewport with mobile-safe `100dvh` sizing and a stable fallback.
