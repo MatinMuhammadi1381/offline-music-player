@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 1.5.0 - 2026-10-14 (PWA installation flow and playback layout)
+
+- Added a platform-aware install landing page with browser installation guidance; the music player opens when launched as an installed PWA or in the Android packaged app.
+- Kept the mini-player in the application layout instead of overlaying the library and playlist panels, and added scroll-end space so the final track rows can scroll fully into view.
+- Refined mobile navigation icons and selected state, and added adaptive Android launcher icons.
+- Advanced the offline shell cache so existing installs receive the updated launch flow and assets.
+- Incremented Android `versionCode` to 11.
+
 ## 1.4.2 - 2026-10-14 (mobile panel and navigation edge joins)
 
 - Joined each open mobile panel's side lines to the outer side edges of the bottom navigation capsule without drawing a horizontal connector or changing the navigation's rounded shape.

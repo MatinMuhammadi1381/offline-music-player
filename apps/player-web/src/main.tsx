@@ -17,6 +17,8 @@ import {
   getBrowserStoragePersistenceStatus,
   requestBrowserStoragePersistence,
 } from "@offline-music-player/web-platform";
+import { InstallLanding } from "./install-landing";
+import { isInstalledPwa } from "./pwa-mode";
 import "./styles.css";
 
 type Destination = "library" | "playlists" | "queue" | "settings" | "player";
@@ -50,12 +52,99 @@ interface PendingRelink {
   readonly file: import("@offline-music-player/platform-contracts").SelectedAudioFile;
 }
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  readonly userChoice: Promise<{ readonly outcome: "accepted" | "dismissed"; readonly platform: string }>;
+}
+
+function isStandalone(): boolean {
+  if (window.location.hostname === "appassets.androidplatform.net") return true;
+  const displayModeStandalone = window.matchMedia("(display-mode: standalone)").matches;
+  const navigatorStandalone = "standalone" in navigator && navigator.standalone === true;
+  return isInstalledPwa(displayModeStandalone, navigatorStandalone);
+}
+
+function AppBootstrap(): ReactNode {
+  const [installed, setInstalled] = useState(isStandalone);
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [serviceWorkerError, setServiceWorkerError] = useState("");
+
+  useEffect(() => {
+    const standaloneQuery = window.matchMedia("(display-mode: standalone)");
+    const updateDisplayMode = (): void => setInstalled(isStandalone());
+    const onBeforeInstallPrompt = (event: Event): void => {
+      const promptEvent = event as BeforeInstallPromptEvent;
+      promptEvent.preventDefault();
+      setInstallPrompt(promptEvent);
+    };
+    const onServiceWorkerError = (event: Event): void => {
+      const detail = (event as CustomEvent<string>).detail;
+      setServiceWorkerError(detail);
+    };
+
+    standaloneQuery.addEventListener("change", updateDisplayMode);
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("offline-music-service-worker-error", onServiceWorkerError);
+
+    const androidPackagedAssets = window.location.hostname === "appassets.androidplatform.net";
+    if ("serviceWorker" in navigator && window.isSecureContext && !androidPackagedAssets) {
+      if (import.meta.env.DEV) {
+        void (async () => {
+          const workerUrl = new URL("./sw.js", document.baseURI).href;
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations
+            .filter((registration) => [registration.active, registration.installing, registration.waiting]
+              .some((worker) => worker?.scriptURL === workerUrl))
+            .map((registration) => registration.unregister()));
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames
+            .filter((name) => name.startsWith("offline-music-shell-"))
+            .map((name) => caches.delete(name)));
+        })().catch((error: unknown) => {
+          const message = `Development cache cleanup failed: ${errorMessage(error)}`;
+          console.error(message);
+          window.dispatchEvent(new CustomEvent("offline-music-service-worker-error", { detail: message }));
+        });
+      } else {
+        void navigator.serviceWorker.register("./sw.js").catch((error: unknown) => {
+          const message = `Offline app setup failed: ${errorMessage(error)}`;
+          console.error(message);
+          window.dispatchEvent(new CustomEvent("offline-music-service-worker-error", { detail: message }));
+        });
+      }
+    }
+
+    return () => {
+      standaloneQuery.removeEventListener("change", updateDisplayMode);
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("offline-music-service-worker-error", onServiceWorkerError);
+    };
+  }, []);
+
+  return installed
+    ? <App />
+    : <InstallLanding
+        installPromptAvailable={installPrompt !== null}
+        onInstall={async () => {
+          if (!installPrompt) return;
+          try {
+            await installPrompt.prompt();
+            await installPrompt.userChoice;
+            setInstallPrompt(null);
+          } catch (error) {
+            setServiceWorkerError(`The install prompt could not be opened: ${errorMessage(error)}`);
+          }
+        }}
+        setupError={serviceWorkerError}
+      />;
+}
+
 function Icon({ name, size = 21 }: { readonly name: IconName; readonly size?: number }): ReactNode {
   const paths: Record<IconName, ReactNode> = {
     library: <><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H20v16H5.5A1.5 1.5 0 0 1 4 18.5z" /><path d="M4 8h16M8 4v16" /></>,
-    playlist: <><path d="M4 6h11M4 11h11M4 16h7" /><path d="M19 12v8l-3-1.7V14z" /></>,
-    queue: <><path d="M4 6h12M4 11h12M4 16h7" /><path d="M19 16v4m-2-2h4" /></>,
-    settings: <><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" /><path d="m19.4 15 .1.1 1.2.9-1.2 2.1-1.4-.5-.2.1-1.2.7-.2 1.5h-2.5l-.3-1.5-1.3-.7-.2-.1-1.4.5-1.2-2.1 1.2-.9.1-.2v-1.5l-.1-.2-1.2-.9 1.2-2.1 1.4.5.2-.1 1.3-.7.3-1.5h2.5l.2 1.5 1.2.7.2.1 1.4-.5 1.2 2.1-1.2.9-.1.2z" transform="translate(-1 -1) scale(1.08)" /></>,
+    playlist: <><path d="M4 6h10M4 10h10M4 14h6" /><path d="M17 18V5l4-1v12" /><circle cx="15" cy="18" r="2" /></>,
+    queue: <><path d="M4 6h11M4 10h11M4 14h7" /><path d="m17 15 4 3-4 3z" fill="currentColor" stroke="none" /></>,
+    settings: <><path d="M4 6h6M14 6h6M4 12h2M10 12h10M4 18h10M18 18h2" /><circle cx="12" cy="6" r="2" /><circle cx="8" cy="12" r="2" /><circle cx="16" cy="18" r="2" /></>,
     play: <path d="m8 5 11 7-11 7z" fill="currentColor" stroke="none" />,
     pause: <><path d="M8 5h3v14H8zM15 5h3v14h-3z" fill="currentColor" stroke="none" /></>,
     next: <><path d="m5 5 10 7-10 7z" fill="currentColor" stroke="none" /><path d="M19 5v14" /></>,
@@ -221,8 +310,15 @@ export function App(): ReactNode {
       const result = (event as CustomEvent<{ readonly message: string }>).detail;
       setNotice(result.message);
     };
+    const onServiceWorkerError = (event: Event): void => {
+      setNotice((event as CustomEvent<string>).detail);
+    };
     window.addEventListener("offline-music-backup-export", onBackupExport);
-    return () => window.removeEventListener("offline-music-backup-export", onBackupExport);
+    window.addEventListener("offline-music-service-worker-error", onServiceWorkerError);
+    return () => {
+      window.removeEventListener("offline-music-backup-export", onBackupExport);
+      window.removeEventListener("offline-music-service-worker-error", onServiceWorkerError);
+    };
   }, []);
 
   useEffect(() => {
@@ -298,28 +394,6 @@ export function App(): ReactNode {
       setLoading(false);
     });
 
-    if ("serviceWorker" in navigator && window.isSecureContext && !androidPackagedAssets) {
-      if (import.meta.env.DEV) {
-        void (async () => {
-          const workerUrl = new URL("./sw.js", document.baseURI).href;
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(registrations
-            .filter((registration) => [registration.active, registration.installing, registration.waiting]
-              .some((worker) => worker?.scriptURL === workerUrl))
-            .map((registration) => registration.unregister()));
-          const cacheNames = await caches.keys();
-          await Promise.all(cacheNames
-            .filter((name) => name.startsWith("offline-music-shell-"))
-            .map((name) => caches.delete(name)));
-        })().catch((error: unknown) => {
-          if (mounted) setNotice(`Development cache cleanup failed: ${errorMessage(error)}`);
-        });
-      } else {
-        void navigator.serviceWorker.register("./sw.js").catch((error: unknown) => {
-          if (mounted) setNotice(`Offline app setup failed: ${errorMessage(error)}`);
-        });
-      }
-    }
     return () => {
       mounted = false;
       playbackSubscription.unsubscribe();
@@ -337,6 +411,7 @@ export function App(): ReactNode {
     const id = player.playback.currentTrackId;
     return library?.tracks.find((track) => track.id === id);
   }, [library, player.playback.currentTrackId]);
+  const showMiniPlayer = Boolean(currentTrack && destination !== "player");
 
   useEffect(() => {
     const mediaSession = navigator.mediaSession;
@@ -622,6 +697,7 @@ export function App(): ReactNode {
       })}
     </ul>
     {tracks.length > listLimit && <button type="button" className="button button-secondary show-more" onClick={() => setListLimit((limit) => limit + 100)}>Show 100 more tracks</button>}
+    {tracks.length > 0 && <div className="track-list-scroll-spacer" aria-hidden="true" />}
     </>
   );
 
@@ -648,7 +724,7 @@ export function App(): ReactNode {
         <p className="privacy-note">Your music stays on this device.</p>
       </aside>
 
-      <main id="main-content" className="main-content" tabIndex={-1}>
+      <main id="main-content" className={`main-content${showMiniPlayer ? " has-mini-player" : ""}`} tabIndex={-1}>
         <header className="topbar">
           <div className="topbar-heading">
             {destination === "player" && <IconButton label="Back to library" icon="back" onClick={() => setDestination("library")} />}
@@ -920,17 +996,17 @@ export function App(): ReactNode {
             )}
           </>
         )}
+        {showMiniPlayer && currentTrack ? (
+          <div className="mini-player">
+            <button type="button" className="mini-open" onClick={() => setDestination("player")} aria-label={`Open player: ${currentTrack.title}`}>
+              <Artwork track={currentTrack} file={getAudioFile(currentTrack.id)} />
+              <span className="mini-copy"><strong>{currentTrack.title}</strong><small>{currentTrack.artist ?? currentTrack.fileName}</small></span>
+            </button>
+            <IconButton label={player.playback.state === "playing" ? "Pause playback" : "Resume playback"} icon={player.playback.state === "playing" ? "pause" : "play"} className="mini-state" onClick={() => run(() => runtime.current?.playback.togglePlayback() ?? Promise.resolve())} />
+          </div>
+        ) : null}
       </main>
 
-      {currentTrack && destination !== "player" && (
-        <div className="mini-player">
-          <button type="button" className="mini-open" onClick={() => setDestination("player")} aria-label={`Open player: ${currentTrack.title}`}>
-          <Artwork track={currentTrack} file={getAudioFile(currentTrack.id)} />
-          <span className="mini-copy"><strong>{currentTrack.title}</strong><small>{currentTrack.artist ?? currentTrack.fileName}</small></span>
-          </button>
-          <IconButton label={player.playback.state === "playing" ? "Pause playback" : "Resume playback"} icon={player.playback.state === "playing" ? "pause" : "play"} className="mini-state" onClick={() => run(() => runtime.current?.playback.togglePlayback() ?? Promise.resolve())} />
-        </div>
-      )}
       <nav className="bottom-nav" aria-label="Main navigation">
         {navItems.map((item) => <button key={item.id} type="button" className={`bottom-nav-item${destination === item.id ? " selected" : ""}`} aria-current={destination === item.id ? "page" : undefined} onClick={() => setDestination(item.id)}><Icon name={item.icon} /><span>{item.label}</span></button>)}
       </nav>
@@ -944,5 +1020,5 @@ const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("The app root element is missing.");
 const reactRoot = createRoot(rootElement);
 if (import.meta.hot) import.meta.hot.dispose(() => reactRoot.unmount());
-reactRoot.render(<App />);
+reactRoot.render(<AppBootstrap />);
 import appVersion from "../../../VERSION?raw";
