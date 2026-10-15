@@ -726,14 +726,7 @@ export function App(): ReactNode {
 
       <main id="main-content" className={`main-content${showMiniPlayer ? " has-mini-player" : ""}`} tabIndex={-1}>
         <header className="topbar">
-          <div className="topbar-heading">
-            {destination === "player" && <IconButton label="Back to library" icon="back" onClick={() => setDestination("library")} />}
-            <h1>{destination === "player" ? "Now Playing" : destination === "library" ? "Library" : destination === "playlists" ? "Playlists" : destination === "queue" ? "Queue" : "Settings"}</h1>
-          </div>
-          <div className="topbar-actions">
-            {destination === "library" && <button type="button" className="button button-secondary" onClick={chooseFiles}><Icon name="plus" /> <span>Add music</span></button>}
-            {destination === "library" && <IconButton label="Open queue" icon="queue" onClick={() => setDestination("queue")} />}
-          </div>
+          <h1 className="topbar-brand">Your device, your music</h1>
         </header>
 
         {notice && <div className="toast" role="status"><span>{notice}</span><IconButton label="Dismiss message" icon="close" onClick={() => setNotice("")} /></div>}
@@ -746,12 +739,13 @@ export function App(): ReactNode {
             {destination === "library" && (
               <section className="view-section" aria-labelledby="library-heading">
                 <div className="collection-heading">
-                  <div><p className="section-kicker">YOUR DEVICE, YOUR MUSIC</p><h2 id="library-heading">Listen offline.</h2><p className="collection-count">{library.tracks.length} {library.tracks.length === 1 ? "track" : "tracks"} in your collection</p></div>
+                  <div><h2 id="library-heading">Listen offline.</h2><p className="collection-count">{library.tracks.length} {library.tracks.length === 1 ? "track" : "tracks"} in your collection</p></div>
                   {visibleTracks.length > 0 && <button type="button" className="button button-primary" onClick={() => playTrack(visibleTracks[0]!.id)}><Icon name="play" /> {search ? "Play results" : "Play collection"}</button>}
                 </div>
                 <div className="library-tools">
                   <label className="search-field"><Icon name="search" /><span className="visually-hidden">Search your library</span><input name="library-search" autoComplete="off" value={search} onChange={(event) => { setSearch(event.currentTarget.value); setListLimit(100); }} placeholder="Search tracks, artists, albums…" /></label>
                   <div className="sort-controls">
+                    <button type="button" className="button button-secondary library-add-button" aria-label="Add music" title="Add music" onClick={chooseFiles}><Icon name="plus" /><span>Add music</span></button>
                     <label className="visually-hidden" htmlFor="sort-field">Sort library</label>
                     <div className="sort-field-picker" ref={sortMenuRef} onKeyDown={(event) => {
                       if (event.key === "Escape") {
@@ -855,7 +849,7 @@ export function App(): ReactNode {
                       <div className="empty-art"><Icon name={search ? "search" : "music"} size={34} /></div>
                       <h3>{search ? "No matches found" : "Your music belongs here"}</h3>
                       <p>{search ? "Try a different title, artist, or album." : persistentAudioEnabled ? "Choose audio files to copy into this app for offline playback. Keep your originals as a backup." : "Choose audio files from your device. Reselect them after restarting the app."}</p>
-                      {search ? <button type="button" className="button button-secondary" onClick={() => setSearch("")}>Clear search</button> : <button type="button" className="button button-primary" onClick={chooseFiles}><Icon name="plus" /> Choose music</button>}
+                      {search && <button type="button" className="button button-secondary" onClick={() => setSearch("")}>Clear search</button>}
                     </div>
                   )}
                 </div>
@@ -888,7 +882,7 @@ export function App(): ReactNode {
 
             {destination === "queue" && (
               <section className="view-section">
-                <div className="section-heading"><div><p className="section-kicker">UP NEXT</p><h2>Queue</h2><p className="collection-count">{player.queue.trackIds.length} queued tracks</p></div><button type="button" className="button button-secondary" onClick={() => { const tracksToAdd = sortTracks(library.tracks, { field: sortField, direction: sortDirection }); runtime.current?.playback.enqueue(tracksToAdd.map((track) => track.id)); tell(`${tracksToAdd.length} track${tracksToAdd.length === 1 ? "" : "s"} added to the queue.`); }} disabled={library.tracks.length === 0}><Icon name="plus" /> Add library</button></div>
+                <div className="section-heading"><div><h2>Queue</h2><p className="collection-count">{player.queue.trackIds.length} queued tracks</p></div><button type="button" className="button button-secondary" onClick={() => { const tracksToAdd = sortTracks(library.tracks, { field: sortField, direction: sortDirection }); runtime.current?.playback.enqueue(tracksToAdd.map((track) => track.id)); tell(`${tracksToAdd.length} track${tracksToAdd.length === 1 ? "" : "s"} added to the queue.`); }} disabled={library.tracks.length === 0}><Icon name="plus" /> Add library</button></div>
                 <div className="scroll-panel" role="region" aria-label="Playback queue" tabIndex={0}>
                   {player.queue.trackIds.length ? trackRows(player.queue.trackIds.flatMap((id) => {
                     const track = library.tracks.find((item) => item.id === id);
@@ -902,7 +896,7 @@ export function App(): ReactNode {
               <section className="view-section">
                 {selectedPlaylist ? (
                   <>
-                    <div className="section-heading"><div className="playlist-title-wrap"><IconButton label="Back to playlists" icon="back" onClick={() => setSelectedPlaylistId(null)} /><div><p className="section-kicker">PLAYLIST</p><h2>{selectedPlaylist.name}</h2><p className="collection-count">{playlistTracks.length} tracks</p></div></div>                    <button type="button" className="button button-danger" onClick={() => {
+                    <div className="section-heading"><div className="playlist-title-wrap"><IconButton label="Back to playlists" icon="back" onClick={() => setSelectedPlaylistId(null)} /><div><h2>{selectedPlaylist.name}</h2><p className="collection-count">{playlistTracks.length} tracks</p></div></div>                    <button type="button" className="button button-danger" onClick={() => {
                       if (!window.confirm(`Delete the playlist “${selectedPlaylist.name}”? This does not delete audio files.`)) return;
                       run(async () => {
                     const app = runtime.current;
@@ -949,7 +943,7 @@ export function App(): ReactNode {
                   </>
                 ) : (
                   <>
-                    <div className="section-heading"><div><p className="section-kicker">MADE FOR YOUR LIBRARY</p><h2>Playlists</h2><p className="collection-count">Your music, arranged your way</p></div></div>
+                    <div className="section-heading"><div><h2>Playlists</h2><p className="collection-count">Your music, arranged your way</p></div></div>
                     <form className="playlist-create-form" onSubmit={createPlaylist}>
                       <label className="visually-hidden" htmlFor="new-playlist-name">New playlist name</label>
                       <input id="new-playlist-name" name="playlist-name" autoComplete="off" value={newPlaylistName} onChange={(event) => setNewPlaylistName(event.currentTarget.value)} placeholder="Name a new playlist…" maxLength={80} />
@@ -969,7 +963,7 @@ export function App(): ReactNode {
 
             {destination === "settings" && (
               <section className="view-section settings-view">
-                <div className="section-heading"><div><p className="section-kicker">ON THIS DEVICE</p><h2>Settings</h2><p className="collection-count">Keep your library private and recoverable.</p></div></div>
+                <div className="section-heading"><div><h2>Settings</h2><p className="collection-count">Keep your library private and recoverable.</p></div></div>
                 <div className="scroll-panel settings-panel" role="region" aria-label="Settings" tabIndex={0}>
                   <div className="settings-group">
                     <h3>Playback</h3>
