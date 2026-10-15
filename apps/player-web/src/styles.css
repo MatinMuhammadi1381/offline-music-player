@@ -1282,18 +1282,18 @@ button:disabled {
   .bottom-nav {
     position: fixed;
     z-index: 7;
-    right: 50%;
+    right: max(8px, env(safe-area-inset-right, 0px));
     bottom: calc(var(--mobile-nav-bottom-gap) + var(--safe-bottom));
-    left: auto;
+    left: max(8px, env(safe-area-inset-left, 0px));
     display: grid;
-    width: min(440px, calc(100vw - 32px));
+    max-width: 440px;
     min-height: var(--mobile-nav-height);
     grid-template-columns: repeat(4, 1fr);
     align-items: center;
+    margin-inline: auto;
     padding: 8px;
     border: 1px solid var(--surface-glass-border);
     border-radius: 24px;
-    transform: translateX(50%);
     background: var(--surface-glass);
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.34);
     -webkit-backdrop-filter: blur(24px) saturate(1.25);
