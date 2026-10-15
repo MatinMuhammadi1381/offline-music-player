@@ -69,7 +69,7 @@ Open the public [GitHub Pages deployment](https://matinmuhammadi1381.github.io/o
 
 ## Acceptance evidence available
 
-- 56 automated Node tests pass, including synthetic 1,000-track search/sort, a 1,000-file / 3,000,000,000-byte metadata/reference simulation that fails if audio `arrayBuffer()` or `stream()` is read, simulated app-restart audio restoration and deletion, persistent relinking, storage quota failure handling, MP3 APIC cover extraction, and duplicate-ID queue targeting.
+- 57 automated Node tests pass, including synchronous audio-picker activation and cancellation, synthetic 1,000-track search/sort, a 1,000-file / 3,000,000,000-byte metadata/reference simulation that fails if audio `arrayBuffer()` or `stream()` is read, simulated app-restart audio restoration and deletion, persistent relinking, storage quota failure handling, MP3 APIC cover extraction, and duplicate-ID queue targeting.
 - Core and UI strict TypeScript checks pass.
 - PWA production build passes.
 - Android debug APK build and Android lint pass.
