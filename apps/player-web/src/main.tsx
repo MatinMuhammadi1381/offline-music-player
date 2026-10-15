@@ -392,10 +392,10 @@ export function App(): ReactNode {
   const addFiles = (): void => run(async () => {
     const app = runtime.current;
     if (!app) return;
+    const result = await app.library.selectAndAddFiles();
     const persistence = persistentAudioEnabled
       ? await requestBrowserStoragePersistence(navigator.storage)
       : undefined;
-    const result = await app.library.selectAndAddFiles();
     if (result.status === "selected") {
       await refreshLibrary();
       if (persistentAudioEnabled) {
@@ -416,17 +416,17 @@ export function App(): ReactNode {
   const recoverFiles = (): void => run(async () => {
     const app = runtime.current;
     if (!app) return;
-    if (persistentAudioEnabled) {
-      const persistence = await requestBrowserStoragePersistence(navigator.storage);
-      if (persistence.status !== "supported") {
-        setStorageMessage("Audio copies will be saved on this device, but iOS may clear app data. Keep your original files.");
-      }
-    }
     const result = await app.files.selectAudioFiles();
     if (result.status === "cancelled") return;
     if (result.status === "failed") {
       tell(result.error.message);
       return;
+    }
+    if (persistentAudioEnabled) {
+      const persistence = await requestBrowserStoragePersistence(navigator.storage);
+      if (persistence.status !== "supported") {
+        setStorageMessage("Audio copies will be saved on this device, but iOS may clear app data. Keep your original files.");
+      }
     }
     const linked = await app.library.relinkFiles(result.files);
     const ambiguousFiles = linked.ambiguous.flatMap((entry) => {
@@ -673,45 +673,6 @@ export function App(): ReactNode {
                   <div><p className="section-kicker">YOUR DEVICE, YOUR MUSIC</p><h2 id="library-heading">Listen offline.</h2><p className="collection-count">{library.tracks.length} {library.tracks.length === 1 ? "track" : "tracks"} in your collection</p></div>
                   {visibleTracks.length > 0 && <button type="button" className="button button-primary" onClick={() => playTrack(visibleTracks[0]!.id)}><Icon name="play" /> {search ? "Play results" : "Play collection"}</button>}
                 </div>
-                {unavailableCount > 0 && (
-                  <div className="recovery-banner" role="status">
-                    <span className="recovery-icon"><Icon name="music" /></span>
-                    <div><strong>{unavailableCount} file{unavailableCount === 1 ? "" : "s"} need access again</strong><p>{persistentAudioEnabled ? "The saved audio copy is missing. Reselect the original files to restore playback in this app." : "File access did not survive the app restart. Reselect the original files to restore playback."}</p></div>
-                    <button type="button" className="button button-secondary" onClick={recoverFiles}>Reselect files</button>
-                  </div>
-                )}
-                {recoverySummary && (
-                  <div className="recovery-details">
-                    <div className="recovery-summary"><p>{recoverySummary}</p><IconButton label="Dismiss recovery details" icon="close" onClick={() => { setRecoverySummary(""); setPendingRelinks([]); setUnmatchedFiles([]); }} /></div>
-                    {pendingRelinks.map((pending) => (
-                      <label className="relink-row" key={`${pending.fileName}-${pending.file.track.id}`}>
-                        <span>Choose which saved “{pending.fileName}” this file belongs to</span>
-                        <select defaultValue="" onChange={(event) => {
-                          const trackId = event.currentTarget.value;
-                          if (!trackId) return;
-                          run(async () => {
-                            const app = runtime.current;
-                            if (!app) return;
-                            await app.library.linkTrackToFile(trackId, pending.file);
-                            setPendingRelinks((items) => items.filter((item) => item.file.track.id !== pending.file.track.id));
-                            await refreshLibrary();
-                          });
-                        }}>
-                          <option value="" disabled>Select a saved track</option>
-                          {pending.candidateTrackIds.map((id) => <option key={id} value={id}>{library.tracks.find((track) => track.id === id)?.title ?? id}</option>)}
-                        </select>
-                      </label>
-                    ))}
-                    {unmatchedFiles.length > 0 && <button type="button" className="button button-secondary" onClick={() => run(async () => {
-                      const app = runtime.current;
-                      if (!app) return;
-                      await app.library.addSelectedFiles(unmatchedFiles);
-                      setUnmatchedFiles([]);
-                      await refreshLibrary();
-                      tell("Unmatched files were added as new tracks.");
-                    })}>Add unmatched files as new tracks</button>}
-                  </div>
-                )}
                 <div className="library-tools">
                   <label className="search-field"><Icon name="search" /><span className="visually-hidden">Search your library</span><input name="library-search" autoComplete="off" value={search} onChange={(event) => { setSearch(event.currentTarget.value); setListLimit(100); }} placeholder="Search tracks, artists, albums…" /></label>
                   <div className="sort-controls">
@@ -773,14 +734,55 @@ export function App(): ReactNode {
                     <IconButton label={`Sort ${sortDirection === "ascending" ? "descending" : "ascending"}`} icon="sort" onClick={toggleSortDirection} />
                   </div>
                 </div>
-                {visibleTracks.length > 0 ? trackRows(visibleTracks) : (
-                  <div className="empty-state">
-                    <div className="empty-art"><Icon name={search ? "search" : "music"} size={34} /></div>
-                    <h3>{search ? "No matches found" : "Your music belongs here"}</h3>
-                    <p>{search ? "Try a different title, artist, or album." : persistentAudioEnabled ? "Choose audio files to copy into this app for offline playback. Keep your originals as a backup." : "Choose audio files from your device. Reselect them after restarting the app."}</p>
-                    {search ? <button type="button" className="button button-secondary" onClick={() => setSearch("")}>Clear search</button> : <button type="button" className="button button-primary" onClick={chooseFiles}><Icon name="plus" /> Choose music</button>}
-                  </div>
-                )}
+                <div className="scroll-panel" role="region" aria-label="Music library" tabIndex={0}>
+                  {unavailableCount > 0 && (
+                    <div className="recovery-banner" role="status">
+                      <span className="recovery-icon"><Icon name="music" /></span>
+                      <div><strong>{unavailableCount} file{unavailableCount === 1 ? "" : "s"} need access again</strong><p>{persistentAudioEnabled ? "The saved audio copy is missing. Reselect the original files to restore playback in this app." : "File access did not survive the app restart. Reselect the original files to restore playback."}</p></div>
+                      <button type="button" className="button button-secondary" onClick={recoverFiles}>Reselect files</button>
+                    </div>
+                  )}
+                  {recoverySummary && (
+                    <div className="recovery-details">
+                      <div className="recovery-summary"><p>{recoverySummary}</p><IconButton label="Dismiss recovery details" icon="close" onClick={() => { setRecoverySummary(""); setPendingRelinks([]); setUnmatchedFiles([]); }} /></div>
+                      {pendingRelinks.map((pending) => (
+                        <label className="relink-row" key={`${pending.fileName}-${pending.file.track.id}`}>
+                          <span>Choose which saved “{pending.fileName}” this file belongs to</span>
+                          <select defaultValue="" onChange={(event) => {
+                            const trackId = event.currentTarget.value;
+                            if (!trackId) return;
+                            run(async () => {
+                              const app = runtime.current;
+                              if (!app) return;
+                              await app.library.linkTrackToFile(trackId, pending.file);
+                              setPendingRelinks((items) => items.filter((item) => item.file.track.id !== pending.file.track.id));
+                              await refreshLibrary();
+                            });
+                          }}>
+                            <option value="" disabled>Select a saved track</option>
+                            {pending.candidateTrackIds.map((id) => <option key={id} value={id}>{library.tracks.find((track) => track.id === id)?.title ?? id}</option>)}
+                          </select>
+                        </label>
+                      ))}
+                      {unmatchedFiles.length > 0 && <button type="button" className="button button-secondary" onClick={() => run(async () => {
+                        const app = runtime.current;
+                        if (!app) return;
+                        await app.library.addSelectedFiles(unmatchedFiles);
+                        setUnmatchedFiles([]);
+                        await refreshLibrary();
+                        tell("Unmatched files were added as new tracks.");
+                      })}>Add unmatched files as new tracks</button>}
+                    </div>
+                  )}
+                  {visibleTracks.length > 0 ? trackRows(visibleTracks) : (
+                    <div className="empty-state">
+                      <div className="empty-art"><Icon name={search ? "search" : "music"} size={34} /></div>
+                      <h3>{search ? "No matches found" : "Your music belongs here"}</h3>
+                      <p>{search ? "Try a different title, artist, or album." : persistentAudioEnabled ? "Choose audio files to copy into this app for offline playback. Keep your originals as a backup." : "Choose audio files from your device. Reselect them after restarting the app."}</p>
+                      {search ? <button type="button" className="button button-secondary" onClick={() => setSearch("")}>Clear search</button> : <button type="button" className="button button-primary" onClick={chooseFiles}><Icon name="plus" /> Choose music</button>}
+                    </div>
+                  )}
+                </div>
               </section>
             )}
 
@@ -811,10 +813,12 @@ export function App(): ReactNode {
             {destination === "queue" && (
               <section className="view-section">
                 <div className="section-heading"><div><p className="section-kicker">UP NEXT</p><h2>Queue</h2><p className="collection-count">{player.queue.trackIds.length} queued tracks</p></div><button type="button" className="button button-secondary" onClick={() => { const tracksToAdd = sortTracks(library.tracks, { field: sortField, direction: sortDirection }); runtime.current?.playback.enqueue(tracksToAdd.map((track) => track.id)); tell(`${tracksToAdd.length} track${tracksToAdd.length === 1 ? "" : "s"} added to the queue.`); }} disabled={library.tracks.length === 0}><Icon name="plus" /> Add library</button></div>
-                {player.queue.trackIds.length ? trackRows(player.queue.trackIds.flatMap((id) => {
-                  const track = library.tracks.find((item) => item.id === id);
-                  return track ? [track] : [];
-                }), { queueControls: true, queueIndices: player.queue.trackIds.flatMap((id, index) => library.tracks.some((track) => track.id === id) ? [index] : []) }) : <div className="empty-state compact-empty"><div className="empty-art"><Icon name="queue" size={30} /></div><h3>Your queue is clear</h3><p>Add tracks from your library or start a collection.</p><button type="button" className="button button-primary" onClick={() => setDestination("library")}>Browse library</button></div>}
+                <div className="scroll-panel" role="region" aria-label="Playback queue" tabIndex={0}>
+                  {player.queue.trackIds.length ? trackRows(player.queue.trackIds.flatMap((id) => {
+                    const track = library.tracks.find((item) => item.id === id);
+                    return track ? [track] : [];
+                  }), { queueControls: true, queueIndices: player.queue.trackIds.flatMap((id, index) => library.tracks.some((track) => track.id === id) ? [index] : []) }) : <div className="empty-state compact-empty"><div className="empty-art"><Icon name="queue" size={30} /></div><h3>Your queue is clear</h3><p>Add tracks from your library or start a collection.</p><button type="button" className="button button-primary" onClick={() => setDestination("library")}>Browse library</button></div>}
+                </div>
               </section>
             )}
 
@@ -863,7 +867,9 @@ export function App(): ReactNode {
                       </select>
                       <button type="submit" className="button button-secondary" disabled={!playlistAddTrackId}><Icon name="plus" /> Add track</button>
                     </form>
-                    {playlistTracks.length ? trackRows(playlistTracks, { playlistId: selectedPlaylist.id }) : <div className="empty-state compact-empty"><h3>This playlist is empty</h3><p>Add tracks from your local library.</p></div>}
+                    <div className="scroll-panel" role="region" aria-label={`${selectedPlaylist.name} tracks`} tabIndex={0}>
+                      {playlistTracks.length ? trackRows(playlistTracks, { playlistId: selectedPlaylist.id }) : <div className="empty-state compact-empty"><h3>This playlist is empty</h3><p>Add tracks from your local library.</p></div>}
+                    </div>
                   </>
                 ) : (
                   <>
@@ -873,11 +879,13 @@ export function App(): ReactNode {
                       <input id="new-playlist-name" name="playlist-name" autoComplete="off" value={newPlaylistName} onChange={(event) => setNewPlaylistName(event.currentTarget.value)} placeholder="Name a new playlist…" maxLength={80} />
                       <button type="submit" className="button button-primary" disabled={!newPlaylistName.trim()}><Icon name="plus" /> Create playlist</button>
                     </form>
-                    {library.playlists.length ? (
-                      <ul className="playlist-list">{library.playlists.map((playlist) => (
-                        <li key={playlist.id}><button type="button" className="playlist-card" onClick={() => setSelectedPlaylistId(playlist.id)}><span className="playlist-art"><Icon name="playlist" /></span><span><strong>{playlist.name}</strong><small>{playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}</small></span><Icon name="back" /></button></li>
-                      ))}</ul>
-                    ) : <div className="empty-state compact-empty"><div className="empty-art"><Icon name="playlist" size={30} /></div><h3>No playlists yet</h3><p>Create a playlist to bring favorite tracks together.</p></div>}
+                    <div className="scroll-panel" role="region" aria-label="Your playlists" tabIndex={0}>
+                      {library.playlists.length ? (
+                        <ul className="playlist-list">{library.playlists.map((playlist) => (
+                          <li key={playlist.id}><button type="button" className="playlist-card" onClick={() => setSelectedPlaylistId(playlist.id)}><span className="playlist-art"><Icon name="playlist" /></span><span><strong>{playlist.name}</strong><small>{playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}</small></span><Icon name="back" /></button></li>
+                        ))}</ul>
+                      ) : <div className="empty-state compact-empty"><div className="empty-art"><Icon name="playlist" size={30} /></div><h3>No playlists yet</h3><p>Create a playlist to bring favorite tracks together.</p></div>}
+                    </div>
                   </>
                 )}
               </section>
@@ -886,25 +894,27 @@ export function App(): ReactNode {
             {destination === "settings" && (
               <section className="view-section settings-view">
                 <div className="section-heading"><div><p className="section-kicker">ON THIS DEVICE</p><h2>Settings</h2><p className="collection-count">Keep your library private and recoverable.</p></div></div>
-                <div className="settings-group">
-                  <h3>Playback</h3>
-                  <div className="setting-row"><span><strong>Shuffle</strong><small>Change the order of upcoming tracks.</small></span><button type="button" role="switch" aria-label="Shuffle" aria-checked={settings.shuffleEnabled} className={`switch${settings.shuffleEnabled ? " switch-on" : ""}`} onClick={toggleShuffle}><span /></button></div>
-                  <div className="setting-row"><span><strong>Repeat</strong><small>Current mode: {settings.repeatMode === "off" ? "Off" : settings.repeatMode === "queue" ? "Queue" : "Track"}.</small></span><button type="button" className="button button-secondary" onClick={cycleRepeat}>Change</button></div>
-                </div>
-                <div className="settings-group">
-                  <h3>Library backup</h3>
-                  <p className="setting-copy">{persistentAudioEnabled ? "Backups include track details and playlists, not audio. Audio copies are stored only in this app and are not included in metadata backups." : "Backups include track details and playlists, not audio files or file-access permissions."}</p>
-                  <div className="setting-actions"><button type="button" className="button button-secondary" onClick={exportBackup}><Icon name="download" /> Export metadata</button><button type="button" className="button button-secondary" onClick={() => backupInput.current?.click()}><Icon name="upload" /> Import backup</button></div>
-                </div>
-                <div className="settings-group">
-                  <h3>Browser storage</h3>
-                  <p className="setting-copy">{storageMessage}</p>
-                  <button type="button" className="button button-secondary" onClick={requestPersistence}>Request persistent storage</button>
-                </div>
-                <div className="settings-group">
-                  <h3>About and privacy</h3>
-                  <p className="setting-copy">Offline Music · Version {appVersion.trim()} development build</p>
-                  <p className="setting-copy">{persistentAudioEnabled ? "Selected audio is copied into this app's private browser storage so it remains available after reopening. It is never uploaded. iOS may still clear app data under storage pressure or when site data is removed; keep your original files and metadata backups." : "Audio access is session-only and may need to be restored after restarting the app. Audio is not copied into browser storage."} Background playback depends on browser and platform behavior and has not been confirmed on your device.</p>
+                <div className="scroll-panel settings-panel" role="region" aria-label="Settings" tabIndex={0}>
+                  <div className="settings-group">
+                    <h3>Playback</h3>
+                    <div className="setting-row"><span><strong>Shuffle</strong><small>Change the order of upcoming tracks.</small></span><button type="button" role="switch" aria-label="Shuffle" aria-checked={settings.shuffleEnabled} className={`switch${settings.shuffleEnabled ? " switch-on" : ""}`} onClick={toggleShuffle}><span /></button></div>
+                    <div className="setting-row"><span><strong>Repeat</strong><small>Current mode: {settings.repeatMode === "off" ? "Off" : settings.repeatMode === "queue" ? "Queue" : "Track"}.</small></span><button type="button" className="button button-secondary" onClick={cycleRepeat}>Change</button></div>
+                  </div>
+                  <div className="settings-group">
+                    <h3>Library backup</h3>
+                    <p className="setting-copy">{persistentAudioEnabled ? "Backups include track details and playlists, not audio. Audio copies are stored only in this app and are not included in metadata backups." : "Backups include track details and playlists, not audio files or file-access permissions."}</p>
+                    <div className="setting-actions"><button type="button" className="button button-secondary" onClick={exportBackup}><Icon name="download" /> Export metadata</button><button type="button" className="button button-secondary" onClick={() => backupInput.current?.click()}><Icon name="upload" /> Import backup</button></div>
+                  </div>
+                  <div className="settings-group">
+                    <h3>Browser storage</h3>
+                    <p className="setting-copy">{storageMessage}</p>
+                    <button type="button" className="button button-secondary" onClick={requestPersistence}>Request persistent storage</button>
+                  </div>
+                  <div className="settings-group">
+                    <h3>About and privacy</h3>
+                    <p className="setting-copy">Offline Music · Version {appVersion.trim()} development build</p>
+                    <p className="setting-copy">{persistentAudioEnabled ? "Selected audio is copied into this app's private browser storage so it remains available after reopening. It is never uploaded. iOS may still clear app data under storage pressure or when site data is removed; keep your original files and metadata backups." : "Audio access is session-only and may need to be restored after restarting the app. Audio is not copied into browser storage."} Background playback depends on browser and platform behavior and has not been confirmed on your device.</p>
+                  </div>
                 </div>
               </section>
             )}

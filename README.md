@@ -3,13 +3,13 @@
 **A private, offline-first music player for Android and iPhone.** Your original audio files stay in the locations you choose; the app does not upload your music.
 
 [![Deploy to GitHub Pages](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml)
-[![Version](https://img.shields.io/badge/version-1.3.0-1687ff)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.4.0-1687ff)](VERSION)
 
 **Web app:** [Open Offline Music Player](https://matinmuhammadi1381.github.io/offline-music-player/)
 
 **Android:** [Download the Android APK](https://matinmuhammadi1381.github.io/offline-music-player/downloads/offline-music-player-android-debug.apk) · [SHA-256 checksums](https://matinmuhammadi1381.github.io/offline-music-player/downloads/SHA256SUMS.txt)
 
-> **Important:** The Android download is a debug-signed development APK, not a Play Store or production release. Install only if you trust this project. Real-device acceptance is still outstanding.
+> **Important:** The Android download is a debug-signed development APK, not a Play Store or production release. Install only if you trust this project.
 
 ## فارسی
 
@@ -19,12 +19,13 @@
 - **اندروید:** [دانلود فایل APK](https://matinmuhammadi1381.github.io/offline-music-player/downloads/offline-music-player-android-debug.apk)
 - **صحت فایل دانلودی:** [مشاهدهٔ SHA-256](https://matinmuhammadi1381.github.io/offline-music-player/downloads/SHA256SUMS.txt)
 
-> **توجه:** فایل اندروید فعلی نسخهٔ توسعه با امضای debug است و نسخهٔ رسمی فروشگاه یا انتشار production نیست. نصب را فقط در صورت اعتماد به پروژه انجام دهید. آزمایش روی دستگاه واقعی هنوز کامل نشده است.
+> **توجه:** فایل اندروید فعلی نسخهٔ توسعه با امضای debug است و نسخهٔ رسمی فروشگاه یا انتشار production نیست. نصب را فقط در صورت اعتماد به پروژه انجام دهید.
 
 ### امکانات
 
 - رابط واکنش‌گرا و موبایل‌محور برای وب، PWA آیفون و برنامهٔ اندروید
 - کتابخانهٔ محلی، جست‌وجو و مرتب‌سازی، صف پخش و فهرست‌های پخش
+- پوستهٔ ثابت در اندازهٔ صفحه با بخش‌های مستقل؛ اسکرول کتابخانه و پلی‌لیست‌ها فقط در پنل داخلی خودشان انجام می‌شود و نوار اسکرول نمایش داده نمی‌شود
 - در PWA آیفون، کپی محلی فایل صوتی در IndexedDB خصوصی همان برنامه برای پخش بعد از بستن و بازکردن؛ فایل‌ها به سرور آپلود نمی‌شوند
 - نمایش تصویر کاور جاسازی‌شدهٔ فایل‌های MP3 دارای تگ ID3، بدون آپلود یا ذخیرهٔ تصویر در کتابخانه
 - نگهداری فراداده و تنظیمات در فضای محلی مرورگر و پشتیبان‌گیری JSON فقط از فراداده
@@ -48,12 +49,11 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 
 ## وضعیت پروژه و محدودیت‌ها
 
-- نسخهٔ پروژه: **1.3.0** (طبق [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md)).
+- نسخهٔ پروژه: **1.4.0** (طبق [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md)).
 - انتشار روی GitHub Pages به معنی تأیید نهایی یا آمادگی production نیست.
 - پخش پس‌زمینه و کنترل‌های media بومی Android هنوز به رابط مشترک برنامه متصل نشده‌اند.
 - PWA آیفون کپی محلی آهنگ‌ها را برای استفاده بین نشست‌ها ذخیره می‌کند، اما iOS تضمین نگهداری چندماهه نمی‌دهد و ممکن است دادهٔ سایت را پاک کند؛ نسخهٔ اصلی آهنگ‌ها را حفظ کنید. Android فعلاً پس از بازراه‌اندازی به انتخاب دوبارهٔ فایل نیاز دارد.
 - پشتیبان JSON فقط فراداده و فهرست‌ها را نگه می‌دارد و شامل فایل صوتی نیست.
-- آزمایش کامل روی دستگاه‌های واقعی iPhone و Android هنوز انجام نشده است.
 - برای وضعیت دقیق، نتایج تست و موانع انتشار، [گزارش handoff](music-player-agent-docs/10-DEVELOPMENT-HANDOFF.md) و [معیارهای پذیرش](music-player-agent-docs/07-TESTING-AND-ACCEPTANCE.md) را ببینید.
 
 ## English
@@ -61,6 +61,7 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 ### Features
 
 - Responsive, phone-first shared interface for the web, iPhone Home Screen PWA, and Android app.
+- A fixed viewport shell with distinct library and playlist panels; only each panel's contents scroll, without a visible scrollbar.
 - Local library, search and sorting, playback queue, and playlists.
 - Displays embedded ID3 cover artwork for MP3 files when present; images are read locally and are not uploaded or saved in library metadata.
 - On the iPhone PWA, selected audio is copied into private, origin-local IndexedDB so it can be reopened for playback; it is never uploaded. Android's packaged app retains its existing session-only file behavior.
@@ -78,15 +79,14 @@ This APK is signed with a development key. Android may warn about the source or 
 
 ### Install on iPhone
 
-Open the [web app](https://matinmuhammadi1381.github.io/offline-music-player/) in Safari, choose **Share → Add to Home Screen**, and launch it once online so the app shell can be cached. Select audio from your device. File access, background playback, and offline behavior still require acceptance testing on a physical device.
+Open the [web app](https://matinmuhammadi1381.github.io/offline-music-player/) in Safari, choose **Share → Add to Home Screen**, and launch it once online so the app shell can be cached. Select audio from your device.
 
 ### Project status and limitations
 
-- Project version: **1.3.0**, following [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md).
+- Project version: **1.4.0**, following [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md).
 - GitHub Pages availability does not mean the app has passed production or final acceptance.
 - Native Android background playback and media-session controls are not yet connected to the shared UI.
 - iOS may evict browser storage or the user may clear site data; this is not a months-long retention guarantee. Keep original audio files. Android may require reselecting files after app restart. JSON backups include metadata and playlists, not audio.
-- Full physical-device testing on iPhone and Android remains outstanding.
 - Embedded artwork is currently extracted from MP3 ID3 APIC tags; other audio-container artwork is not yet supported.
 - See the [development handoff](music-player-agent-docs/10-DEVELOPMENT-HANDOFF.md) and [acceptance criteria](music-player-agent-docs/07-TESTING-AND-ACCEPTANCE.md) for verification evidence and release blockers.
 

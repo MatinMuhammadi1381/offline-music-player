@@ -9,7 +9,7 @@ import {
 import { LibraryController } from "../../music-core/src/library-controller.ts";
 import type { LibraryMetadata, PlayerSettings } from "../../shared-types/src/index.ts";
 import type { AudioElementPort, ObjectUrlPort } from "../src/html-audio-playback-engine.ts";
-import { BrowserAudioFileSource } from "../src/browser-audio-file-source.ts";
+import { BrowserAudioFileSource, createInputFileChooser } from "../src/browser-audio-file-source.ts";
 import { extractEmbeddedArtwork } from "../src/embedded-artwork.ts";
 import { IndexedDbLibraryRepository } from "../src/index.ts";
 import { HtmlAudioPlaybackEngine } from "../src/html-audio-playback-engine.ts";
@@ -123,6 +123,37 @@ class FakeAudioElement implements AudioElementPort {
   }
 }
 
+class FakeFileInput {
+  multiple = false;
+  accept = "";
+  files: FileList | null = null;
+  value = "";
+  clickCount = 0;
+  private readonly listeners = new Map<string, Set<EventListenerOrEventListenerObject>>();
+
+  addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+    const listeners = this.listeners.get(type) ?? new Set<EventListenerOrEventListenerObject>();
+    listeners.add(listener);
+    this.listeners.set(type, listeners);
+  }
+
+  removeEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+    this.listeners.get(type)?.delete(listener);
+  }
+
+  click(): void {
+    this.clickCount++;
+  }
+
+  dispatch(type: string): void {
+    const event = new Event(type);
+    for (const listener of this.listeners.get(type) ?? []) {
+      if (typeof listener === "function") listener(event);
+      else listener.handleEvent(event);
+    }
+  }
+}
+
 function fakeIndexedDb(): IDBFactory {
   const databases = new Map<string, FakeDatabase>();
   return {
@@ -205,6 +236,32 @@ test("requests browser persistence and reports denial without treating it as suc
     status: "unsupported",
     requestAvailable: false,
   });
+});
+
+test("opens the audio picker synchronously with multiple audio-file selection enabled", async () => {
+  const input = new FakeFileInput();
+  const chooseFiles = createInputFileChooser(input as unknown as HTMLInputElement);
+
+  assert.equal(input.multiple, true);
+  assert.equal(input.accept, "audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus");
+
+  const firstFile = new File(["first"], "first.mp3", { type: "audio/mpeg" });
+  const secondFile = new File(["second"], "second.m4a", { type: "audio/mp4" });
+  const selection = chooseFiles();
+  assert.equal(input.clickCount, 1, "input.click() must run before the chooser returns its pending promise");
+
+  input.files = [firstFile, secondFile] as unknown as FileList;
+  input.value = "selected-audio";
+  input.dispatch("change");
+  assert.deepEqual(await selection, [firstFile, secondFile]);
+  assert.equal(input.value, "");
+
+  const cancelledSelection = chooseFiles();
+  assert.equal(input.clickCount, 2);
+  input.value = "previous-selection";
+  input.dispatch("cancel");
+  assert.equal(await cancelledSelection, null);
+  assert.equal(input.value, "");
 });
 
 test("reports unavailable browser persistence errors explicitly", async () => {

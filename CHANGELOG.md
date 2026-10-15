@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 1.4.0 - 2026-10-14 (fixed app layout and contained library scrolling)
+
+- Kept the application shell anchored to the visible viewport with mobile-safe `100dvh` sizing and a stable fallback.
+- Presented the music library, playlists, queue, and settings contents in visually distinct panels; library and playlist lists scroll inside their own panels without visible scrollbars or page scroll chaining.
+- Kept navigation, search, sort, and playlist controls outside the scrolling lists and made the scroll regions keyboard-focusable.
+- Opened the iOS Safari/PWA audio picker synchronously from the Add music and Reselect files gestures before requesting storage persistence, preserving the browser's user activation.
+- Added regression coverage for synchronous picker opening, multi-file selection, cancellation, and input cleanup.
+- Updated the shared web experience used by the Android WebView and incremented Android `versionCode` to 8.
+
 ## 1.3.0 - 2026-10-14 (iPhone offline audio persistence)
 
 - Copy audio selected in the iOS PWA into the app origin's private IndexedDB storage and restore playable file references after reopening the app.
