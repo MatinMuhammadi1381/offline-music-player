@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 1.5.1 - 2026-10-15 (mobile navigation and library header refinements)
+
+- Widened the mobile bottom navigation by about 20% while retaining at least 4 px side margins, safe-area insets, and no horizontal overflow at 320, 360, and 390 CSS px.
+- Kept the exact “Your device, your music” brand line as the shared player header, and moved Add music beside the library sort controls; the existing synchronous iOS file-picker activation is preserved.
+- Incremented Android `versionCode` to 12; no library data or backup migration is required.
+- Validation passed: 60 automated tests, root and web TypeScript checks, PWA production build, Android debug APK assembly and lint, and responsive browser checks at 320/360/390 px.
+- Real-device iOS and Android acceptance remains outstanding as previously deferred.
+
 ## 1.5.0 - 2026-10-14 (PWA installation flow and playback layout)
 
 - Added a platform-aware install landing page with browser installation guidance; the music player opens when launched as an installed PWA or in the Android packaged app.
