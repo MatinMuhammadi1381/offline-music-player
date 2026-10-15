@@ -1,8 +1,14 @@
 ﻿# Changelog
 
+## 1.4.2 - 2026-10-14 (mobile panel and navigation edge joins)
+
+- Joined each open mobile panel's side lines to the outer side edges of the bottom navigation capsule without drawing a horizontal connector or changing the navigation's rounded shape.
+- Preserved the fixed header and internal scrolling; keyboard focus highlights the panel top and sides without drawing a closing line along the open bottom edge.
+- Incremented Android `versionCode` to 10 for the shared WebView styling update.
+
 ## 1.4.1 - 2026-10-14 (open mobile library and playlist panels)
 
-- Extended mobile scroll panels to the top edge of the fixed bottom navigation; removed the lower border and rounded bottom corners so side lines continue flush to the navigation.
+- Extended mobile scroll panels to the top edge of the fixed bottom navigation; removed the lower border and rounded bottom corners, then joined the side lines to the capsule's top-border tangents without changing its rounded outline.
 - Kept the section headers and filters in place and confined list scrolling to the space above the navigation, accounting for the mobile safe-area inset in portrait and landscape.
 - Updated Android `versionCode` to 9 for the shared WebView UI refinement.
 

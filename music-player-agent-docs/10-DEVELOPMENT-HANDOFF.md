@@ -4,7 +4,7 @@
 
 This is a development handoff prepared during Phase 10. The project owner authorized proceeding and explicitly deferred iPhone and Android real-device testing until later. That is recorded as an **owner-approved test deferral**, not as test evidence. The PWA is publicly deployed on GitHub Pages at <https://matinmuhammadi1381.github.io/offline-music-player/>. No production signing key, release tag, or production signing identity is available, so this is **not** a production release.
 
-Version is `1.4.1` (`VERSION`) and is bundled into the web app from the root version file so the About screen cannot drift from the project version. This remains a development handoff, not a production release; do not distribute this debug APK as a production release.
+Version is `1.4.2` (`VERSION`) and is bundled into the web app from the root version file so the About screen cannot drift from the project version. This remains a development handoff, not a production release; do not distribute this debug APK as a production release.
 
 ## Verified build environment
 
@@ -34,7 +34,7 @@ To run only the Android build/lint, use `.\gradlew.bat assembleDebug lintDebug` 
 Generated artifacts are kept outside source control in the ignored `release-artifacts/development/` directory:
 
 - `offline-music-player-pwa.zip` — static PWA build. Extract its contents to the document root of an approved HTTPS static host. The archive contains only the app shell; it does not contain user audio.
-- `offline-music-player-android-debug.apk` — locally built Android debug APK for device acceptance. Its application ID is currently `com.offlinemusicplayer.spike`, its Android `versionName` is `1.4.1` (versionCode 9), and it uses the Android debug signing identity rather than a production key.
+- `offline-music-player-android-debug.apk` — locally built Android debug APK for device acceptance. Its application ID is currently `com.offlinemusicplayer.spike`, its Android `versionName` is `1.4.2` (versionCode 10), and it uses the Android debug signing identity rather than a production key.
 
 SHA-256 checksums:
 
@@ -77,7 +77,7 @@ Open the public [GitHub Pages deployment](https://matinmuhammadi1381.github.io/o
 - Chrome imported a WAV, reloaded the PWA, confirmed the library reopened without a missing-file warning, and verified the matching audio blob remained in IndexedDB.
 - APK package inspection confirmed the `Offline Music` app label, `SharedPlayerActivity` launcher, application ID `com.offlinemusicplayer.spike`, Android version `1.3.0` (versionCode 7), SDK 23 minimum / SDK 34 target, and no `INTERNET` permission. APK signature verification passed with the default Android debug certificate; the certificate is not a production identity.
 - Desktop Edge 155 responsive checks pass at 320, 360, 390, 430, 844×390, and 390×600 CSS px; offline shell reload, focus visibility, reduced-motion behavior, and the measured primary-button text contrast were also checked.
-- Version `1.4.1` keeps the mobile library and playlist panels open to the bottom navigation, with edge borders ending flush above the navigation; the Android WebView receives the same updated web assets.
+- Version `1.4.2` keeps the mobile library and playlist panels open to the bottom navigation, joining their side borders to the navigation outline without changing its rounded shape; the Android WebView receives the same updated web assets.
 
 The desktop checks passed and the owner approved deferring actual device testing. The iPhone/Android device results remain outstanding—not passed—and should be recorded when the owner runs the tests later. Details are in `07-TESTING-AND-ACCEPTANCE.md`.
 
