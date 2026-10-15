@@ -15,7 +15,9 @@
 
 ## Persistence
 - Persistent browser storage is best-effort and not an absolute data-loss guarantee.
-- Original audio should remain in user-managed storage.
+- The iOS PWA may copy audio selected by the user into its private, origin-local IndexedDB storage to support playback after relaunch. Do not upload these copies or include them in metadata backups. Tell the user this consumes device storage, delete the app copy when the track is removed, and remind the user to retain the original.
+- Android's packaged WebView retains its current session-only file references; do not silently change its storage behavior.
+- Origin-private browser storage is best-effort and may be evicted or cleared by iOS/the user; never promise multi-month retention.
 - Metadata backup must be accessible to the user.
 - Validate a backup before applying it.
 - Never overwrite the current library metadata with an invalid backup.

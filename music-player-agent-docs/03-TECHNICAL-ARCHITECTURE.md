@@ -48,7 +48,8 @@ Use typed capability results rather than assuming a feature exists on every plat
 ## iOS PWA adapter
 - Use standard file input for one/multiple file selection where supported.
 - Investigate Safari-specific folder selection and file handle APIs with a real device test; do not infer support from desktop Chrome.
-- If only `File` objects are available, document that the page may need the user to reselect files after reload. Blob URLs are temporary and must not be treated as durable file references.
+- The owner approved copying selected iOS PWA audio into origin-private IndexedDB so files can be reopened after app relaunch. Keep audio separate from metadata/backups, disclose device-storage use, and handle quota errors. Blob URLs remain temporary and must not be treated as durable file references.
+- Browser storage remains best-effort: request persistent storage following a user action when supported, but do not promise it prevents iOS eviction or user deletion. Keep originals as the recoverable copy.
 - Do not use OPFS as if it were the shared Files folder. OPFS is origin-private storage.
 - Request `navigator.storage.persist()` only when available; check and report the returned result.
 - Keep metadata small; avoid loading the entire 3 GB collection into memory or browser storage.
@@ -65,8 +66,9 @@ Use typed capability results rather than assuming a feature exists on every plat
 ## Persistence
 - Keep three concerns distinct:
   1. Original audio files controlled by the user in Files or local device storage.
-  2. Small library metadata, playlists, and settings.
-  3. Application shell assets for offline launch.
+  2. iOS PWA app-owned audio copies in origin-private storage, separate from metadata; treat them as a convenience, not an archive.
+  3. Small library metadata, playlists, and settings.
+  4. Application shell assets for offline launch.
 - A metadata database is not a backup of audio files.
 - Store stable IDs and available file identifiers; avoid relying solely on paths that may change.
 - Support metadata export/import and validate before applying.

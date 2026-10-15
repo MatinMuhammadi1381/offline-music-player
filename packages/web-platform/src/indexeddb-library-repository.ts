@@ -1,5 +1,6 @@
-import type { LibraryMetadata, PlayerSettings } from "../../shared-types/src/index.ts";
+import type { LibraryMetadata, PlayerSettings, TrackId, TrackMetadata } from "../../shared-types/src/index.ts";
 import type {
+  AudioFileStore,
   LibraryRepository,
 } from "../../platform-contracts/src/index.ts";
 import { validateLibraryMetadata } from "../../music-core/src/metadata-backup.ts";
@@ -8,13 +9,14 @@ import {
   validatePlayerSettings,
 } from "../../music-core/src/settings.ts";
 
-const DATABASE_VERSION = 2;
+const DATABASE_VERSION = 3;
 const LIBRARY_STORE = "library";
 const SETTINGS_STORE = "settings";
+const AUDIO_FILES_STORE = "audio-files";
 const LIBRARY_KEY = "metadata";
 const SETTINGS_KEY = "player";
 
-export class IndexedDbLibraryRepository implements LibraryRepository {
+export class IndexedDbLibraryRepository implements LibraryRepository, AudioFileStore {
   private readonly databasePromise: Promise<IDBDatabase>;
 
   constructor(
@@ -114,6 +116,74 @@ export class IndexedDbLibraryRepository implements LibraryRepository {
     });
   }
 
+  async saveAudioFiles(files: readonly { readonly trackId: TrackId; readonly file: File }[]): Promise<void> {
+    if (files.length === 0) return;
+    const database = await this.databasePromise;
+    return new Promise<void>((resolve, reject) => {
+      try {
+        const transaction = database.transaction(AUDIO_FILES_STORE, "readwrite");
+        const store = transaction.objectStore(AUDIO_FILES_STORE);
+        for (const entry of files) store.put(entry.file, entry.trackId);
+        transaction.oncomplete = () => resolve();
+        transaction.onabort = () => reject(transaction.error ?? new Error("Saving audio files to IndexedDB was aborted."));
+        transaction.onerror = () => reject(transaction.error ?? new Error("Saving audio files to IndexedDB failed."));
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async loadAudioFiles(
+    tracks: readonly TrackMetadata[],
+  ): Promise<readonly { readonly trackId: TrackId; readonly file: File }[]> {
+    if (tracks.length === 0) return [];
+    const database = await this.databasePromise;
+    return new Promise<readonly { readonly trackId: TrackId; readonly file: File }[]>((resolve, reject) => {
+      try {
+        const transaction = database.transaction(AUDIO_FILES_STORE, "readonly");
+        const store = transaction.objectStore(AUDIO_FILES_STORE);
+        const restored: { trackId: TrackId; file: File }[] = [];
+        for (const track of tracks) {
+          const request = store.get(track.id);
+          request.onerror = () => reject(request.error ?? new Error(`Unable to read stored audio for track ${track.id}.`));
+          request.onsuccess = () => {
+            if (request.result instanceof File
+              && request.result.name === track.fileName
+              && request.result.size === track.fileSizeBytes) {
+              restored.push({
+                trackId: track.id,
+                file: new File([request.result], track.fileName, {
+                  ...(track.mimeType ? { type: track.mimeType } : {}),
+                  lastModified: request.result.lastModified,
+                }),
+              });
+            }
+          };
+        }
+        transaction.oncomplete = () => resolve(restored);
+        transaction.onabort = () => reject(transaction.error ?? new Error("Reading stored audio from IndexedDB was aborted."));
+        transaction.onerror = () => reject(transaction.error ?? new Error("Reading stored audio from IndexedDB failed."));
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async deleteAudioFile(trackId: string): Promise<void> {
+    const database = await this.databasePromise;
+    return new Promise<void>((resolve, reject) => {
+      try {
+        const transaction = database.transaction(AUDIO_FILES_STORE, "readwrite");
+        transaction.objectStore(AUDIO_FILES_STORE).delete(trackId);
+        transaction.oncomplete = () => resolve();
+        transaction.onabort = () => reject(transaction.error ?? new Error(`Deleting stored audio for track ${trackId} was aborted.`));
+        transaction.onerror = () => reject(transaction.error ?? new Error(`Deleting stored audio for track ${trackId} failed.`));
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
   async close(): Promise<void> {
     (await this.databasePromise).close();
   }
@@ -133,6 +203,7 @@ export class IndexedDbLibraryRepository implements LibraryRepository {
         const database = request.result;
         if (!database.objectStoreNames.contains(LIBRARY_STORE)) database.createObjectStore(LIBRARY_STORE);
         if (!database.objectStoreNames.contains(SETTINGS_STORE)) database.createObjectStore(SETTINGS_STORE);
+        if (!database.objectStoreNames.contains(AUDIO_FILES_STORE)) database.createObjectStore(AUDIO_FILES_STORE);
       };
       request.onblocked = () => reject(new Error("Opening the library database was blocked by another open app version."));
       request.onerror = () => reject(request.error ?? new Error("Unable to open the IndexedDB library database."));

@@ -4,6 +4,7 @@
 - [ ] Test selecting one audio file in iOS Safari.
 - [ ] Test selecting multiple audio files in iOS Safari.
 - [ ] Test whether selected file references remain usable after navigation/reload and after closing/reopening the installed PWA.
+- [ ] Verify selected audio remains playable after closing/reopening the iOS PWA on the owner's device; record the iOS version and storage-persistence grant.
 - [ ] Test whether Safari supports a user-selected directory workflow on the target iOS version. Do not assume it does.
 - [ ] Test Android local file/folder selection with the proposed native bridge.
 - [ ] Test Android playback with screen locked and app backgrounded.
@@ -12,6 +13,7 @@
 
 ## P1 — Library
 - [ ] Import/select locally available audio files without uploading them.
+- [x] For the iOS PWA, copy files selected by the user into app-private IndexedDB and restore playback references on the next launch.
 - [ ] Show available metadata such as title, artist, album, duration, file name, and file size when it can be read.
 - [ ] Handle missing metadata gracefully.
 - [ ] Search and sort the available library.
@@ -39,7 +41,7 @@
 ## P1 — Resilience
 - [ ] Request persistent browser storage where the browser exposes the API; record whether the request was granted.
 - [ ] Never claim that persistent storage prevents all data loss.
-- [ ] Keep original music files separate from browser cache/metadata storage where possible.
+- [x] Keep app-owned audio blobs separate from portable metadata and backups; never upload them or cache them in Cache Storage.
 - [ ] Provide a way to rebuild the library by reselecting files if file references are lost.
 - [ ] Show a clear warning when permissions or references are no longer valid.
 - [ ] Validate imported backup structure and handle malformed data safely.
@@ -54,5 +56,6 @@
 - Do not require sign-in.
 - Do not require an internet connection for normal playback after setup, within tested platform capabilities.
 - Do not upload audio or metadata to a remote service.
-- Do not copy the full collection into IndexedDB or Cache Storage without explicit owner approval.
+- The owner explicitly approved copying selected iPhone PWA audio into app-private IndexedDB on 2026-10-14; disclose device-storage use and best-effort retention.
+- Do not copy audio into Cache Storage.
 - Detailed visual behavior will be defined in a separate UI/UX package.

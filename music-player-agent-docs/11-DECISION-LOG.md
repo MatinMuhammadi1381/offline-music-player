@@ -8,7 +8,8 @@ Record material decisions here. Add a dated entry whenever a choice affects arch
 - [Confirmed] iPhone delivery target is a PWA.
 - [Confirmed] Android delivery target is an installable APK.
 - [Confirmed] Maximize shared React/TypeScript code where practical.
-- [Confirmed] Original audio files should remain in user-managed local storage rather than being copied wholesale into browser storage.
+- [Superseded 2026-10-14] The original default was to keep audio only in user-managed storage. The owner later authorized copying selected iPhone PWA audio into app-private storage to preserve playback between launches.
+- [Confirmed 2026-10-14] The iPhone PWA copies user-selected audio into origin-private IndexedDB, separate from library metadata and backups. It does not upload audio, requests storage persistence when supported, warns users to keep originals, and must describe iOS eviction as possible rather than promise long-term retention. Android WebView remains session-only.
 - [Confirmed] Metadata/playlist backup and recovery are important.
 - [Confirmed] Version control and versioning must start from the beginning.
 - [Confirmed] UI/UX details will be supplied later in a separate package.
@@ -24,8 +25,9 @@ Record material decisions here. Add a dated entry whenever a choice affects arch
 
 ## Open decisions
 - [Confirmed owner-reported 2026-10-14] The owner completed the iPhone and Android feasibility checks without encountering issues and approved proceeding to Phase 4. Device/OS versions, reproducible steps, and test records have not yet been added to the repository and must be collected before a release decision; later Android metadata changes also require a device retest.
+- [Confirmed owner request 2026-10-14] Copy iPhone PWA audio into app-private IndexedDB so the library remains playable after closing and reopening the app. This is not a guarantee against iOS eviction or user-cleared site data.
 - [Open] Exact behavior of multi-file selection on the target iOS version.
-- [Open] Whether the installed iOS PWA can meet the desired persistence/relinking workflow without importing audio into browser storage.
+- [Open] Verify stored audio retention and playback across relaunch, eviction conditions, and storage-pressure behavior on the owner's actual iOS version/device.
 - [Open] Whether the iOS PWA must support background playback with the screen locked.
 - [Open] Android playback implementation/plugin after a proof of concept.
 - [Open] Exact UI/UX design and interaction details (await separate owner-provided UI/UX package).

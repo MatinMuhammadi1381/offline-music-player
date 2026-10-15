@@ -184,6 +184,7 @@ export function App(): ReactNode {
   const [pendingRelinks, setPendingRelinks] = useState<readonly PendingRelink[]>([]);
   const [unmatchedFiles, setUnmatchedFiles] = useState<readonly import("@offline-music-player/platform-contracts").SelectedAudioFile[]>([]);
   const [recoverySummary, setRecoverySummary] = useState("");
+  const persistentAudioEnabled = runtime.current?.files.getCapabilities().persistentFileReferences.status === "supported";
   const sortOptions: readonly { readonly value: SortField; readonly label: string }[] = [
     { value: "title", label: "Title" },
     { value: "artist", label: "Artist" },
@@ -227,8 +228,12 @@ export function App(): ReactNode {
   useEffect(() => {
     const input = fileInput.current;
     if (!input) return;
-    const files = new BrowserAudioFileSource(createInputFileChooser(input));
     const repository = new IndexedDbLibraryRepository();
+    const androidPackagedAssets = window.location.hostname === "appassets.androidplatform.net";
+    const files = new BrowserAudioFileSource(
+      createInputFileChooser(input),
+      androidPackagedAssets ? undefined : repository,
+    );
     const libraryController = new LibraryController(repository, files);
     const audio = new HtmlAudioPlaybackEngine(files);
     const playback = new PlaybackController(audio, (trackId) => libraryController.getFile(trackId));
@@ -282,10 +287,10 @@ export function App(): ReactNode {
       playback.setShuffleEnabled(loadedSettings.shuffleEnabled);
       setIntegrity(await libraryController.checkIntegrity());
       setStorageMessage(storage.status === "supported"
-        ? storage.granted ? "Persistent storage is granted. Browser storage can still be deleted."
-          : "Persistent storage is not granted. Your browser may remove app data."
-        : storage.status === "unsupported" ? "Persistent storage requests are not available in this browser."
-          : "Persistent storage status could not be confirmed.");
+        ? storage.granted ? "Persistent storage is granted. Audio copies stay in this app between launches, but iOS can still remove app data."
+          : "Persistent storage was not granted. Audio copies stay in this app between launches, but iOS may remove browser data."
+        : storage.status === "unsupported" ? "Audio copies stay in this app between launches. This browser cannot request eviction protection, so keep the originals."
+          : "Audio copies are stored on this device. Storage eviction protection could not be confirmed; keep the originals.");
       setLoading(false);
     }).catch((error: unknown) => {
       if (!mounted) return;
@@ -293,7 +298,6 @@ export function App(): ReactNode {
       setLoading(false);
     });
 
-    const androidPackagedAssets = window.location.hostname === "appassets.androidplatform.net";
     if ("serviceWorker" in navigator && window.isSecureContext && !androidPackagedAssets) {
       if (import.meta.env.DEV) {
         void (async () => {
@@ -388,10 +392,20 @@ export function App(): ReactNode {
   const addFiles = (): void => run(async () => {
     const app = runtime.current;
     if (!app) return;
+    const persistence = persistentAudioEnabled
+      ? await requestBrowserStoragePersistence(navigator.storage)
+      : undefined;
     const result = await app.library.selectAndAddFiles();
     if (result.status === "selected") {
       await refreshLibrary();
-      tell(`${result.files.length} file${result.files.length === 1 ? "" : "s"} added to your library.`);
+      if (persistentAudioEnabled) {
+        const storageWarning = persistence?.status === "supported"
+          ? ""
+          : " iOS may still clear app storage, so keep your originals.";
+        tell(`${result.files.length} audio file${result.files.length === 1 ? "" : "s"} copied into this app for playback across launches.${storageWarning}`);
+      } else {
+        tell(`${result.files.length} file${result.files.length === 1 ? "" : "s"} added. Reselect files after restarting the app.`);
+      }
     } else if (result.status === "failed") {
       tell(result.error.message);
     }
@@ -402,6 +416,12 @@ export function App(): ReactNode {
   const recoverFiles = (): void => run(async () => {
     const app = runtime.current;
     if (!app) return;
+    if (persistentAudioEnabled) {
+      const persistence = await requestBrowserStoragePersistence(navigator.storage);
+      if (persistence.status !== "supported") {
+        setStorageMessage("Audio copies will be saved on this device, but iOS may clear app data. Keep your original files.");
+      }
+    }
     const result = await app.files.selectAudioFiles();
     if (result.status === "cancelled") return;
     if (result.status === "failed") {
@@ -511,8 +531,8 @@ export function App(): ReactNode {
   const requestPersistence = (): void => run(async () => {
     const status = await requestBrowserStoragePersistence(navigator.storage);
     setStorageMessage(status.status === "supported"
-      ? status.granted ? "Persistent storage is granted. Browser storage can still be deleted."
-        : "Persistent storage was not granted. Export a backup to protect your metadata."
+      ? status.granted ? "Persistent storage is granted. App audio and metadata remain best-effort and can still be deleted."
+        : "Persistent storage was not granted. iOS may remove stored audio and metadata; keep original audio and export a metadata backup."
       : status.status === "unsupported" ? "Persistent storage requests are not available in this browser."
         : "The persistent storage request failed. Your music files were not changed.");
   });
@@ -581,13 +601,18 @@ export function App(): ReactNode {
               <div className="row-actions">
                 <IconButton label={`Add ${track.title} to queue`} icon="plus" onClick={() => runtime.current?.playback.enqueue([track.id])} />
                 <IconButton label={`Remove ${track.title} from library`} icon="close" onClick={() => {
-                  if (!window.confirm(`Remove “${track.title}” from your library? This does not delete the audio file.`)) return;
+                  const confirmation = persistentAudioEnabled
+                    ? `Remove “${track.title}” and its saved audio copy from this app? Your original file is not deleted.`
+                    : `Remove “${track.title}” from your library? This does not delete the original audio file.`;
+                  if (!window.confirm(confirmation)) return;
                   run(async () => {
                     const app = runtime.current;
                     if (!app) return;
                     await app.library.removeTrack(track.id);
                     await refreshLibrary();
-                    tell("Track removed from the library. The original audio file was not deleted.");
+                    tell(persistentAudioEnabled
+                      ? "Track and its saved app copy were removed. The original audio file was not deleted."
+                      : "Track removed from the library. The original audio file was not deleted.");
                   });
                 }} />
               </div>
@@ -651,7 +676,7 @@ export function App(): ReactNode {
                 {unavailableCount > 0 && (
                   <div className="recovery-banner" role="status">
                     <span className="recovery-icon"><Icon name="music" /></span>
-                    <div><strong>{unavailableCount} file{unavailableCount === 1 ? "" : "s"} need access again</strong><p>Music files stay in their original location. Reselect them to restore playback.</p></div>
+                    <div><strong>{unavailableCount} file{unavailableCount === 1 ? "" : "s"} need access again</strong><p>{persistentAudioEnabled ? "The saved audio copy is missing. Reselect the original files to restore playback in this app." : "File access did not survive the app restart. Reselect the original files to restore playback."}</p></div>
                     <button type="button" className="button button-secondary" onClick={recoverFiles}>Reselect files</button>
                   </div>
                 )}
@@ -664,9 +689,13 @@ export function App(): ReactNode {
                         <select defaultValue="" onChange={(event) => {
                           const trackId = event.currentTarget.value;
                           if (!trackId) return;
-                          runtime.current?.library.linkTrackToFile(trackId, pending.file);
-                          setPendingRelinks((items) => items.filter((item) => item.file.track.id !== pending.file.track.id));
-                          void refreshLibrary();
+                          run(async () => {
+                            const app = runtime.current;
+                            if (!app) return;
+                            await app.library.linkTrackToFile(trackId, pending.file);
+                            setPendingRelinks((items) => items.filter((item) => item.file.track.id !== pending.file.track.id));
+                            await refreshLibrary();
+                          });
                         }}>
                           <option value="" disabled>Select a saved track</option>
                           {pending.candidateTrackIds.map((id) => <option key={id} value={id}>{library.tracks.find((track) => track.id === id)?.title ?? id}</option>)}
@@ -748,7 +777,7 @@ export function App(): ReactNode {
                   <div className="empty-state">
                     <div className="empty-art"><Icon name={search ? "search" : "music"} size={34} /></div>
                     <h3>{search ? "No matches found" : "Your music belongs here"}</h3>
-                    <p>{search ? "Try a different title, artist, or album." : "Choose audio files from your device. They stay where you keep them."}</p>
+                    <p>{search ? "Try a different title, artist, or album." : persistentAudioEnabled ? "Choose audio files to copy into this app for offline playback. Keep your originals as a backup." : "Choose audio files from your device. Reselect them after restarting the app."}</p>
                     {search ? <button type="button" className="button button-secondary" onClick={() => setSearch("")}>Clear search</button> : <button type="button" className="button button-primary" onClick={chooseFiles}><Icon name="plus" /> Choose music</button>}
                   </div>
                 )}
@@ -864,7 +893,7 @@ export function App(): ReactNode {
                 </div>
                 <div className="settings-group">
                   <h3>Library backup</h3>
-                  <p className="setting-copy">Backups include track details and playlists. They never contain audio files or file-access permissions.</p>
+                  <p className="setting-copy">{persistentAudioEnabled ? "Backups include track details and playlists, not audio. Audio copies are stored only in this app and are not included in metadata backups." : "Backups include track details and playlists, not audio files or file-access permissions."}</p>
                   <div className="setting-actions"><button type="button" className="button button-secondary" onClick={exportBackup}><Icon name="download" /> Export metadata</button><button type="button" className="button button-secondary" onClick={() => backupInput.current?.click()}><Icon name="upload" /> Import backup</button></div>
                 </div>
                 <div className="settings-group">
@@ -875,7 +904,7 @@ export function App(): ReactNode {
                 <div className="settings-group">
                   <h3>About and privacy</h3>
                   <p className="setting-copy">Offline Music · Version {appVersion.trim()} development build</p>
-                  <p className="setting-copy">Audio files are not uploaded or copied into browser storage. On iPhone, file access may need to be restored after closing the app. Background playback depends on browser and iOS behavior and has not been confirmed on your device.</p>
+                  <p className="setting-copy">{persistentAudioEnabled ? "Selected audio is copied into this app's private browser storage so it remains available after reopening. It is never uploaded. iOS may still clear app data under storage pressure or when site data is removed; keep your original files and metadata backups." : "Audio access is session-only and may need to be restored after restarting the app. Audio is not copied into browser storage."} Background playback depends on browser and platform behavior and has not been confirmed on your device.</p>
                 </div>
               </section>
             )}

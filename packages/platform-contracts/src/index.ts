@@ -51,11 +51,23 @@ export interface AudioFileSource {
   selectAudioFiles(): Promise<FileSelectionResult>;
   selectAudioDirectory(): Promise<FileSelectionResult>;
   checkReference(reference: AudioFileReference): Promise<FileReferenceStatus>;
+  restoreFiles?(tracks: readonly TrackMetadata[]): Promise<readonly {
+    readonly trackId: TrackId;
+    readonly reference: AudioFileReference;
+  }[]>;
+  linkFile?(trackId: TrackId, file: SelectedAudioFile): Promise<AudioFileReference>;
+  deleteStoredFile?(trackId: TrackId): Promise<void>;
   releaseReference?(reference: AudioFileReference): void;
 }
 
+export interface AudioFileStore {
+  saveAudioFiles(files: readonly { readonly trackId: TrackId; readonly file: File }[]): Promise<void>;
+  loadAudioFiles(tracks: readonly TrackMetadata[]): Promise<readonly { readonly trackId: TrackId; readonly file: File }[]>;
+  deleteAudioFile(trackId: string): Promise<void>;
+}
+
 export interface LibraryRepository {
-  /** Load and save metadata only; original audio bytes are never repository data. */
+  /** Load and save the portable library metadata. Audio is managed by AudioFileStore. */
   loadLibrary(): Promise<LibraryMetadata>;
   saveLibrary(library: LibraryMetadata): Promise<void>;
   loadSettings(): Promise<PlayerSettings>;

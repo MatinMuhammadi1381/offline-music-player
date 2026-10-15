@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 1.3.0 - 2026-10-14 (iPhone offline audio persistence)
+
+- Copy audio selected in the iOS PWA into the app origin's private IndexedDB storage and restore playable file references after reopening the app.
+- Request browser storage persistence during an explicit add-music action where supported; report storage failures instead of saving metadata without its audio.
+- Delete the app's stored audio copy when its track is removed. Metadata backups remain audio-free; original files should be kept separately.
+- iOS/WebKit storage remains best-effort and may be removed by the user or operating system; Android retains its existing session-only WebView behavior.
+- Added restart/restore, deletion, and storage-quota failure regression coverage. Real iPhone retention testing is still required.
+
 ## 1.2.0 - 2026-10-14 (artwork, playlists, and queue fixes)
 
 - Read embedded MP3 ID3 front-cover artwork locally and display it in the library, player, and mini-player without uploading artwork or adding it to persistent library metadata.

@@ -86,6 +86,8 @@ export class LibraryController {
     for (const reference of this.references.values()) this.fileSource.releaseReference?.(reference);
     this.references.clear();
     this.library = validation.library;
+    const restoredReferences = await this.fileSource.restoreFiles?.(this.library.tracks) ?? [];
+    for (const entry of restoredReferences) this.references.set(entry.trackId, entry.reference);
     return this.library;
   }
 
@@ -140,7 +142,10 @@ export class LibraryController {
       if (candidates.length === 1) {
         const match = candidates[0];
         if (match === undefined) throw new Error("The matched track disappeared during relinking.");
-        this.references.set(match.id, file.reference);
+        const reference = this.fileSource.linkFile
+          ? await this.fileSource.linkFile(match.id, file)
+          : file.reference;
+        this.references.set(match.id, reference);
         claimed.add(match.id);
         linkedTrackIds.push(match.id);
       } else if (candidates.length > 1) {
@@ -162,7 +167,7 @@ export class LibraryController {
     return { linkedTrackIds, ambiguous, unlinkedFiles };
   }
 
-  linkTrackToFile(trackId: TrackId, file: SelectedAudioFile): void {
+  async linkTrackToFile(trackId: TrackId, file: SelectedAudioFile): Promise<void> {
     const track = this.requireLibrary().tracks.find((item) => item.id === trackId);
     if (track === undefined) {
       throw new Error(`Track ${trackId} is not in the library.`);
@@ -170,7 +175,10 @@ export class LibraryController {
     if (track.fileName !== file.track.fileName || track.fileSizeBytes !== file.track.fileSizeBytes) {
       throw new Error("The selected file does not match this track's filename and size.");
     }
-    this.references.set(trackId, file.reference);
+    const reference = this.fileSource.linkFile
+      ? await this.fileSource.linkFile(trackId, file)
+      : file.reference;
+    this.references.set(trackId, reference);
   }
 
   async checkIntegrity(): Promise<readonly TrackIntegrity[]> {
@@ -276,7 +284,11 @@ export class LibraryController {
     }));
     const reference = this.references.get(trackId);
     this.references.delete(trackId);
-    if (reference !== undefined) this.fileSource.releaseReference?.(reference);
+    if (this.fileSource.deleteStoredFile) {
+      await this.fileSource.deleteStoredFile(trackId);
+    } else if (reference !== undefined) {
+      this.fileSource.releaseReference?.(reference);
+    }
   }
 
   private requireLibrary(): LibraryMetadata {

@@ -6,6 +6,7 @@ import {
   DEFAULT_PLAYER_SETTINGS,
   validatePlayerSettings,
 } from "../../music-core/src/settings.ts";
+import { LibraryController } from "../../music-core/src/library-controller.ts";
 import type { LibraryMetadata, PlayerSettings } from "../../shared-types/src/index.ts";
 import type { AudioElementPort, ObjectUrlPort } from "../src/html-audio-playback-engine.ts";
 import { BrowserAudioFileSource } from "../src/browser-audio-file-source.ts";
@@ -36,7 +37,11 @@ class FakeDatabase {
   }
 
   transaction(storeName: string, _mode?: string): {
-    objectStore: () => { get: (key: string) => CallbackRequest; put: (value: unknown, key: string) => void };
+    objectStore: (name?: string) => {
+      get: (key: string) => CallbackRequest;
+      put: (value: unknown, key: string) => void;
+      delete: (key: string) => void;
+    };
     oncomplete: (() => void) | null;
     onerror: (() => void) | null;
     onabort: (() => void) | null;
@@ -49,21 +54,29 @@ class FakeDatabase {
       onerror: null as (() => void) | null,
       onabort: null as (() => void) | null,
       error: null as DOMException | null,
-      objectStore: () => ({
+      objectStore: (name = storeName) => {
+        const selectedStore = this.stores.get(name);
+        if (!selectedStore) throw new DOMException("Object store does not exist.", "NotFoundError");
+        return {
         get: (key: string) => {
           const request: CallbackRequest = { result: undefined, error: null, onsuccess: null, onerror: null };
           queueMicrotask(() => {
-            request.result = store.get(key);
+            request.result = selectedStore.get(key);
             request.onsuccess?.();
             queueMicrotask(() => transaction.oncomplete?.());
           });
           return request;
         },
         put: (value: unknown, key: string) => {
-          store.set(key, value);
+          selectedStore.set(key, value);
           queueMicrotask(() => transaction.oncomplete?.());
         },
-      }),
+        delete: (key: string) => {
+          selectedStore.delete(key);
+          queueMicrotask(() => transaction.oncomplete?.());
+        },
+      };
+      },
     };
     return transaction;
   }
@@ -227,6 +240,107 @@ test("tracks selected File objects only in memory and reports lost session refer
   assert.equal(source.getFile(selected.reference), undefined);
 });
 
+test("persists selected audio across source instances and removes stored copies", async () => {
+  const repository = new IndexedDbLibraryRepository("persistent-audio-test", fakeIndexedDb());
+  const original = new File(["private audio bytes"], "kept-track.mp3", { type: "audio/mpeg", lastModified: 123 });
+  const firstSession = new BrowserAudioFileSource(async () => [original], repository);
+  const selected = await firstSession.selectAudioFiles();
+  assert.equal(selected.status, "selected");
+  if (selected.status !== "selected") throw new Error("Expected a successful file selection.");
+  assert.equal(selected.files[0]?.reference.persistence, "persistable");
+  assert.equal(firstSession.getCapabilities().persistentFileReferences.status, "supported");
+
+  const restartedSession = new BrowserAudioFileSource(async () => null, repository);
+  await restartedSession.restoreFiles(selected.files.map(({ track }) => track));
+  const restored = restartedSession.getFile(selected.files[0]!.reference);
+  assert.ok(restored);
+  assert.equal(restored.name, original.name);
+  assert.equal(restored.lastModified, original.lastModified);
+  assert.equal(await restored.text(), "private audio bytes");
+  assert.equal(await restartedSession.checkReference(selected.files[0]!.reference), "available");
+
+  await restartedSession.deleteStoredFile(selected.files[0]!.track.id);
+  const afterDeletion = new BrowserAudioFileSource(async () => null, repository);
+  await afterDeletion.restoreFiles(selected.files.map(({ track }) => track));
+  assert.equal(afterDeletion.getFile(selected.files[0]!.reference), undefined);
+  await repository.close();
+});
+
+test("restores a playable library after an app restart and deletes audio with a removed track", async () => {
+  const factory = fakeIndexedDb();
+  const firstRepository = new IndexedDbLibraryRepository("player-restart-test", factory);
+  const original = new File(["audio survives restart"], "survivor.mp3", { type: "audio/mpeg" });
+  const firstSource = new BrowserAudioFileSource(async () => [original], firstRepository);
+  const firstApp = new LibraryController(firstRepository, firstSource);
+  await firstApp.load();
+  const selected = await firstApp.selectAndAddFiles();
+  assert.equal(selected.status, "selected");
+  if (selected.status !== "selected") throw new Error("Expected selected audio to be added.");
+
+  const restartedRepository = new IndexedDbLibraryRepository("player-restart-test", factory);
+  const restartedSource = new BrowserAudioFileSource(async () => null, restartedRepository);
+  const restartedApp = new LibraryController(restartedRepository, restartedSource);
+  await restartedApp.load();
+  const track = selected.files[0]!.track;
+  assert.equal(await restartedSource.checkReference(selected.files[0]!.reference), "available");
+  assert.equal(await restartedApp.checkIntegrity().then((items) => items[0]?.status), "available");
+  assert.equal(await restartedApp.getFile(track.id)?.reference.token, track.id);
+  assert.equal(await restartedApp.getFile(track.id)?.track.fileName, "survivor.mp3");
+  assert.equal(await restartedSource.getFile(selected.files[0]!.reference)?.text(), "audio survives restart");
+  assert.deepEqual(await restartedRepository.loadAudioFiles([{
+    ...track,
+    fileName: "different-track.mp3",
+  }]), []);
+  assert.deepEqual(await restartedRepository.loadAudioFiles([{
+    ...track,
+    fileSizeBytes: track.fileSizeBytes + 1,
+  }]), []);
+
+  await restartedApp.removeTrack(track.id);
+  assert.equal(await restartedApp.getFile(track.id), undefined);
+  assert.deepEqual(await restartedRepository.loadAudioFiles([track]), []);
+  await firstRepository.close();
+  await restartedRepository.close();
+});
+
+test("moves a reselected audio copy to its existing stable track ID during relinking", async () => {
+  const repository = new IndexedDbLibraryRepository("persistent-relink-test", fakeIndexedDb());
+  const selectedFile = new File(["relinked bytes"], "relinked.mp3", { type: "audio/mpeg" });
+  const source = new BrowserAudioFileSource(async () => [selectedFile], repository);
+  const result = await source.selectAudioFiles();
+  assert.equal(result.status, "selected");
+  if (result.status !== "selected") throw new Error("Expected a successful file selection.");
+  const selected = result.files[0]!;
+  const reference = await source.linkFile("existing-track", selected);
+  const existingTrack = { ...selected.track, id: "existing-track" };
+  const persisted = await repository.loadAudioFiles([selected.track, existingTrack]);
+
+  assert.equal(reference.token, "existing-track");
+  assert.equal(source.getFile(reference), selectedFile);
+  assert.deepEqual(persisted.map((entry) => entry.trackId), ["existing-track"]);
+  assert.equal(await persisted[0]!.file.text(), "relinked bytes");
+  assert.equal(await source.getFile(selected.reference), undefined);
+  await repository.close();
+});
+
+test("reports a storage failure instead of adding audio without a durable copy", async () => {
+  const file = new File(["audio"], "limited-space.mp3", { type: "audio/mpeg" });
+  const source = new BrowserAudioFileSource(async () => [file], {
+    async saveAudioFiles() { throw new DOMException("Quota exceeded.", "QuotaExceededError"); },
+    async loadAudioFiles() { return []; },
+    async deleteAudioFile() {},
+  });
+
+  const result = await source.selectAudioFiles();
+  assert.deepEqual(result, {
+    status: "failed",
+    error: {
+      code: "unavailable",
+      message: "The selected audio could not be saved on this device. Check available storage and try again. Quota exceeded.",
+    },
+  });
+});
+
 test("extracts embedded MP3 front-cover artwork without reading audio payload bytes", async () => {
   const imageBytes = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
   const picturePayload = new Uint8Array([
@@ -316,6 +430,26 @@ test("persists only validated metadata using a single IndexedDB transaction", as
   await repository.saveLibrary(library);
   assert.deepEqual(await repository.loadLibrary(), library);
   await repository.close();
+});
+
+test("stores audio outside portable metadata and loads it after a simulated app restart", async () => {
+  const factory = fakeIndexedDb();
+  const firstSession = new IndexedDbLibraryRepository("audio-restart-test", factory);
+  const audio = new File(["audio bytes"], "offline.mp3", { type: "audio/mpeg" });
+  const track = { ...library.tracks[0]!, fileSizeBytes: audio.size };
+  await firstSession.saveAudioFiles([{ trackId: "track-1", file: audio }]);
+
+  const restartedSession = new IndexedDbLibraryRepository("audio-restart-test", factory);
+  const restored = await restartedSession.loadAudioFiles([track]);
+  assert.equal(restored.length, 1);
+  assert.equal(restored[0]?.trackId, "track-1");
+  assert.equal(await restored[0]?.file.text(), "audio bytes");
+  assert.deepEqual(await restartedSession.loadLibrary(), { schemaVersion: 1, tracks: [], playlists: [] });
+
+  await restartedSession.deleteAudioFile("track-1");
+  assert.deepEqual(await restartedSession.loadAudioFiles([track]), []);
+  await firstSession.close();
+  await restartedSession.close();
 });
 
 test("persists validated player settings separately from library metadata", async () => {

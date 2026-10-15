@@ -1,10 +1,13 @@
 import type {
+  AudioFileStore,
   AudioFileReference,
   AudioFileSource,
   FileReferenceStatus,
   FileSelectionResult,
   PlatformCapabilities,
+  SelectedAudioFile,
 } from "../../platform-contracts/src/index.ts";
+import type { TrackId, TrackMetadata } from "../../shared-types/src/index.ts";
 import { createTrack, createTrackId } from "../../music-core/src/tracks.ts";
 
 export type BrowserFileChooser = () => Promise<readonly File[] | null>;
@@ -19,10 +22,7 @@ const BROWSER_CAPABILITIES: PlatformCapabilities = {
     status: "unsupported",
     notes: "This adapter uses a standard file input and does not claim persistent directory access.",
   },
-  persistentFileReferences: {
-    status: "unsupported",
-    notes: "Selected File objects and their runtime handles are session-only and cannot be serialized as library metadata.",
-  },
+  persistentFileReferences: { status: "unsupported" },
   backgroundPlayback: { status: "not-tested" },
   lockScreenControls: { status: "not-tested" },
 };
@@ -65,13 +65,22 @@ export function createInputFileChooser(input: HTMLInputElement): BrowserFileChoo
 export class BrowserAudioFileSource implements AudioFileSource {
   private readonly selectedFiles = new Map<string, File>();
   private readonly chooseFiles: BrowserFileChooser;
+  private readonly audioFileStore: AudioFileStore | undefined;
 
-  constructor(chooseFiles: BrowserFileChooser) {
+  constructor(chooseFiles: BrowserFileChooser, audioFileStore?: AudioFileStore) {
     this.chooseFiles = chooseFiles;
+    this.audioFileStore = audioFileStore;
   }
 
   getCapabilities(): PlatformCapabilities {
-    return BROWSER_CAPABILITIES;
+    if (!this.audioFileStore) return BROWSER_CAPABILITIES;
+    return {
+      ...BROWSER_CAPABILITIES,
+      persistentFileReferences: {
+        status: "supported",
+        notes: "Audio is copied into this app's private IndexedDB storage. iOS may still remove browser data.",
+      },
+    };
   }
 
   async selectAudioFiles(): Promise<FileSelectionResult> {
@@ -89,33 +98,48 @@ export class BrowserAudioFileSource implements AudioFileSource {
     }
     if (files === null || files.length === 0) return { status: "cancelled" };
 
-    const selected = [];
-    for (const file of files) {
-      if (file.size < 0 || !Number.isSafeInteger(file.size)) {
-        return {
-          status: "failed",
-          error: { code: "unavailable", message: `The selected file "${file.name}" has an invalid size.` },
-        };
-      }
-      const token = createTrackId();
-      this.selectedFiles.set(token, file);
-      const mimeType = file.type || undefined;
-      selected.push({
-        track: createTrack({
-          id: createTrackId(),
-          fileName: file.name,
-          fileSizeBytes: file.size,
-          addedAt: Date.now(),
-          ...(mimeType ? { mimeType } : {}),
-        }),
+    const invalidFile = files.find((file) => file.size < 0 || !Number.isSafeInteger(file.size));
+    if (invalidFile) {
+      return {
+        status: "failed",
+        error: { code: "unavailable", message: `The selected file "${invalidFile.name}" has an invalid size.` },
+      };
+    }
+    const selected = files.map((file) => {
+      const track = createTrack({
+        id: createTrackId(),
+        fileName: file.name,
+        fileSizeBytes: file.size,
+        addedAt: Date.now(),
+        ...(file.type ? { mimeType: file.type } : {}),
+      });
+      return {
+        track,
+        file,
         reference: {
           platform: "ios-pwa" as const,
-          token,
-          persistence: "session-only" as const,
+          token: track.id,
+          persistence: this.audioFileStore ? "persistable" as const : "session-only" as const,
         },
-      });
+      };
+    });
+    if (this.audioFileStore) {
+      try {
+        await this.audioFileStore.saveAudioFiles(selected.map(({ track, file }) => ({ trackId: track.id, file })));
+      } catch (error) {
+        return {
+          status: "failed",
+          error: {
+            code: "unavailable",
+            message: `The selected audio could not be saved on this device. Check available storage and try again. ${error instanceof Error ? error.message : ""}`.trim(),
+          },
+        };
+      }
     }
-    return { status: "selected", files: selected };
+    for (const entry of selected) {
+      this.selectedFiles.set(entry.reference.token, entry.file);
+    }
+    return { status: "selected", files: selected.map(({ track, reference }) => ({ track, reference })) };
   }
 
   async selectAudioDirectory(): Promise<FileSelectionResult> {
@@ -136,6 +160,43 @@ export class BrowserAudioFileSource implements AudioFileSource {
   getFile(reference: AudioFileReference): File | undefined {
     if (reference.platform !== "ios-pwa") return undefined;
     return this.selectedFiles.get(reference.token);
+  }
+
+  async restoreFiles(
+    tracks: readonly TrackMetadata[],
+  ): Promise<readonly { readonly trackId: TrackId; readonly reference: AudioFileReference }[]> {
+    this.selectedFiles.clear();
+    if (!this.audioFileStore) return [];
+    const restored = await this.audioFileStore.loadAudioFiles(tracks);
+    for (const entry of restored) this.selectedFiles.set(entry.trackId, entry.file);
+    return restored.map(({ trackId }) => ({
+      trackId,
+      reference: { platform: "ios-pwa", token: trackId, persistence: "persistable" },
+    }));
+  }
+
+  async linkFile(trackId: TrackId, selected: SelectedAudioFile): Promise<AudioFileReference> {
+    const file = this.getFile(selected.reference);
+    if (!file) throw new Error(`The selected file "${selected.track.fileName}" is no longer available.`);
+    if (this.audioFileStore) {
+      await this.audioFileStore.saveAudioFiles([{ trackId, file }]);
+      if (selected.reference.token !== trackId) {
+        await this.audioFileStore.deleteAudioFile(selected.reference.token);
+        this.selectedFiles.delete(selected.reference.token);
+      }
+    }
+    const reference: AudioFileReference = {
+      platform: "ios-pwa",
+      token: trackId,
+      persistence: this.audioFileStore ? "persistable" : "session-only",
+    };
+    this.selectedFiles.set(reference.token, file);
+    return reference;
+  }
+
+  async deleteStoredFile(trackId: TrackId): Promise<void> {
+    if (this.audioFileStore) await this.audioFileStore.deleteAudioFile(trackId);
+    this.selectedFiles.delete(trackId);
   }
 
   release(reference: AudioFileReference): void {

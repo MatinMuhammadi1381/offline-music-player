@@ -24,6 +24,8 @@ A Windows `.bat` runner may be added if useful. It should print clear success/fa
 - [ ] Does not claim whole-folder support unless verified.
 - [ ] Reports behavior after reload and after app/browser relaunch.
 - [ ] Reports persistent-storage request result if API exists.
+- [ ] Confirms selected iOS PWA audio is playable after closing and reopening the app; records device, iOS version, and whether persistent storage was granted.
+- [ ] Confirms iOS storage-eviction warnings and that audio stays out of metadata backups.
 - [ ] No full-library copy to browser storage.
 - [ ] Results recorded with OS/device and reproducible steps.
 
