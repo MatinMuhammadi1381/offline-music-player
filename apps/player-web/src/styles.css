@@ -52,6 +52,47 @@
   }
 }
 
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 760px) {
+    :root {
+      --ui-scale: 1;
+      --ui-viewport-height: 100vh;
+      --mobile-nav-bottom-gap: 4px;
+    }
+
+    @supports (height: 100svh) {
+      :root {
+        --ui-viewport-height: 100svh;
+      }
+    }
+
+    body,
+    #root,
+    .app-shell {
+      background: var(--color-bg);
+    }
+
+    .topbar {
+      min-height: 0;
+      margin-bottom: 0;
+    }
+
+    .topbar-brand {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .loading-orb {
+      display: none;
+    }
+  }
+}
+
 * {
   box-sizing: border-box;
 }

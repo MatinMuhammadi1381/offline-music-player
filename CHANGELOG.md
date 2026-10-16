@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 1.5.2 - 2026-10-16 (iPhone layout stabilization)
+
+- Removed the mobile brand strip and loading spinner from iPhone screens while retaining the brand heading for assistive technology.
+- Disabled the scaled desktop zoom on iPhone, used a stable small viewport height, lowered the bottom navigation, and matched the safe-area background to the app.
+- Incremented Android `versionCode` to 13; no library data or backup migration is required.
+- Validation passed: 60 automated tests, root and web TypeScript checks, PWA production build, Android debug APK assembly, and Android lint. Real-device iPhone verification remains outstanding.
+
 ## 1.5.1 - 2026-10-15 (mobile navigation and library header refinements)
 
 - Widened the mobile bottom navigation by about 20% while retaining at least 4 px side margins, safe-area insets, and no horizontal overflow at 320, 360, and 390 CSS px.
