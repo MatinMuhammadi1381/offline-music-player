@@ -55,14 +55,16 @@
 @supports (-webkit-touch-callout: none) {
   @media (max-width: 760px) {
     :root {
-      --ui-scale: 1;
-      --ui-viewport-height: 100vh;
-      --mobile-nav-bottom-gap: 4px;
+      --ui-scale: 0.7;
+      --ui-viewport-height: 142.857143vh;
+      --mobile-nav-bottom-gap: -10px;
+      --safe-top: calc(env(safe-area-inset-top, 0px) / 0.7);
+      --safe-bottom: calc(env(safe-area-inset-bottom, 0px) / 0.7);
     }
 
     @supports (height: 100svh) {
       :root {
-        --ui-viewport-height: 100svh;
+        --ui-viewport-height: 142.857143svh;
       }
     }
 
@@ -85,6 +87,10 @@
       clip: rect(0, 0, 0, 0);
       clip-path: inset(50%);
       white-space: nowrap;
+    }
+
+    .bottom-nav {
+      bottom: max(20px, calc(var(--mobile-nav-bottom-gap) + var(--safe-bottom)));
     }
 
     .loading-orb {

@@ -1,9 +1,16 @@
 ﻿# Changelog
 
+## 1.5.3 - 2026-10-16 (iPhone scale and navigation position)
+
+- Restored the 30% smaller iPhone interface with stable small-viewport sizing, keeping the top and bottom safe areas intact.
+- Lowered the iPhone bottom navigation by about 20% of its height while retaining clearance from the home indicator.
+- Incremented Android `versionCode` to 14; no library data or backup migration is required.
+- Validation passed: 60 automated tests, root and web TypeScript checks, PWA production build, Android debug APK assembly, and Android lint. Real-device iPhone verification remains outstanding.
+
 ## 1.5.2 - 2026-10-16 (iPhone layout stabilization)
 
 - Removed the mobile brand strip and loading spinner from iPhone screens while retaining the brand heading for assistive technology.
-- Disabled the scaled desktop zoom on iPhone, used a stable small viewport height, lowered the bottom navigation, and matched the safe-area background to the app.
+- Temporarily disabled scaled desktop zoom on iPhone to stabilize its layout, used a stable small viewport height, lowered the bottom navigation, and matched the safe-area background to the app.
 - Incremented Android `versionCode` to 13; no library data or backup migration is required.
 - Validation passed: 60 automated tests, root and web TypeScript checks, PWA production build, Android debug APK assembly, and Android lint. Real-device iPhone verification remains outstanding.
 
