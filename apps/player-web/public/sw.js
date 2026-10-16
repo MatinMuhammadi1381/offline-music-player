@@ -1,4 +1,4 @@
-const CACHE_NAME = "offline-music-shell-v2";
+const CACHE_NAME = "offline-music-shell-v3"; // bumped to force clients to refresh on next deploy
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.add("./")));
