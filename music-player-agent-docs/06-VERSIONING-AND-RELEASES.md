@@ -10,7 +10,7 @@
 - Never call an untested build “stable” or “production-ready.”
 
 ## Project version
-- The current project version is `1.5.5`. Preserve this semantic version consistently in the `VERSION` file, package metadata, Android APK metadata, and user-visible About screen. The version label alone does not certify release acceptance or production readiness.
+- The current project version is `1.5.6`. Preserve this semantic version consistently in the `VERSION` file, package metadata, Android APK metadata, and user-visible About screen. The version label alone does not certify release acceptance or production readiness.
 - The PWA's About-screen version is injected from the root `VERSION` file at build time. Do not hardcode a separate display value.
 - Android's `versionName` must use the same display identifier. Increment its integer `versionCode` for each distributable APK so Android can distinguish upgrades.
 

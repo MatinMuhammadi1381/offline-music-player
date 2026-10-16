@@ -3,7 +3,7 @@
 **A private, offline-first music player for Android and iPhone.** Your original audio files stay in the locations you choose; the app does not upload your music.
 
 [![Deploy to GitHub Pages](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml)
-[![Version](https://img.shields.io/badge/version-1.5.5-1687ff)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.5.6-1687ff)](VERSION)
 
 **Web app:** [Open Offline Music Player](https://matinmuhammadi1381.github.io/offline-music-player/)
 
@@ -58,7 +58,7 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 
 ## وضعیت پروژه و محدودیت‌ها
 
-- نسخهٔ پروژه: **1.5.5** (طبق [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md)).
+- نسخهٔ پروژه: **1.5.6** (طبق [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md)).
 - انتشار روی GitHub Pages به معنی تأیید نهایی یا آمادگی production نیست.
 - پخش پس‌زمینه و کنترل‌های media بومی Android هنوز به رابط مشترک برنامه متصل نشده‌اند.
 - PWA آیفون کپی محلی آهنگ‌ها را برای استفاده بین نشست‌ها ذخیره می‌کند، اما iOS تضمین نگهداری چندماهه نمی‌دهد و ممکن است دادهٔ سایت را پاک کند؛ نسخهٔ اصلی آهنگ‌ها را حفظ کنید. Android فعلاً پس از بازراه‌اندازی به انتخاب دوبارهٔ فایل نیاز دارد.
@@ -73,6 +73,7 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 - A fixed viewport shell with library and playlist panels; on phones, the panels stay open to the bottom navigation and their side borders connect to its outline without changing its rounded shape, while only panel contents scroll without a visible scrollbar.
 - A platform-aware installation guide for iPhone, Android, and desktop; the music player opens when launched from the installed app icon.
 - The mini-player occupies layout space instead of covering content, and extra list-end space allows the last tracks to scroll fully into view.
+- The now-playing screen is vertically balanced on phones, with refined playback controls and a pull-down gesture or accessible button to return to the library.
 - Updated mobile navigation icons and a dedicated adaptive Android launcher icon.
 - Local library, search and sorting, playback queue, and playlists.
 - Displays embedded ID3 cover artwork for MP3 files when present; images are read locally and are not uploaded or saved in library metadata.
@@ -100,7 +101,7 @@ Open the [web app](https://matinmuhammadi1381.github.io/offline-music-player/) i
 
 ### Project status and limitations
 
-- Project version: **1.5.5**, following [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md).
+- Project version: **1.5.6**, following [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md).
 - GitHub Pages availability does not mean the app has passed production or final acceptance.
 - Native Android background playback and media-session controls are not yet connected to the shared UI.
 - iOS may evict browser storage or the user may clear site data; this is not a months-long retention guarantee. Keep original audio files. Android may require reselecting files after app restart. JSON backups include metadata and playlists, not audio.

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type TouchEvent as ReactTouchEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { createPortal } from "react-dom";
 import {
@@ -20,6 +20,7 @@ import {
 } from "@offline-music-player/web-platform";
 import { InstallLanding } from "./install-landing";
 import { isInstalledPwa } from "./pwa-mode";
+import { getPlayerGestureDestination } from "./player-gesture";
 import "./styles.css";
 
 type Destination = "library" | "playlists" | "queue" | "settings" | "player";
@@ -256,11 +257,18 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Something went wrong. Please try again.";
 }
 
+function isInteractivePlayerTarget(target: EventTarget | null): boolean {
+  return target instanceof Element
+    && target.closest("button, input, select, textarea, a, [contenteditable='true']") !== null;
+}
+
 export function App(): ReactNode {
   const fileInput = useRef<HTMLInputElement>(null);
   const backupInput = useRef<HTMLInputElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const sortButtonRef = useRef<HTMLButtonElement>(null);
+  const playerViewRef = useRef<HTMLElement>(null);
+  const playerGestureStart = useRef<{ readonly source: "pointer" | "touch"; readonly id: number; readonly x: number; readonly y: number } | null>(null);
   const runtime = useRef<AppRuntime | null>(null);
   const [library, setLibrary] = useState<LibraryMetadata | null>(null);
   const [settings, setSettings] = useState<PlayerSettings>(DEFAULT_PLAYER_SETTINGS);
@@ -282,6 +290,7 @@ export function App(): ReactNode {
   const [pendingRelinks, setPendingRelinks] = useState<readonly PendingRelink[]>([]);
   const [unmatchedFiles, setUnmatchedFiles] = useState<readonly import("@offline-music-player/platform-contracts").SelectedAudioFile[]>([]);
   const [recoverySummary, setRecoverySummary] = useState("");
+  const [playerDragOffset, setPlayerDragOffset] = useState(0);
   const persistentAudioEnabled = runtime.current?.files.getCapabilities().persistentFileReferences.status === "supported";
   const sortOptions: readonly { readonly value: SortField; readonly label: string }[] = [
     { value: "title", label: "Title" },
@@ -289,10 +298,78 @@ export function App(): ReactNode {
     { value: "album", label: "Album" },
     { value: "addedAt", label: "Date added" },
   ];
-  const setDestination = (next: Destination): void => {
+  const setDestination = (next: Destination, replaceCurrentHistory = false): void => {
     setDestinationState(next);
-    if (window.location.hash !== `#${next}`) window.history.pushState(null, "", `#${next}`);
+    if (window.location.hash !== `#${next}`) {
+      if (replaceCurrentHistory) window.history.replaceState(null, "", `#${next}`);
+      else window.history.pushState(null, "", `#${next}`);
+    }
     setListLimit(100);
+  };
+  const beginPlayerGesture = (source: "pointer" | "touch", id: number, x: number, y: number, target: EventTarget | null): void => {
+    if (isInteractivePlayerTarget(target) || (playerViewRef.current?.scrollTop ?? 0) > 0) return;
+    playerGestureStart.current = { source, id, x, y };
+  };
+  const updatePlayerGesture = (source: "pointer" | "touch", id: number, x: number, y: number): void => {
+    const start = playerGestureStart.current;
+    if (!start || start.source !== source || start.id !== id) return;
+    const deltaX = x - start.x;
+    const deltaY = y - start.y;
+    if (deltaY > 8 && deltaY > Math.abs(deltaX) * 1.15) {
+      setPlayerDragOffset(Math.min(deltaY, 150));
+    } else if (Math.abs(deltaX) > 8 && Math.abs(deltaX) > Math.abs(deltaY) * 1.15) {
+      playerGestureStart.current = null;
+      setPlayerDragOffset(0);
+    }
+  };
+  const finishPlayerGesture = (source: "pointer" | "touch", id: number, x: number, y: number): void => {
+    const start = playerGestureStart.current;
+    if (!start || start.source !== source || start.id !== id) return;
+    playerGestureStart.current = null;
+    setPlayerDragOffset(0);
+    if ((playerViewRef.current?.scrollTop ?? 0) === 0
+      && getPlayerGestureDestination(start, { x, y }) === "library") setDestination("library", true);
+  };
+  const cancelPlayerGesture = (source: "pointer" | "touch", id: number): void => {
+    if (playerGestureStart.current?.source !== source || playerGestureStart.current.id !== id) return;
+    playerGestureStart.current = null;
+    setPlayerDragOffset(0);
+  };
+  const onPlayerPointerDown = (event: ReactPointerEvent<HTMLElement>): void => {
+    if (event.pointerType === "touch" || (event.pointerType === "mouse" && event.button !== 0)) return;
+    beginPlayerGesture("pointer", event.pointerId, event.clientX, event.clientY, event.target);
+    if (playerGestureStart.current?.source === "pointer" && playerGestureStart.current.id === event.pointerId) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+  };
+  const onPlayerPointerMove = (event: ReactPointerEvent<HTMLElement>): void => {
+    if (event.pointerType !== "touch") updatePlayerGesture("pointer", event.pointerId, event.clientX, event.clientY);
+  };
+  const onPlayerPointerUp = (event: ReactPointerEvent<HTMLElement>): void => {
+    if (event.pointerType !== "touch") finishPlayerGesture("pointer", event.pointerId, event.clientX, event.clientY);
+  };
+  const onPlayerPointerCancel = (event: ReactPointerEvent<HTMLElement>): void => {
+    if (event.pointerType !== "touch") cancelPlayerGesture("pointer", event.pointerId);
+  };
+  const onPlayerTouchStart = (event: ReactTouchEvent<HTMLElement>): void => {
+    if (event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    if (touch) beginPlayerGesture("touch", touch.identifier, touch.clientX, touch.clientY, event.target);
+  };
+  const onPlayerTouchMove = (event: ReactTouchEvent<HTMLElement>): void => {
+    if (event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    if (touch) updatePlayerGesture("touch", touch.identifier, touch.clientX, touch.clientY);
+  };
+  const onPlayerTouchEnd = (event: ReactTouchEvent<HTMLElement>): void => {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    if (event.touches.length > 0) cancelPlayerGesture("touch", touch.identifier);
+    else finishPlayerGesture("touch", touch.identifier, touch.clientX, touch.clientY);
+  };
+  const onPlayerTouchCancel = (event: ReactTouchEvent<HTMLElement>): void => {
+    const touch = event.changedTouches[0];
+    if (touch) cancelPlayerGesture("touch", touch.identifier);
   };
 
   useEffect(() => {
@@ -867,7 +944,24 @@ export function App(): ReactNode {
             )}
 
             {destination === "player" && (
-              <section className="player-view" aria-label="Now Playing">
+              <section
+                ref={playerViewRef}
+                className={`player-view${playerDragOffset > 0 ? " player-view-pulling" : ""}`}
+                aria-label="Now Playing"
+                style={playerDragOffset > 0 ? { transform: `translate3d(0, ${playerDragOffset}px, 0)`, transition: "none" } : undefined}
+                onPointerDown={onPlayerPointerDown}
+                onPointerMove={onPlayerPointerMove}
+                onPointerUp={onPlayerPointerUp}
+                onPointerCancel={onPlayerPointerCancel}
+                onTouchStart={onPlayerTouchStart}
+                onTouchMove={onPlayerTouchMove}
+                onTouchEnd={onPlayerTouchEnd}
+                onTouchCancel={onPlayerTouchCancel}
+              >
+                <div className="player-dismiss-row">
+                  <button type="button" className="player-return-button" onClick={() => setDestination("library", true)} aria-label="Back to library"><Icon name="back" size={18} /> Library</button>
+                  <div className="player-drag-hint" aria-hidden="true"><span className="player-drag-indicator" /> Pull down to return</div>
+                </div>
                 {currentTrack ? (
                   <>
                     <Artwork track={currentTrack} file={getAudioFile(currentTrack.id)} large />

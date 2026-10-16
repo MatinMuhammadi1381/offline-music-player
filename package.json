@@ -1,6 +1,6 @@
 {
   "name": "offline-music-player",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@12.4.1",
@@ -8,7 +8,7 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types --test packages/music-core/test/music-core.test.ts packages/web-platform/test/web-platform.test.ts apps/player-web/test/pwa-mode.test.ts",
+    "test": "node --disable-warning=ExperimentalWarning --experimental-strip-types --test packages/music-core/test/music-core.test.ts packages/web-platform/test/web-platform.test.ts apps/player-web/test/pwa-mode.test.ts apps/player-web/test/player-gesture.test.ts",
     "typecheck": "npm exec --yes --package=https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz -- tsc --noEmit -p tsconfig.json",
     "typecheck:web": "pnpm --filter @offline-music-player/player-web typecheck",
     "build:web": "pnpm --filter @offline-music-player/player-web build",

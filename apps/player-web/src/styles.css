@@ -899,10 +899,63 @@ button:disabled {
   overscroll-behavior: contain;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .player-view::-webkit-scrollbar {
   display: none;
+}
+
+.player-dismiss-row {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.player-return-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 13px 0 9px;
+  border: 1px solid var(--surface-glass-border);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.045);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease;
+}
+
+.player-return-button:hover {
+  border-color: rgba(77, 165, 255, 0.42);
+  color: var(--color-text-primary);
+  background: var(--color-accent-soft);
+}
+
+.player-drag-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.025em;
+}
+
+.player-drag-indicator {
+  width: 22px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(183, 205, 235, 0.38);
+}
+
+.player-view-pulling .player-drag-indicator {
+  background: var(--color-accent);
+  box-shadow: 0 0 12px rgba(77, 165, 255, 0.55);
 }
 
 .settings-panel {
@@ -913,9 +966,11 @@ button:disabled {
   width: min(68vw, 410px);
   height: auto;
   aspect-ratio: 1;
+  flex: 0 0 auto;
   flex-direction: column;
   gap: 22px;
   border-radius: 28px;
+  border: 1px solid rgba(206, 228, 255, 0.16);
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
@@ -932,7 +987,7 @@ button:disabled {
 
 .player-track {
   width: 100%;
-  margin: 24px 0 17px;
+  margin: 20px 0 22px;
   text-align: center;
 }
 
@@ -952,12 +1007,20 @@ button:disabled {
 
 .progress-control {
   width: 100%;
+  padding: 11px 15px 10px;
+  border: 1px solid rgba(220, 235, 255, 0.1);
+  border-radius: 18px;
+  background: linear-gradient(150deg, rgba(25, 38, 60, 0.78), rgba(13, 21, 35, 0.84));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 .progress-control input[type="range"] {
   width: 100%;
+  height: 23px;
+  margin: 0;
   accent-color: var(--color-accent);
   cursor: pointer;
+  touch-action: pan-x;
 }
 
 .progress-control > div {
@@ -976,11 +1039,34 @@ button:disabled {
   justify-content: space-between;
   gap: 8px;
   margin: 20px 0 11px;
+  padding: 7px 9px;
+  border: 1px solid rgba(220, 235, 255, 0.09);
+  border-radius: 24px;
+  background: rgba(17, 28, 46, 0.58);
+}
+
+.player-controls .icon-button:not(.control-main) {
+  border-color: rgba(220, 235, 255, 0.06);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.player-controls .icon-button:not(.control-main):hover,
+.player-controls .icon-button:not(.control-main).is-active {
+  border-color: rgba(77, 165, 255, 0.2);
+  background: var(--color-accent-soft);
+}
+
+.player-controls .icon-button.control-main {
+  border: 0;
+  box-shadow: 0 10px 28px rgba(20, 122, 238, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
 .player-extra {
   width: 100%;
   justify-content: space-between;
+  margin-top: 7px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(220, 235, 255, 0.075);
   color: var(--color-text-muted);
   font-size: 12px;
 }
@@ -1399,12 +1485,16 @@ button:disabled {
 
   .player-view {
     min-height: 0;
-    justify-content: flex-start;
-    padding-top: 4px;
+    justify-content: center;
+    padding: clamp(18px, 4vh, 38px) 0 28px;
+  }
+
+  .player-dismiss-row {
+    margin-bottom: 16px;
   }
 
   .artwork-large {
-    width: min(74vw, 360px);
+    width: min(72vw, 360px);
     border-radius: 25px;
   }
 
@@ -1595,7 +1685,8 @@ button:disabled {
   }
 
   .player-controls {
-    gap: 1px;
+    gap: 2px;
+    padding: 6px;
   }
 
   .icon-button.control-main {
@@ -1606,6 +1697,18 @@ button:disabled {
   .icon-button.control-secondary {
     width: 46px;
     height: 46px;
+  }
+}
+
+@media (max-width: 360px) {
+  .player-drag-hint {
+    gap: 6px;
+    font-size: 10px;
+  }
+
+  .player-controls {
+    gap: 0;
+    padding-inline: 4px;
   }
 }
 

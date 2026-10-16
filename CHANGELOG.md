@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 1.5.6 - 2026-10-16 (player screen polish and pull-down navigation)
+
+- Lowered and vertically balanced the now-playing layout on mobile, refined the artwork, timeline and playback-control surfaces, and added a visible keyboard-accessible return-to-library button.
+- Added a deliberate vertical pull-down gesture to return from the player to the Library; horizontal gestures and interactive controls remain available.
+- Incremented Android `versionCode` to 17. No library data or backup migration is required.
+- Validation passed: 63 automated tests, root and web TypeScript checks, PWA production build, Android debug APK assembly and lint, plus a 390×844 CSS-pixel Chrome touch-emulation check confirming the pull-down returns to Library without horizontal overflow. Real iPhone/Safari gesture verification remains outstanding. GitHub Pages deploys from `main` on push.
+
 ## 1.5.5 - 2026-10-16 (iPhone navigation anchoring and PWA updates)
 
 - Rendered mobile navigation outside the globally zoomed app tree and scaled its dimensions explicitly so fixed positioning reaches the actual viewport edge while retaining safe-area padding and the prior visual size.

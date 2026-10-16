@@ -4,7 +4,7 @@
 
 This is a development handoff prepared during Phase 10. The project owner authorized proceeding and explicitly deferred iPhone and Android real-device testing until later. That is recorded as an **owner-approved test deferral**, not as test evidence. The PWA is publicly deployed on GitHub Pages at <https://matinmuhammadi1381.github.io/offline-music-player/>. No production signing key, release tag, or production signing identity is available, so this is **not** a production release.
 
-Version is `1.5.5` (`VERSION`) and is bundled into the web app from the root version file so the About screen cannot drift from the project version. This remains a development handoff, not a production release; do not distribute this debug APK as a production release.
+Version is `1.5.6` (`VERSION`) and is bundled into the web app from the root version file so the About screen cannot drift from the project version. This remains a development handoff, not a production release; do not distribute this debug APK as a production release.
 
 ## Verified build environment
 
@@ -34,7 +34,7 @@ To run only the Android build/lint, use `.\gradlew.bat assembleDebug lintDebug` 
 Generated artifacts are kept outside source control in the ignored `release-artifacts/development/` directory:
 
 - `offline-music-player-pwa.zip` — static PWA build. Extract its contents to the document root of an approved HTTPS static host. The archive contains only the app shell; it does not contain user audio.
-- `offline-music-player-android-debug.apk` — locally built Android debug APK for device acceptance. Its application ID is currently `com.offlinemusicplayer.spike`, its Android `versionName` is `1.5.5` (versionCode 16), and it uses the Android debug signing identity rather than a production key.
+- `offline-music-player-android-debug.apk` — locally built Android debug APK for device acceptance. Its application ID is currently `com.offlinemusicplayer.spike`, its Android `versionName` is `1.5.6` (versionCode 17), and it uses the Android debug signing identity rather than a production key.
 
 SHA-256 checksums:
 
@@ -69,7 +69,7 @@ Open the public [GitHub Pages deployment](https://matinmuhammadi1381.github.io/o
 
 ## Acceptance evidence available
 
-- 60 automated Node tests pass, including PWA installed-mode detection, synchronous audio-picker activation and cancellation, synthetic 1,000-track search/sort, a 1,000-file / 3,000,000,000-byte metadata/reference simulation that fails if audio `arrayBuffer()` or `stream()` is read, simulated app-restart audio restoration and deletion, persistent relinking, storage quota failure handling, MP3 APIC cover extraction, and duplicate-ID queue targeting.
+- 63 automated Node tests pass, including PWA installed-mode detection, player pull-down destination and gesture thresholds, synchronous audio-picker activation and cancellation, synthetic 1,000-track search/sort, a 1,000-file / 3,000,000,000-byte metadata/reference simulation that fails if audio `arrayBuffer()` or `stream()` is read, simulated app-restart audio restoration and deletion, persistent relinking, storage quota failure handling, MP3 APIC cover extraction, and duplicate-ID queue targeting.
 - Core and UI strict TypeScript checks pass.
 - PWA production build passes.
 - Android debug APK build and Android lint pass.
@@ -85,6 +85,8 @@ Open the public [GitHub Pages deployment](https://matinmuhammadi1381.github.io/o
 - Version `1.5.4` widened the iPhone bottom navigation by about 30% relative to its scaled rendering and enlarged its labels and icons by about 10%.
 - Version `1.5.5` portals the mobile navigation outside the globally zoomed app root, explicitly preserves the 70% visual scale, and reserves the device safe-area inset for tappable controls. In Edge Chromium emulation at 440×956 CSS px / DPR 3, the forced iOS override measured `nav.getBoundingClientRect().bottom` at 956 px against a 956 px `visualViewport` bottom (0 px gap); with a simulated 34 px safe inset, the navigation buttons ended at 915.4 px (40.6 px clearance). At 390×844 CSS px, the measured gap was also 0 px. Chromium does not support the iOS `-webkit-touch-callout` feature test; the test injected its equivalent iOS declarations. The live web canvas showed the install-only landing page outside standalone mode, so it could not demonstrate the navigation; no physical iPhone or Safari/WebKit browser was available, and real-device iPhone checks remain outstanding.
 - Version `1.5.5` changes PWA navigation to network-first with an offline cached-shell fallback and reloads an existing controlled page when an updated worker takes control. Automated verification of the worker's offline navigation is outstanding.
+- Version `1.5.6` refines the player screen, places it lower and more centrally on mobile, and returns to the Library after a deliberate downward gesture or the accessible Library button. Gesture unit tests are included; real iPhone/Safari gesture verification remains outstanding.
+- Version `1.5.6` validation: all 63 tests, root/web TypeScript checks, PWA production build, Android debug APK assembly and lint pass. Headless Chrome touch emulation at 390×844 CSS px confirmed the gesture returns to `#library` and the viewport has no horizontal overflow. Real iPhone/Safari verification remains outstanding.
 - Browser viewport checks covered the install guide and standalone-mode bootstrap, fixed headers, mini-player spacing, side-line alignment, contained list scrolling, and full visibility of the last row across portrait, landscape, and desktop sizes.
 
 The desktop checks passed and the owner approved deferring actual device testing. The iPhone/Android device results remain outstanding—not passed—and should be recorded when the owner runs the tests later. Details are in `07-TESTING-AND-ACCEPTANCE.md`.
