@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 1.5.4 - 2026-10-16 (iPhone bottom navigation refinement)
+
+- Widened the iPhone bottom navigation by about 30%, enlarged its labels and icons by about 10%, and anchored the capsule to the viewport bottom while keeping controls above the home-indicator safe area.
+- Incremented Android `versionCode` to 15; no library data or backup migration is required.
+- Validation passed: 60 automated tests, root and web TypeScript checks, PWA production build, Android debug APK assembly, and Android lint. Real-device iPhone verification remains outstanding.
+
 ## 1.5.3 - 2026-10-16 (iPhone scale and navigation position)
 
 - Restored the 30% smaller iPhone interface with stable small-viewport sizing, keeping the top and bottom safe areas intact.

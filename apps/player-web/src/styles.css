@@ -22,6 +22,7 @@
   --radius-control: 15px;
   --mobile-nav-height: 68px;
   --mobile-nav-bottom-gap: 14px;
+  --mobile-nav-width-scale: 1;
   --mobile-player-slot-height: 0px;
   --track-row-height: 76px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -57,7 +58,8 @@
     :root {
       --ui-scale: 0.7;
       --ui-viewport-height: 142.857143vh;
-      --mobile-nav-bottom-gap: -10px;
+      --mobile-nav-bottom-gap: 0px;
+      --mobile-nav-width-scale: 1.3;
       --safe-top: calc(env(safe-area-inset-top, 0px) / 0.7);
       --safe-bottom: calc(env(safe-area-inset-bottom, 0px) / 0.7);
     }
@@ -90,7 +92,8 @@
     }
 
     .bottom-nav {
-      bottom: max(20px, calc(var(--mobile-nav-bottom-gap) + var(--safe-bottom)));
+      bottom: 0;
+      padding-bottom: calc(8px + var(--safe-bottom));
     }
 
     .loading-orb {
@@ -1342,15 +1345,19 @@ button:disabled {
   .bottom-nav {
     position: fixed;
     z-index: 7;
-    right: max(4px, env(safe-area-inset-right, 0px));
     bottom: calc(var(--mobile-nav-bottom-gap) + var(--safe-bottom));
-    left: max(4px, env(safe-area-inset-left, 0px));
+    left: 50%;
     display: grid;
-    max-width: 440px;
+    width: min(
+      calc((100vw - max(8px, env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px))) * var(--mobile-nav-width-scale)),
+      calc(440px * var(--mobile-nav-width-scale))
+    );
+    max-width: none;
     min-height: var(--mobile-nav-height);
     grid-template-columns: repeat(4, 1fr);
     align-items: center;
     margin-inline: auto;
+    transform: translateX(-50%);
     padding: 8px;
     border: 1px solid var(--surface-glass-border);
     border-radius: 24px;
@@ -1367,12 +1374,12 @@ button:disabled {
     gap: 4px;
     padding: 2px;
     border-radius: 13px;
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .bottom-nav-item svg {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     flex: 0 0 auto;
     stroke-width: 1.8;
   }
