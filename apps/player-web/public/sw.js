@@ -1,4 +1,4 @@
-const CACHE_NAME = "offline-music-shell-v2";
+const CACHE_NAME = "offline-music-shell-v3";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.add("./")));
@@ -22,19 +22,23 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
+    if (request.mode === "navigate") {
+      try {
+        const response = await fetch(request);
+        if (response.ok) await cache.put(request, response.clone());
+        return response;
+      } catch (error) {
+        const shell = await cache.match(request) ?? await cache.match("./");
+        if (shell) return shell;
+        throw error;
+      }
+    }
+
     const cached = await cache.match(request);
     if (cached) return cached;
 
-    try {
-      const response = await fetch(request);
-      if (response.ok) await cache.put(request, response.clone());
-      return response;
-    } catch (error) {
-      if (request.mode === "navigate") {
-        const shell = await cache.match("./");
-        if (shell) return shell;
-      }
-      throw error;
-    }
+    const response = await fetch(request);
+    if (response.ok) await cache.put(request, response.clone());
+    return response;
   })());
 });

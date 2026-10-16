@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 1.5.5 - 2026-10-16 (iPhone navigation anchoring and PWA updates)
+
+- Rendered mobile navigation outside the globally zoomed app tree and scaled its dimensions explicitly so fixed positioning reaches the actual viewport edge while retaining safe-area padding and the prior visual size.
+- Changed PWA navigations to network-first with cached-shell offline fallback, bumped the shell cache, and reloads an already-controlled page once when an updated service worker takes control.
+- Incremented Android `versionCode` to 16; no library data or backup migration is required.
+- Browser viewport checks, automated tests, typechecks, PWA build, and Android build/lint results are recorded in the current development handoff; real-device iPhone verification remains outstanding.
+
 ## 1.5.4 - 2026-10-16 (iPhone bottom navigation refinement)
 
 - Widened the iPhone bottom navigation by about 30%, enlarged its labels and icons by about 10%, and anchored the capsule to the viewport bottom while keeping controls above the home-indicator safe area.

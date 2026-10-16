@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
+import { createPortal } from "react-dom";
 import {
   JsonMetadataBackupService,
   LibraryController,
@@ -81,6 +82,7 @@ function AppBootstrap(): ReactNode {
       const detail = (event as CustomEvent<string>).detail;
       setServiceWorkerError(detail);
     };
+    let reloadAfterWorkerUpdate: (() => void) | undefined;
 
     standaloneQuery.addEventListener("change", updateDisplayMode);
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
@@ -106,6 +108,10 @@ function AppBootstrap(): ReactNode {
           window.dispatchEvent(new CustomEvent("offline-music-service-worker-error", { detail: message }));
         });
       } else {
+        if (navigator.serviceWorker.controller) {
+          reloadAfterWorkerUpdate = (): void => window.location.reload();
+          navigator.serviceWorker.addEventListener("controllerchange", reloadAfterWorkerUpdate);
+        }
         void navigator.serviceWorker.register("./sw.js").catch((error: unknown) => {
           const message = `Offline app setup failed: ${errorMessage(error)}`;
           console.error(message);
@@ -118,6 +124,9 @@ function AppBootstrap(): ReactNode {
       standaloneQuery.removeEventListener("change", updateDisplayMode);
       window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
       window.removeEventListener("offline-music-service-worker-error", onServiceWorkerError);
+      if (reloadAfterWorkerUpdate) {
+        navigator.serviceWorker.removeEventListener("controllerchange", reloadAfterWorkerUpdate);
+      }
     };
   }, []);
 
@@ -707,6 +716,7 @@ export function App(): ReactNode {
     : [];
 
   return (
+    <>
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Skip to content</a>
       <aside className="side-rail" aria-label="Main navigation">
@@ -1001,12 +1011,16 @@ export function App(): ReactNode {
         ) : null}
       </main>
 
+      <input ref={fileInput} className="hidden-input" type="file" name="audio-files" aria-label="Choose audio files" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus" multiple />
+      <input ref={backupInput} className="hidden-input" type="file" name="metadata-backup" aria-label="Choose metadata backup" accept="application/json,.json" onChange={importBackup} />
+    </div>
+    {createPortal(
       <nav className="bottom-nav" aria-label="Main navigation">
         {navItems.map((item) => <button key={item.id} type="button" className={`bottom-nav-item${destination === item.id ? " selected" : ""}`} aria-current={destination === item.id ? "page" : undefined} onClick={() => setDestination(item.id)}><Icon name={item.icon} /><span>{item.label}</span></button>)}
-      </nav>
-      <input ref={fileInput} className="hidden-input" type="file" name="audio-files" aria-label="Choose audio files" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus" multiple />
-        <input ref={backupInput} className="hidden-input" type="file" name="metadata-backup" aria-label="Choose metadata backup" accept="application/json,.json" onChange={importBackup} />
-    </div>
+      </nav>,
+      document.body,
+    )}
+    </>
   );
 }
 
