@@ -129,6 +129,7 @@ html.pwa-ui-enabled select:focus-visible {
   isolation: isolate;
   transform: scale(0.7);
   transform-origin: top left;
+  --pwa-render-scale: 0.7;
   background: var(--color-bg);
   color: var(--color-text-primary);
   --safe-top: calc(env(safe-area-inset-top, 0px) / 0.7);
@@ -965,12 +966,19 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
   .pwa-ui .mini-player {
     position: fixed;
     z-index: 2147482999;
-    bottom: calc((60px + env(safe-area-inset-bottom, 0px)) / var(--ui-scale));
-    left: 50%;
-    width: min(100%, 460px);
+    right: max(
+      calc(12px / var(--pwa-render-scale)),
+      calc(env(safe-area-inset-left, 0px) / var(--pwa-render-scale))
+    );
+    bottom: calc((50px + env(safe-area-inset-bottom, 0px)) / var(--pwa-render-scale));
+    left: max(
+      calc(12px / var(--pwa-render-scale)),
+      calc(env(safe-area-inset-left, 0px) / var(--pwa-render-scale))
+    );
+    width: auto;
+    max-width: calc(560px / var(--pwa-render-scale));
     min-height: 62px;
-    margin: 0;
-    transform: translateX(-50%);
+    margin: 0 auto;
   }
 
   .pwa-dock {
