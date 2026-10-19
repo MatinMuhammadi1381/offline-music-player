@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.6 - 2026-10-19 (version display and Android download correction)
+
+- Align the user-visible web/PWA and Android WebView version with Android `versionName` `1.6.6`; the About screen reads the root `VERSION` file.
+- Increment Android `versionCode` to 28 and the PWA shell cache to v15 so installed copies receive the updated app shell.
+- Publish the debug-signed APK as a named GitHub Actions artifact and continue updating the existing GitHub Pages APK download.
+- Local verification passed: 63 tests, both TypeScript checks, the PWA production build, Android `assembleDebug` and `lintDebug`; APK metadata reports `1.6.6` / versionCode 28. Android builds remain development builds, not production releases.
+
 ## 1.6.5 - 2026-10-19 (top spacing adjustment)
 
 - Remove the added top band and 15% vertical offset. Keep the shared PWA/Android UI and Android light/dark theme synchronization unchanged.

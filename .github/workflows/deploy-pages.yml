@@ -68,6 +68,14 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon assembleDebug lintDebug
 
+      - name: Upload installable Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-music-player-android-debug
+          path: apps/android-file-access-spike/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Assemble GitHub Pages site
         shell: bash
         run: |
