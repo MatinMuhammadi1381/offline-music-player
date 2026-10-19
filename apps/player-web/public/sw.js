@@ -1,4 +1,4 @@
-const CACHE_NAME = "offline-music-shell-v6"; // refresh the iOS status bar and bottom-anchored navigation
+const CACHE_NAME = "offline-music-shell-v7"; // refresh the iOS status bar and bottom-anchored navigation
 
 const APP_SHELL = [
   "./",

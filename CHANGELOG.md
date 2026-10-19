@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.8 - 2026-10-19 (iPhone dock anchoring and light player controls)
+
+- Extend the independent iOS navigation dock into the bottom safe-area inset and raise it above page content; reserve navigation space in the player view.
+- Restyle the playback timeline, transport controls, and player secondary actions for readable contrast in light mode.
+- Increment Android `versionCode` to 19 and update the app/workspace version to `1.5.8`; no library data or backup migration is required.
+- Local TypeScript check and PWA production build passed. CI will rebuild the Android APK and deploy Pages after push; real iPhone verification remains outstanding.
+
 ## 1.5.7 - 2026-10-19 (iPhone PWA bottom navigation and status bar fix)
 
 - Replaced the floating iPhone navigation capsule with a full-width bar flush to the screen bottom; the home-indicator safe area now belongs to the bar itself.
