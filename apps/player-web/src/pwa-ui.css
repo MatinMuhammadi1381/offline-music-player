@@ -1,5 +1,7 @@
 /* Shared browser/PWA and Android WebView presentation. */
 html.pwa-ui-enabled {
+  --pwa-dock-inline-inset: max(12px, env(safe-area-inset-left, 0px));
+  --pwa-dock-content-max-width: 560px;
   --color-bg: #080d18;
   --color-surface: #101827;
   --color-surface-raised: #172338;
@@ -963,22 +965,24 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
     margin-top: 14px;
   }
 
-  .pwa-ui .mini-player {
-    position: fixed;
+  .pwa-ui .pwa-inline-mini-player {
+    display: none;
+  }
+
+  .pwa-dock .pwa-dock-mini-player {
+    position: absolute;
     z-index: 2147482999;
-    right: max(
-      calc(12px / var(--pwa-render-scale)),
-      calc(env(safe-area-inset-left, 0px) / var(--pwa-render-scale))
-    );
-    bottom: calc((50px + env(safe-area-inset-bottom, 0px)) / var(--pwa-render-scale));
-    left: max(
-      calc(12px / var(--pwa-render-scale)),
-      calc(env(safe-area-inset-left, 0px) / var(--pwa-render-scale))
-    );
+    right: var(--pwa-dock-inline-inset);
+    bottom: calc(100% + 1px);
+    left: var(--pwa-dock-inline-inset);
     width: auto;
-    max-width: calc(560px / var(--pwa-render-scale));
+    max-width: var(--pwa-dock-content-max-width);
     min-height: 62px;
     margin: 0 auto;
+  }
+
+  .pwa-dock .pwa-dock-mini-player {
+    display: flex;
   }
 
   .pwa-dock {
@@ -990,8 +994,9 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
     display: block;
     width: 100%;
     height: calc(50px + env(safe-area-inset-bottom, 0px));
+    overflow: visible;
     margin: 0;
-    padding: 2px max(12px, env(safe-area-inset-left, 0px)) env(safe-area-inset-bottom, 0px);
+    padding: 2px var(--pwa-dock-inline-inset) env(safe-area-inset-bottom, 0px);
     border-top: 1px solid var(--color-separator);
     border-radius: 16px 16px 0 0;
     background: var(--color-surface);
@@ -1004,7 +1009,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
     z-index: auto;
     display: grid;
     width: 100%;
-    max-width: 560px;
+    max-width: var(--pwa-dock-content-max-width);
     height: 46px;
     min-height: 0;
     grid-template-columns: repeat(4, minmax(0, 1fr));

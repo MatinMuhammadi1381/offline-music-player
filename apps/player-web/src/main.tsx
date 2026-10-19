@@ -842,6 +842,16 @@ export function App(): ReactNode {
   const playlistTracks = selectedPlaylist && runtime.current
     ? runtime.current.library.getPlaylistTracks(selectedPlaylist.id)
     : [];
+  const renderMiniPlayer = (className: string, track: NonNullable<typeof currentTrack>) => (
+    <div className={className}>
+      <button type="button" className="mini-open" onClick={() => setDestination("player")} aria-label={`Open player: ${track.title}`}>
+        <Artwork track={track} file={getAudioFile(track.id)} />
+        <span className="mini-copy"><strong>{track.title}</strong><small>{track.artist ?? track.fileName}</small></span>
+      </button>
+      <IconButton label={player.playback.state === "playing" ? "Pause playback" : "Resume playback"} icon={player.playback.state === "playing" ? "pause" : "play"} className="mini-state" onClick={() => run(() => runtime.current?.playback.togglePlayback() ?? Promise.resolve())} />
+      <IconButton label="Next track" icon="next" className="mini-next" onClick={() => run(() => runtime.current?.playback.next() ?? Promise.resolve())} />
+    </div>
+  );
 
   return (
     <>
@@ -1196,16 +1206,7 @@ export function App(): ReactNode {
             )}
           </>
         )}
-        {showMiniPlayer && currentTrack ? (
-          <div className="mini-player">
-            <button type="button" className="mini-open" onClick={() => setDestination("player")} aria-label={`Open player: ${currentTrack.title}`}>
-              <Artwork track={currentTrack} file={getAudioFile(currentTrack.id)} />
-              <span className="mini-copy"><strong>{currentTrack.title}</strong><small>{currentTrack.artist ?? currentTrack.fileName}</small></span>
-            </button>
-            <IconButton label={player.playback.state === "playing" ? "Pause playback" : "Resume playback"} icon={player.playback.state === "playing" ? "pause" : "play"} className="mini-state" onClick={() => run(() => runtime.current?.playback.togglePlayback() ?? Promise.resolve())} />
-            <IconButton label="Next track" icon="next" className="mini-next" onClick={() => run(() => runtime.current?.playback.next() ?? Promise.resolve())} />
-          </div>
-        ) : null}
+        {showMiniPlayer && currentTrack ? renderMiniPlayer(`mini-player${pwaUiEnabled ? " pwa-inline-mini-player" : ""}`, currentTrack) : null}
       </main>
 
       <input ref={fileInput} className="hidden-input" type="file" name="audio-files" aria-label="Choose audio files" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus" multiple />
@@ -1214,6 +1215,7 @@ export function App(): ReactNode {
     {createPortal(
       pwaUiEnabled ? (
         <div className="pwa-dock">
+          {showMiniPlayer && currentTrack ? renderMiniPlayer("mini-player pwa-dock-mini-player", currentTrack) : null}
           <nav className="bottom-nav pwa-bottom-nav" aria-label="Main navigation">
             {navItems.map((item) => <button key={item.id} type="button" className={`bottom-nav-item${destination === item.id ? " selected" : ""}`} aria-current={destination === item.id ? "page" : undefined} onClick={() => setDestination(item.id)}><Icon name={item.icon} /><span>{item.label}</span></button>)}
           </nav>
