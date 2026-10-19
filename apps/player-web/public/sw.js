@@ -1,7 +1,17 @@
 const CACHE_NAME = "offline-music-shell-v3"; // bumped to force clients to refresh on next deploy
 
+const APP_SHELL = [
+  "./",
+  "./figma/playlist-night-drive.svg",
+  "./figma/playlist-blue-hour.svg",
+  "./figma/playlist-focus-flow.svg",
+  "./figma/featured-glow.svg",
+  "./figma/search-category-glow.svg",
+  "./figma/playlist-cover.svg",
+];
+
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.add("./")));
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
   self.skipWaiting();
 });
 

@@ -5,6 +5,7 @@ import type {
   FileReferenceStatus,
   FileSelectionResult,
   PlatformCapabilities,
+  PlatformId,
   SelectedAudioFile,
 } from "../../platform-contracts/src/index.ts";
 import type { TrackId, TrackMetadata } from "../../shared-types/src/index.ts";
@@ -66,19 +67,24 @@ export class BrowserAudioFileSource implements AudioFileSource {
   private readonly selectedFiles = new Map<string, File>();
   private readonly chooseFiles: BrowserFileChooser;
   private readonly audioFileStore: AudioFileStore | undefined;
+  private readonly platform: PlatformId;
 
-  constructor(chooseFiles: BrowserFileChooser, audioFileStore?: AudioFileStore) {
+  constructor(chooseFiles: BrowserFileChooser, audioFileStore?: AudioFileStore, platform: PlatformId = "ios-pwa") {
     this.chooseFiles = chooseFiles;
     this.audioFileStore = audioFileStore;
+    this.platform = platform;
   }
 
   getCapabilities(): PlatformCapabilities {
-    if (!this.audioFileStore) return BROWSER_CAPABILITIES;
+    const baseCapabilities = { ...BROWSER_CAPABILITIES, platform: this.platform };
+    if (!this.audioFileStore) return baseCapabilities;
     return {
-      ...BROWSER_CAPABILITIES,
+      ...baseCapabilities,
       persistentFileReferences: {
         status: "supported",
-        notes: "Audio is copied into this app's private IndexedDB storage. iOS may still remove browser data.",
+        notes: this.platform === "android"
+          ? "Audio is copied into this app's private IndexedDB storage and remains across launches until app data is cleared or the app is uninstalled."
+          : "Audio is copied into this app's private IndexedDB storage. iOS may still remove browser data.",
       },
     };
   }
@@ -117,7 +123,7 @@ export class BrowserAudioFileSource implements AudioFileSource {
         track,
         file,
         reference: {
-          platform: "ios-pwa" as const,
+          platform: this.platform,
           token: track.id,
           persistence: this.audioFileStore ? "persistable" as const : "session-only" as const,
         },
@@ -153,12 +159,12 @@ export class BrowserAudioFileSource implements AudioFileSource {
   }
 
   async checkReference(reference: AudioFileReference): Promise<FileReferenceStatus> {
-    if (reference.platform !== "ios-pwa") return "unknown";
+    if (reference.platform !== this.platform) return "unknown";
     return this.selectedFiles.has(reference.token) ? "available" : "permission-lost";
   }
 
   getFile(reference: AudioFileReference): File | undefined {
-    if (reference.platform !== "ios-pwa") return undefined;
+    if (reference.platform !== this.platform) return undefined;
     return this.selectedFiles.get(reference.token);
   }
 
@@ -171,7 +177,7 @@ export class BrowserAudioFileSource implements AudioFileSource {
     for (const entry of restored) this.selectedFiles.set(entry.trackId, entry.file);
     return restored.map(({ trackId }) => ({
       trackId,
-      reference: { platform: "ios-pwa", token: trackId, persistence: "persistable" },
+      reference: { platform: this.platform, token: trackId, persistence: "persistable" },
     }));
   }
 
@@ -186,7 +192,7 @@ export class BrowserAudioFileSource implements AudioFileSource {
       }
     }
     const reference: AudioFileReference = {
-      platform: "ios-pwa",
+      platform: this.platform,
       token: trackId,
       persistence: this.audioFileStore ? "persistable" : "session-only",
     };
@@ -200,7 +206,7 @@ export class BrowserAudioFileSource implements AudioFileSource {
   }
 
   release(reference: AudioFileReference): void {
-    if (reference.platform === "ios-pwa") this.selectedFiles.delete(reference.token);
+    if (reference.platform === this.platform) this.selectedFiles.delete(reference.token);
   }
 
   releaseReference(reference: AudioFileReference): void {

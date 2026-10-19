@@ -23,9 +23,10 @@ import { isInstalledPwa } from "./pwa-mode";
 import { getPlayerGestureDestination } from "./player-gesture";
 import "./styles.css";
 
-type Destination = "library" | "playlists" | "queue" | "settings" | "player";
-type IconName = "library" | "playlist" | "queue" | "settings" | "play" | "pause" | "next" | "previous" | "search" | "plus" | "shuffle" | "repeat" | "close" | "music" | "back" | "download" | "upload" | "sort";
-const destinations: readonly Destination[] = ["library", "playlists", "queue", "settings", "player"];
+type Destination = "home" | "library" | "search" | "playlists" | "queue" | "settings" | "player";
+type IconName = "home" | "library" | "playlist" | "queue" | "settings" | "play" | "pause" | "next" | "previous" | "search" | "plus" | "shuffle" | "repeat" | "close" | "music" | "back" | "download" | "upload" | "sort";
+const destinations: readonly Destination[] = ["home", "library", "search", "playlists", "queue", "settings", "player"];
+const figmaAsset = (name: string): string => `${import.meta.env.BASE_URL}figma/${name}`;
 
 declare global {
   interface Window {
@@ -37,7 +38,7 @@ declare global {
 
 function destinationFromHash(): Destination {
   const value = window.location.hash.slice(1);
-  return destinations.includes(value as Destination) ? value as Destination : "library";
+  return destinations.includes(value as Destination) ? value as Destination : "home";
 }
 
 interface AppRuntime {
@@ -131,7 +132,7 @@ function AppBootstrap(): ReactNode {
     };
   }, []);
 
-  return installed
+  return installed || (import.meta.env.DEV && new URLSearchParams(window.location.search).get("preview") === "1")
     ? <App />
     : <InstallLanding
         installPromptAvailable={installPrompt !== null}
@@ -152,6 +153,7 @@ function AppBootstrap(): ReactNode {
 function Icon({ name, size = 21 }: { readonly name: IconName; readonly size?: number }): ReactNode {
   const paths: Record<IconName, ReactNode> = {
     library: <><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H20v16H5.5A1.5 1.5 0 0 1 4 18.5z" /><path d="M4 8h16M8 4v16" /></>,
+    home: <><path d="m3.5 10 8.5-7 8.5 7v10a1 1 0 0 1-1 1h-5.3v-7h-4.4v7H4.5a1 1 0 0 1-1-1z" /></>,
     playlist: <><path d="M4 6h10M4 10h10M4 14h6" /><path d="M17 18V5l4-1v12" /><circle cx="15" cy="18" r="2" /></>,
     queue: <><path d="M4 6h11M4 10h11M4 14h7" /><path d="m17 15 4 3-4 3z" fill="currentColor" stroke="none" /></>,
     settings: <><path d="M4 6h6M14 6h6M4 12h2M10 12h10M4 18h10M18 18h2" /><circle cx="12" cy="6" r="2" /><circle cx="8" cy="12" r="2" /><circle cx="16" cy="18" r="2" /></>,
@@ -263,6 +265,7 @@ function isInteractivePlayerTarget(target: EventTarget | null): boolean {
 }
 
 export function App(): ReactNode {
+  const androidPackagedAssets = window.location.hostname === "appassets.androidplatform.net";
   const fileInput = useRef<HTMLInputElement>(null);
   const backupInput = useRef<HTMLInputElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
@@ -272,6 +275,12 @@ export function App(): ReactNode {
   const runtime = useRef<AppRuntime | null>(null);
   const [library, setLibrary] = useState<LibraryMetadata | null>(null);
   const [settings, setSettings] = useState<PlayerSettings>(DEFAULT_PLAYER_SETTINGS);
+  const [lightMode, setLightMode] = useState(() => {
+    try { return window.localStorage.getItem("offline-music-theme") === "light"; } catch { return false; }
+  });
+  const persistencePrivacyMessage = androidPackagedAssets
+    ? "Selected audio is copied into private storage inside this app and remains available after reopening. It is removed if you clear app data or uninstall the app. Audio is never uploaded."
+    : "Selected audio is copied into this app's private browser storage so it remains available after reopening. It is never uploaded. iOS may still clear app data under storage pressure or when site data is removed; keep your original files and metadata backups.";
   const [player, setPlayer] = useState<PlayerSnapshot>({ playback: { state: "idle", positionMs: 0 }, queue: { trackIds: [], currentIndex: null, repeatMode: "off", shuffleEnabled: false } });
   const [integrity, setIntegrity] = useState<readonly TrackIntegrity[]>([]);
   const [destination, setDestinationState] = useState<Destination>(destinationFromHash);
@@ -291,6 +300,13 @@ export function App(): ReactNode {
   const [unmatchedFiles, setUnmatchedFiles] = useState<readonly import("@offline-music-player/platform-contracts").SelectedAudioFile[]>([]);
   const [recoverySummary, setRecoverySummary] = useState("");
   const [playerDragOffset, setPlayerDragOffset] = useState(0);
+  useEffect(() => {
+    document.documentElement.dataset.theme = lightMode ? "light" : "dark";
+    document.documentElement.style.colorScheme = lightMode ? "light" : "dark";
+    try { window.localStorage.setItem("offline-music-theme", lightMode ? "light" : "dark"); } catch { /* Theme still applies for this session. */ }
+    const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    themeColor?.setAttribute("content", lightMode ? "#f4f7fc" : "#060913");
+  }, [lightMode]);
   const persistentAudioEnabled = runtime.current?.files.getCapabilities().persistentFileReferences.status === "supported";
   const sortOptions: readonly { readonly value: SortField; readonly label: string }[] = [
     { value: "title", label: "Title" },
@@ -411,10 +427,10 @@ export function App(): ReactNode {
     const input = fileInput.current;
     if (!input) return;
     const repository = new IndexedDbLibraryRepository();
-    const androidPackagedAssets = window.location.hostname === "appassets.androidplatform.net";
     const files = new BrowserAudioFileSource(
       createInputFileChooser(input),
-      androidPackagedAssets ? undefined : repository,
+      repository,
+      androidPackagedAssets ? "android" : "ios-pwa",
     );
     const libraryController = new LibraryController(repository, files);
     const audio = new HtmlAudioPlaybackEngine(files);
@@ -468,11 +484,13 @@ export function App(): ReactNode {
       playback.setRepeatMode(loadedSettings.repeatMode);
       playback.setShuffleEnabled(loadedSettings.shuffleEnabled);
       setIntegrity(await libraryController.checkIntegrity());
-      setStorageMessage(storage.status === "supported"
-        ? storage.granted ? "Persistent storage is granted. Audio copies stay in this app between launches, but iOS can still remove app data."
-          : "Persistent storage was not granted. Audio copies stay in this app between launches, but iOS may remove browser data."
-        : storage.status === "unsupported" ? "Audio copies stay in this app between launches. This browser cannot request eviction protection, so keep the originals."
-          : "Audio copies are stored on this device. Storage eviction protection could not be confirmed; keep the originals.");
+      setStorageMessage(androidPackagedAssets
+        ? "Songs and library details are saved in this app and remain after it closes. They are removed if you clear app data or uninstall the app."
+        : storage.status === "supported"
+          ? storage.granted ? "Persistent storage is granted. Audio copies stay in this app between launches, but iOS can still remove app data."
+            : "Persistent storage was not granted. Audio copies stay in this app between launches, but iOS may remove browser data."
+          : storage.status === "unsupported" ? "Audio copies stay in this app between launches. This browser cannot request eviction protection, so keep the originals."
+            : "Audio copies are stored on this device. Storage eviction protection could not be confirmed; keep the originals.");
       setLoading(false);
     }).catch((error: unknown) => {
       if (!mounted) return;
@@ -521,6 +539,18 @@ export function App(): ReactNode {
     if (!library) return [];
     return sortTracks(searchTracks(library.tracks, search), { field: sortField, direction: sortDirection });
   }, [library, search, sortDirection, sortField]);
+  const matchingPlaylists = useMemo(() => {
+    const terms = search.trim().toLocaleLowerCase("en").split(/\s+/u).filter(Boolean);
+    if (!library || terms.length === 0) return [];
+    return library.playlists.filter((playlist) => {
+      const name = playlist.name.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("en");
+      return terms.every((term) => name.includes(term.normalize("NFD").replace(/\p{M}/gu, "")));
+    });
+  }, [library, search]);
+  const recentlyAddedTracks = useMemo(() => library?.tracks
+    .slice()
+    .sort((left, right) => right.addedAt - left.addedAt)
+    .slice(0, 2) ?? [], [library]);
   const currentPlaylist = library?.playlists.find((playlist) => playlist.id === selectedPlaylistId);
   const unavailableCount = integrity.filter((item) => item.status !== "available").length;
 
@@ -554,15 +584,15 @@ export function App(): ReactNode {
     const app = runtime.current;
     if (!app) return;
     const result = await app.library.selectAndAddFiles();
-    const persistence = persistentAudioEnabled
+    const persistence = persistentAudioEnabled && !androidPackagedAssets
       ? await requestBrowserStoragePersistence(navigator.storage)
       : undefined;
     if (result.status === "selected") {
       await refreshLibrary();
       if (persistentAudioEnabled) {
-        const storageWarning = persistence?.status === "supported"
-          ? ""
-          : " iOS may still clear app storage, so keep your originals.";
+        const storageWarning = androidPackagedAssets
+          ? " Files remain in the app until its data is cleared or it is uninstalled."
+          : persistence?.status === "supported" ? "" : " iOS may still clear app storage, so keep your originals.";
         tell(`${result.files.length} audio file${result.files.length === 1 ? "" : "s"} copied into this app for playback across launches.${storageWarning}`);
       } else {
         tell(`${result.files.length} file${result.files.length === 1 ? "" : "s"} added. Reselect files after restarting the app.`);
@@ -583,7 +613,7 @@ export function App(): ReactNode {
       tell(result.error.message);
       return;
     }
-    if (persistentAudioEnabled) {
+    if (persistentAudioEnabled && !androidPackagedAssets) {
       const persistence = await requestBrowserStoragePersistence(navigator.storage);
       if (persistence.status !== "supported") {
         setStorageMessage("Audio copies will be saved on this device, but iOS may clear app data. Keep your original files.");
@@ -690,6 +720,10 @@ export function App(): ReactNode {
   });
 
   const requestPersistence = (): void => run(async () => {
+    if (androidPackagedAssets) {
+      setStorageMessage("Songs are saved in this app and remain across launches. They are removed if you clear app data or uninstall the app.");
+      return;
+    }
     const status = await requestBrowserStoragePersistence(navigator.storage);
     setStorageMessage(status.status === "supported"
       ? status.granted ? "Persistent storage is granted. App audio and metadata remain best-effort and can still be deleted."
@@ -699,9 +733,9 @@ export function App(): ReactNode {
   });
 
   const navItems: { readonly id: Exclude<Destination, "player">; readonly label: string; readonly icon: IconName }[] = [
+    { id: "home", label: "Listen", icon: "home" },
     { id: "library", label: "Library", icon: "library" },
-    { id: "playlists", label: "Playlists", icon: "playlist" },
-    { id: "queue", label: "Queue", icon: "queue" },
+    { id: "search", label: "Search", icon: "search" },
     { id: "settings", label: "Settings", icon: "settings" },
   ];
 
@@ -794,10 +828,10 @@ export function App(): ReactNode {
 
   return (
     <>
-    <div className="app-shell">
+    <div className={`app-shell${destination === "player" ? " player-open" : ""}`}>
       <a className="skip-link" href="#main-content">Skip to content</a>
       <aside className="side-rail" aria-label="Main navigation">
-        <a className="brand" href="#library" onClick={(event) => { event.preventDefault(); setDestination("library"); }}>
+        <a className="brand" href="#home" onClick={(event) => { event.preventDefault(); setDestination("home"); }}>
           <span className="brand-mark"><Icon name="music" size={24} /></span>
           <span>Offline Music</span>
         </a>
@@ -813,7 +847,15 @@ export function App(): ReactNode {
 
       <main id="main-content" className={`main-content${showMiniPlayer ? " has-mini-player" : ""}`} tabIndex={-1}>
         <header className="topbar">
-          <h1 className="topbar-brand">Your device, your music</h1>
+          <div className="topbar-heading">
+            {destination === "player" && <IconButton label="Back to library" icon="back" onClick={() => setDestination("library")} />}
+            {destination === "playlists" && selectedPlaylist && <IconButton label="Back to playlists" icon="back" onClick={() => setSelectedPlaylistId(null)} />}
+            <h1>{destination === "player" ? "Now Playing" : destination === "home" ? "Listen" : destination === "library" ? "Your Library" : destination === "search" ? "Search" : destination === "playlists" ? "Playlists" : destination === "queue" ? "Queue" : "Settings"}</h1>
+          </div>
+          <div className="topbar-actions">
+            {(destination === "home" || destination === "library") && <button type="button" className="button button-secondary" onClick={chooseFiles}><Icon name="plus" /> <span>Add music</span></button>}
+            {destination === "library" && <IconButton label="Open queue" icon="queue" onClick={() => setDestination("queue")} />}
+          </div>
         </header>
 
         {notice && <div className="toast" role="status"><span>{notice}</span><IconButton label="Dismiss message" icon="close" onClick={() => setNotice("")} /></div>}
@@ -823,6 +865,31 @@ export function App(): ReactNode {
           <section className="error-state"><h2>Your library could not be opened</h2><p>{notice || "Reload the app to try again."}</p></section>
         ) : (
           <>
+            {destination === "home" && (
+              <section className="view-section home-view" aria-labelledby="home-heading">
+                <div className="home-welcome">
+                  <div><p className="section-kicker">YOUR MUSIC, ALWAYS WITH YOU</p><h1 id="home-heading">Good evening</h1><p className="collection-count">A little space for the music you love.</p></div>
+                </div>
+                <div className="home-section-heading"><h3>Your Playlists</h3><button type="button" className="text-button" onClick={() => setDestination("playlists")}>{library.playlists.length ? "See All" : "Create"}</button></div>
+                {library.playlists.length > 0 ? <div className="recent-grid">
+                  {library.playlists.slice(0, 3).map((playlist, index) => <button type="button" className="recent-card" key={playlist.id} onClick={() => { setSelectedPlaylistId(playlist.id); setDestination("playlists"); }}>
+                    <img className="recent-cover" src={figmaAsset(["playlist-night-drive.svg", "playlist-blue-hour.svg", "playlist-focus-flow.svg"][index]!)} alt="" width="104" height="104" loading="lazy" />
+                    <strong>{playlist.name}</strong><small>{playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}</small>
+                  </button>)}
+                </div> : <button type="button" className="home-recent-empty" onClick={() => setDestination("playlists")}>Create a playlist to bring your music together.</button>}
+                {library.tracks.length > 0 ? <>
+                  <div className="home-section-heading"><h3>Made for You</h3><button type="button" className="text-button" onClick={() => setDestination("playlists")}>Playlists</button></div>
+                  <div className="featured-card">
+                    <img src={figmaAsset("featured-glow.svg")} alt="" width="140" height="140" />
+                    <div><p className="section-kicker">YOUR COLLECTION</p><h3>{library.tracks.length} {library.tracks.length === 1 ? "track" : "tracks"}, ready to play</h3><p>Music you chose, kept on this device.</p></div>
+                    <button type="button" className="featured-play" aria-label="Play your collection" onClick={() => library.tracks[0] && playTrack(library.tracks[0].id, library.tracks.map((track) => track.id))}><Icon name="play" size={24} /></button>
+                  </div>
+                  <div className="home-section-heading"><h3>Recently Added</h3><button type="button" className="text-button" onClick={() => setDestination("library")}>See All</button></div>
+                  <div className="home-track-list">{trackRows(recentlyAddedTracks)}</div>
+                </> : <div className="home-empty"><div className="empty-art"><Icon name="music" size={30} /></div><h3>Your music starts here</h3><p>Add audio from your device to build your library. Your files stay on this device.</p><button type="button" className="button button-primary" onClick={chooseFiles}><Icon name="plus" /> Add music</button></div>}
+              </section>
+            )}
+
             {destination === "library" && (
               <section className="view-section" aria-labelledby="library-heading">
                 <div className="collection-heading">
@@ -943,6 +1010,19 @@ export function App(): ReactNode {
               </section>
             )}
 
+            {destination === "search" && (
+              <section className="view-section search-view" aria-labelledby="search-heading">
+                <div className="screen-intro"><h1 id="search-heading">Search</h1><p>Find a track, artist, album, or playlist.</p></div>
+                <div className="search-field search-screen-field"><Icon name="search" /><label className="visually-hidden" htmlFor="music-search">Search your library</label><input id="music-search" name="music-search" autoComplete="off" value={search} onChange={(event) => { setSearch(event.currentTarget.value); setListLimit(100); }} placeholder="Songs, artists, albums…" /><button type="button" className={`clear-search${search ? " is-visible" : ""}`} aria-label="Clear search" onClick={() => setSearch("")} disabled={!search}><Icon name="close" size={17} /></button></div>
+                {!search && <><h3 className="browse-heading">Browse Categories</h3><div className="category-grid">{[{ name: "Chill", term: "chill", tone: "chill" }, { name: "Focus", term: "focus", tone: "focus" }, { name: "Electronic", term: "electronic", tone: "electronic" }, { name: "Indie", term: "indie", tone: "indie" }, { name: "Ambient", term: "ambient", tone: "ambient" }, { name: "Playlists", destination: "playlists" as const, tone: "playlists" }].map((category) => <button type="button" key={category.name} className={`category-card ${category.tone}`} onClick={() => { if ("destination" in category) setDestination(category.destination); else setSearch(category.term); }}><img src={figmaAsset("search-category-glow.svg")} alt="" width="72" height="72" loading="lazy" /><span>{category.name}</span></button>)}</div></>}
+                <div className="home-section-heading search-results-heading"><h3>{search ? "Results" : "Your Music"}</h3></div>
+                <div className="scroll-panel search-results" role="region" aria-label="Search results" tabIndex={0}>
+                  {matchingPlaylists.length > 0 && <ul className="playlist-list playlist-search-results">{matchingPlaylists.map((playlist) => <li key={playlist.id}><button type="button" className="playlist-card" onClick={() => { setSelectedPlaylistId(playlist.id); setDestination("playlists"); }}><span className="playlist-art"><Icon name="playlist" /></span><span><strong>{playlist.name}</strong><small>{playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}</small></span><Icon name="back" /></button></li>)}</ul>}
+                  {visibleTracks.length > 0 ? trackRows(visibleTracks) : matchingPlaylists.length === 0 && <div className="empty-state compact-empty"><div className="empty-art"><Icon name="search" size={30} /></div><h3>{search ? "No matches found" : "No music yet"}</h3><p>{search ? "Try a different title, artist, album, or playlist." : "Add music from your device to see it here."}</p>{search ? <button type="button" className="button button-secondary" onClick={() => setSearch("")}>Clear search</button> : <button type="button" className="button button-primary" onClick={chooseFiles}>Add music</button>}</div>}
+                </div>
+              </section>
+            )}
+
             {destination === "player" && (
               <section
                 ref={playerViewRef}
@@ -997,10 +1077,11 @@ export function App(): ReactNode {
             )}
 
             {destination === "playlists" && (
-              <section className="view-section">
+              <section className={`view-section${selectedPlaylist ? " playlist-detail-view" : ""}`}>
                 {selectedPlaylist ? (
                   <>
-                    <div className="section-heading"><div className="playlist-title-wrap"><IconButton label="Back to playlists" icon="back" onClick={() => setSelectedPlaylistId(null)} /><div><h2>{selectedPlaylist.name}</h2><p className="collection-count">{playlistTracks.length} tracks</p></div></div>                    <button type="button" className="button button-danger" onClick={() => {
+                    <img className="playlist-detail-cover" src={figmaAsset("playlist-cover.svg")} alt="" width="206" height="206" />
+                    <div className="section-heading"><div className="playlist-title-wrap"><div><p className="section-kicker">PLAYLIST</p><h2>{selectedPlaylist.name}</h2><p className="collection-count">{playlistTracks.length} tracks</p></div></div>                    <button type="button" className="button button-danger" onClick={() => {
                       if (!window.confirm(`Delete the playlist “${selectedPlaylist.name}”? This does not delete audio files.`)) return;
                       run(async () => {
                     const app = runtime.current;
@@ -1070,6 +1151,10 @@ export function App(): ReactNode {
                 <div className="section-heading"><div><h2>Settings</h2><p className="collection-count">Keep your library private and recoverable.</p></div></div>
                 <div className="scroll-panel settings-panel" role="region" aria-label="Settings" tabIndex={0}>
                   <div className="settings-group">
+                    <h3>Appearance</h3>
+                    <div className="setting-row"><span><strong>Light mode</strong><small>Current theme: {lightMode ? "Light" : "Dark"}. Saved on this device.</small></span><button type="button" role="switch" aria-label="Light mode" aria-checked={lightMode} className={`switch${lightMode ? " switch-on" : ""}`} onClick={() => setLightMode((current) => !current)}><span /></button></div>
+                  </div>
+                  <div className="settings-group">
                     <h3>Playback</h3>
                     <div className="setting-row"><span><strong>Shuffle</strong><small>Change the order of upcoming tracks.</small></span><button type="button" role="switch" aria-label="Shuffle" aria-checked={settings.shuffleEnabled} className={`switch${settings.shuffleEnabled ? " switch-on" : ""}`} onClick={toggleShuffle}><span /></button></div>
                     <div className="setting-row"><span><strong>Repeat</strong><small>Current mode: {settings.repeatMode === "off" ? "Off" : settings.repeatMode === "queue" ? "Queue" : "Track"}.</small></span><button type="button" className="button button-secondary" onClick={cycleRepeat}>Change</button></div>
@@ -1080,14 +1165,14 @@ export function App(): ReactNode {
                     <div className="setting-actions"><button type="button" className="button button-secondary" onClick={exportBackup}><Icon name="download" /> Export metadata</button><button type="button" className="button button-secondary" onClick={() => backupInput.current?.click()}><Icon name="upload" /> Import backup</button></div>
                   </div>
                   <div className="settings-group">
-                    <h3>Browser storage</h3>
+                    <h3>{androidPackagedAssets ? "App storage" : "Browser storage"}</h3>
                     <p className="setting-copy">{storageMessage}</p>
-                    <button type="button" className="button button-secondary" onClick={requestPersistence}>Request persistent storage</button>
+                    {!androidPackagedAssets && <button type="button" className="button button-secondary" onClick={requestPersistence}>Request persistent storage</button>}
                   </div>
                   <div className="settings-group">
                     <h3>About and privacy</h3>
                     <p className="setting-copy">Offline Music · Version {appVersion.trim()} development build</p>
-                    <p className="setting-copy">{persistentAudioEnabled ? "Selected audio is copied into this app's private browser storage so it remains available after reopening. It is never uploaded. iOS may still clear app data under storage pressure or when site data is removed; keep your original files and metadata backups." : "Audio access is session-only and may need to be restored after restarting the app. Audio is not copied into browser storage."} Background playback depends on browser and platform behavior and has not been confirmed on your device.</p>
+                    <p className="setting-copy">{persistentAudioEnabled ? persistencePrivacyMessage : "Audio access is session-only and may need to be restored after restarting the app. Audio is not copied into browser storage."} Background playback depends on browser and platform behavior and has not been confirmed on your device.</p>
                   </div>
                 </div>
               </section>
@@ -1101,6 +1186,7 @@ export function App(): ReactNode {
               <span className="mini-copy"><strong>{currentTrack.title}</strong><small>{currentTrack.artist ?? currentTrack.fileName}</small></span>
             </button>
             <IconButton label={player.playback.state === "playing" ? "Pause playback" : "Resume playback"} icon={player.playback.state === "playing" ? "pause" : "play"} className="mini-state" onClick={() => run(() => runtime.current?.playback.togglePlayback() ?? Promise.resolve())} />
+            <IconButton label="Next track" icon="next" className="mini-next" onClick={() => run(() => runtime.current?.playback.next() ?? Promise.resolve())} />
           </div>
         ) : null}
       </main>

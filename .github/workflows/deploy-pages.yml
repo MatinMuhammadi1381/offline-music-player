@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pages: read
 
 concurrency:
   group: github-pages
@@ -19,6 +20,9 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v5
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4

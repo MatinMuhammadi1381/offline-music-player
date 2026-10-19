@@ -1,0 +1,15 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="104" height="104" viewBox="0 0 104 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Recently played &#226;&#128;&#148; Focus Flow">
+<g clip-path="url(#clip0_0_13)">
+<rect width="104" height="104" rx="8.32" fill="#0F574A"/>
+<circle id="Artwork glow" cx="75.92" cy="55.12" r="46.8" fill="#8AE08F" fill-opacity="0.8"/>
+<circle id="Artwork orb" cx="47.32" cy="62.92" r="33.8" fill="#0F574A" fill-opacity="0.9"/>
+<circle id="Artwork highlight" cx="43.68" cy="57.2" r="17.68" fill="#8AE08F" fill-opacity="0.7"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_0_13">
+<rect width="104" height="104" rx="8.32" fill="white"/>
+</clipPath>
+</defs>
+</svg>

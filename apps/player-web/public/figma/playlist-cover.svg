@@ -1,0 +1,15 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="206" height="206" viewBox="0 0 206 206" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Playlist cover">
+<g clip-path="url(#clip0_0_16)">
+<rect width="206" height="206" rx="16.48" fill="#591F6E"/>
+<circle id="Artwork glow" cx="150.38" cy="109.18" r="92.7" fill="#F76173" fill-opacity="0.8"/>
+<circle id="Artwork orb" cx="93.73" cy="124.63" r="66.95" fill="#591F6E" fill-opacity="0.9"/>
+<circle id="Artwork highlight" cx="86.52" cy="113.3" r="35.02" fill="#F76173" fill-opacity="0.7"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_0_16">
+<rect width="206" height="206" rx="16.48" fill="white"/>
+</clipPath>
+</defs>
+</svg>
