@@ -81,6 +81,19 @@ html.pwa-ui-enabled #root {
   background: var(--color-bg);
 }
 
+/* In standalone iOS PWAs, dynamic viewport units can stop above the screen's
+   safe-area edge. WebKit's 100vh includes that area in standalone mode. */
+html.pwa-ui-enabled.ios-standalone-pwa {
+  --ui-viewport-height: 100vh;
+}
+
+html.pwa-ui-enabled.ios-standalone-pwa,
+html.pwa-ui-enabled.ios-standalone-pwa body,
+html.pwa-ui-enabled.ios-standalone-pwa #root {
+  height: 100vh;
+  min-height: 100vh;
+}
+
 html.pwa-ui-enabled body {
   margin: 0;
   overscroll-behavior: none;
@@ -109,7 +122,7 @@ html.pwa-ui-enabled select:focus-visible {
   position: relative;
   display: grid;
   width: calc(100vw / 0.7);
-  height: calc(100dvh / 0.7);
+  height: calc(var(--ui-viewport-height, 100dvh) / 0.7);
   min-height: 0;
   grid-template-columns: 252px minmax(0, 1fr);
   overflow: hidden;
@@ -756,7 +769,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
   .app-shell.pwa-ui {
     display: block;
     width: calc(100vw / 0.7);
-    height: calc(100dvh / 0.7);
+    height: calc(var(--ui-viewport-height, 100dvh) / 0.7);
   }
 
   .pwa-ui .side-rail {

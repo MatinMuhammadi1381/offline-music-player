@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.3 - 2026-10-19 (iOS standalone PWA viewport fix)
+
+- Use the full standalone iOS viewport height so the bottom navigation dock reaches the bottom edge of the display. This is limited to installed iOS PWAs; other browser and Android layouts are unchanged.
+- Bump the PWA shell cache to v12 and Android `versionCode` to 24. No library data or backup migration is required.
+- Root TypeScript check and PWA production build passed locally. The installed iPhone PWA still needs on-device confirmation after deployment.
+
 ## 1.6.2 - 2026-10-19 (PWA sizing and bottom navigation)
 
 - Scale the PWA interface to 70% while keeping its bottom dock independently anchored full-width to the viewport; only the dock's top corners are rounded.

@@ -30,6 +30,12 @@ if (window.location.hostname !== "appassets.androidplatform.net") {
   document.documentElement.classList.add("pwa-ui-enabled");
 }
 
+const isAppleMobileDevice = /iPhone|iPad|iPod/.test(navigator.userAgent)
+  || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+if (isAppleMobileDevice && isStandalone()) {
+  document.documentElement.classList.add("ios-standalone-pwa");
+}
+
 type Destination = "home" | "library" | "search" | "playlists" | "queue" | "settings" | "player";
 type IconName = "home" | "library" | "playlist" | "queue" | "settings" | "play" | "pause" | "next" | "previous" | "search" | "plus" | "shuffle" | "repeat" | "close" | "music" | "back" | "download" | "upload" | "sort";
 const destinations: readonly Destination[] = ["home", "library", "search", "playlists", "queue", "settings", "player"];

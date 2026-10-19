@@ -1,4 +1,4 @@
-const CACHE_NAME = "offline-music-shell-v11"; // refresh the PWA sizing and bottom navigation
+const CACHE_NAME = "offline-music-shell-v12"; // refresh the iOS standalone viewport sizing
 
 const APP_SHELL = [
   "./",
