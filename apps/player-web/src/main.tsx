@@ -863,7 +863,6 @@ export function App(): ReactNode {
       </aside>
 
       <main id="main-content" className={`main-content${showMiniPlayer ? " has-mini-player" : ""}`} tabIndex={-1}>
-        <div className="pwa-top-band" aria-hidden="true" />
         <header className="topbar">
           <div className="topbar-heading">
             {destination === "player" && <IconButton label="Back to library" icon="back" onClick={() => setDestination("library")} />}

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.5 - 2026-10-19 (top spacing adjustment)
+
+- Remove the added top band and 15% vertical offset. Keep the shared PWA/Android UI and Android light/dark theme synchronization unchanged.
+- Bump the PWA shell cache to v14 and Android `versionCode` to 26. No library data or backup migration is required.
+
 ## 1.6.4 - 2026-10-19 (shared Android and PWA layout)
 
 - Move mobile content below a responsive 15%-height top offset and add a flat, borderless 10%-height top band. The bottom navigation remains unchanged.
