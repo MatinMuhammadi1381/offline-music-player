@@ -1,4 +1,4 @@
-const CACHE_NAME = "offline-music-shell-v3"; // bumped to force clients to refresh on next deploy
+const CACHE_NAME = "offline-music-shell-v4"; // refresh the shell and include the updated local artwork manifest
 
 const APP_SHELL = [
   "./",
