@@ -3,8 +3,11 @@ package com.offlinemusicplayer.spike;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebResourceError;
 import android.webkit.ValueCallback;
@@ -44,7 +47,7 @@ public final class SharedPlayerActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         FrameLayout root = new FrameLayout(this);
-        root.setBackgroundColor(0xFF070B14);
+        root.setBackgroundColor(0xFF080D18);
         webView = new WebView(this);
         errorView = new TextView(this);
         errorView.setTextColor(0xFFFFB4AB);
@@ -61,7 +64,7 @@ public final class SharedPlayerActivity extends Activity {
         ));
         setContentView(root);
 
-        webView.setBackgroundColor(0xFF070B14);
+        webView.setBackgroundColor(0xFF080D18);
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -206,6 +209,26 @@ public final class SharedPlayerActivity extends Activity {
         return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
     }
 
+    private void applySystemBarTheme(boolean lightMode) {
+        int color = lightMode ? Color.rgb(243, 246, 251) : Color.rgb(8, 13, 24);
+        getWindow().setStatusBarColor(color);
+        getWindow().setNavigationBarColor(color);
+
+        View decor = getWindow().getDecorView();
+        int flags = decor.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        }
+        if (lightMode) {
+            flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            }
+        }
+        decor.setSystemUiVisibility(flags);
+        if (webView != null) webView.setBackgroundColor(color);
+    }
+
     private void showError(String message) {
         errorView.setText(message);
         errorView.setVisibility(TextView.VISIBLE);
@@ -263,6 +286,11 @@ public final class SharedPlayerActivity extends Activity {
     }
 
     private final class AndroidBackupBridge {
+        @android.webkit.JavascriptInterface
+        public void setTheme(boolean lightMode) {
+            runOnUiThread(() -> applySystemBarTheme(lightMode));
+        }
+
         @android.webkit.JavascriptInterface
         public void saveMetadataBackup(String backupJson) {
             if (backupJson == null || backupJson.isEmpty()) {

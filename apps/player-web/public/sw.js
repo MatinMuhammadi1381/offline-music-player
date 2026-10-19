@@ -1,4 +1,4 @@
-const CACHE_NAME = "offline-music-shell-v12"; // refresh the iOS standalone viewport sizing
+const CACHE_NAME = "offline-music-shell-v13"; // refresh the shared PWA and Android UI
 
 const APP_SHELL = [
   "./",

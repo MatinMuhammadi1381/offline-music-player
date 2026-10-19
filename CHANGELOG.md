@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.4 - 2026-10-19 (shared Android and PWA layout)
+
+- Move mobile content below a responsive 15%-height top offset and add a flat, borderless 10%-height top band. The bottom navigation remains unchanged.
+- Apply the same responsive PWA presentation to the Android WebView and synchronize Android system bars with the saved light/dark theme.
+- Bump the PWA shell cache to v13 and Android `versionCode` to 25. No library data or backup migration is required.
+- TypeScript and the web production build passed locally. The local Gradle APK build could not start because Gradle could not open its loopback connection; CI and real-device validation are pending.
+
 ## 1.6.3 - 2026-10-19 (iOS standalone PWA viewport fix)
 
 - Use the full standalone iOS viewport height so the bottom navigation dock reaches the bottom edge of the display. This is limited to installed iOS PWAs; other browser and Android layouts are unchanged.

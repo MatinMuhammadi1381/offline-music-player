@@ -12,6 +12,12 @@
       try {
         const theme = localStorage.getItem("offline-music-theme");
         if (theme === "dark") document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')?.setAttribute("content", "black");
+        if (location.hostname === "appassets.androidplatform.net") {
+          const lightMode = theme === "light";
+          document.documentElement.dataset.theme = lightMode ? "light" : "dark";
+          document.documentElement.style.colorScheme = lightMode ? "light" : "dark";
+          window.OfflineMusicAndroid?.setTheme(lightMode);
+        }
       } catch { /* Use the opaque light status bar if local storage is unavailable. */ }
     </script>
     <link rel="manifest" href="./manifest.webmanifest" />

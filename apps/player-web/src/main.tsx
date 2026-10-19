@@ -24,11 +24,9 @@ import { getPlayerGestureDestination } from "./player-gesture";
 import "./styles.css";
 import "./pwa-ui.css";
 
-// The Android WebView keeps its established presentation. The redesigned PWA
-// shell is enabled only in browser-hosted builds.
-if (window.location.hostname !== "appassets.androidplatform.net") {
-  document.documentElement.classList.add("pwa-ui-enabled");
-}
+// Browser/PWA and Android WebView share the same UI. Platform-specific file
+// access and persistence behavior remains behind the Android bridge.
+document.documentElement.classList.add("pwa-ui-enabled");
 
 const isAppleMobileDevice = /iPhone|iPad|iPod/.test(navigator.userAgent)
   || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -45,6 +43,7 @@ declare global {
   interface Window {
     OfflineMusicAndroid?: {
       saveMetadataBackup(backupJson: string): void;
+      setTheme(lightMode: boolean): void;
     };
   }
 }
@@ -279,7 +278,7 @@ function isInteractivePlayerTarget(target: EventTarget | null): boolean {
 
 export function App(): ReactNode {
   const androidPackagedAssets = window.location.hostname === "appassets.androidplatform.net";
-  const pwaUiEnabled = !androidPackagedAssets;
+  const pwaUiEnabled = document.documentElement.classList.contains("pwa-ui-enabled");
   const fileInput = useRef<HTMLInputElement>(null);
   const backupInput = useRef<HTMLInputElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
@@ -319,9 +318,8 @@ export function App(): ReactNode {
     document.documentElement.style.colorScheme = lightMode ? "light" : "dark";
     try { window.localStorage.setItem("offline-music-theme", lightMode ? "light" : "dark"); } catch { /* Theme still applies for this session. */ }
     const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-    themeColor?.setAttribute("content", androidPackagedAssets
-      ? lightMode ? "#f4f7fc" : "#060913"
-      : lightMode ? "#f3f6fb" : "#080d18");
+    themeColor?.setAttribute("content", lightMode ? "#f3f6fb" : "#080d18");
+    window.OfflineMusicAndroid?.setTheme(lightMode);
     const iosStatusBar = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-status-bar-style"]');
     // Keep the light iOS status bar opaque so the page background does not tint the clock area.
     iosStatusBar?.setAttribute("content", lightMode ? "default" : "black");
@@ -865,6 +863,7 @@ export function App(): ReactNode {
       </aside>
 
       <main id="main-content" className={`main-content${showMiniPlayer ? " has-mini-player" : ""}`} tabIndex={-1}>
+        <div className="pwa-top-band" aria-hidden="true" />
         <header className="topbar">
           <div className="topbar-heading">
             {destination === "player" && <IconButton label="Back to library" icon="back" onClick={() => setDestination("library")} />}

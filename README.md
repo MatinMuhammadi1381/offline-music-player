@@ -3,7 +3,7 @@
 **A private, offline-first music player for Android and iPhone.** Your original audio files stay in the locations you choose; the app does not upload your music.
 
 [![Deploy to GitHub Pages](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml)
-[![Version](https://img.shields.io/badge/version-1.6.3-1687ff)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.6.4-1687ff)](VERSION)
 
 **Web app:** [Open Offline Music Player](https://matinmuhammadi1381.github.io/offline-music-player/)
 
@@ -58,7 +58,7 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 
 ## وضعیت پروژه و محدودیت‌ها
 
-- نسخهٔ پروژه: **1.6.3** (طبق [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md)).
+- نسخهٔ پروژه: **1.6.4** (طبق [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md)).
 - انتشار روی GitHub Pages به معنی تأیید نهایی یا آمادگی production نیست.
 - پخش پس‌زمینه و کنترل‌های media بومی Android هنوز به رابط مشترک برنامه متصل نشده‌اند.
 - PWA آیفون کپی محلی آهنگ‌ها را برای استفاده بین نشست‌ها ذخیره می‌کند، اما iOS تضمین نگهداری چندماهه نمی‌دهد و ممکن است دادهٔ سایت را پاک کند؛ نسخهٔ اصلی آهنگ‌ها را حفظ کنید. نسخهٔ Android فایل‌های انتخاب‌شده را در فضای خصوصی برنامه نگه می‌دارد؛ پاک‌کردن داده‌های برنامه یا حذف آن، این فایل‌ها را حذف می‌کند.
@@ -101,7 +101,7 @@ Open the [web app](https://matinmuhammadi1381.github.io/offline-music-player/) i
 
 ### Project status and limitations
 
-- Project version: **1.6.3**, following [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md).
+- Project version: **1.6.4**, following [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md).
 - GitHub Pages availability does not mean the app has passed production or final acceptance.
 - Native Android background playback and media-session controls are not yet connected to the shared UI.
 - iOS may evict browser storage or the user may clear site data; this is not a months-long retention guarantee. Keep original audio files. Android stores selected audio in app-private webview storage between launches; clearing app data or uninstalling removes those copies. JSON backups include metadata and playlists, not audio.
