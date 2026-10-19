@@ -4,7 +4,7 @@
 
 - Scale the PWA interface to 70% while keeping its bottom dock independently anchored full-width to the viewport; only the dock's top corners are rounded.
 - Keep the Android WebView presentation and application logic unchanged. Bump the PWA shell cache to v11 and Android `versionCode` to 23; no library data or backup migration is required.
-- Root TypeScript check and PWA production build passed. Mobile responsive review and real iPhone behavior remain unverified.
+- Root TypeScript check and PWA production build passed locally. GitHub Actions run 25 passed tests, typechecks, PWA and APK builds, and GitHub Pages deployment. Mobile responsive review and real iPhone behavior remain unverified.
 
 ## 1.6.1 - 2026-10-19 (PWA theme initialization fix)
 

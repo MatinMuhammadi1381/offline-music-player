@@ -6,7 +6,7 @@ This is a development handoff prepared during Phase 10. The project owner author
 
 Version is `1.6.2` (`VERSION`) and is bundled into the web app from the root version file so the About screen cannot drift from the project version. This remains a development handoff, not a production release; do not distribute this debug APK as a production release.
 
-Version 1.6.2 scales the PWA interface to 70% and anchors a full-width navigation dock flush to the viewport bottom, with rounding only on its top corners. Version 1.6.1 fixes pre-app theme colors on the install guide. Version 1.6.0 rebuilt the browser/PWA presentation and bottom dock while leaving library, playback, storage behavior, and Android WebView styling intact. Responsive review, root TypeScript check, PWA production build, GitHub Actions APK build, and Pages deployment are pending. Real iPhone verification remains outstanding. GitHub Actions rebuilds the APK and deploys Pages after changes are pushed to `main`.
+Version 1.6.2 scales the PWA interface to 70% and anchors a full-width navigation dock flush to the viewport bottom, with rounding only on its top corners. Version 1.6.1 fixes pre-app theme colors on the install guide. Version 1.6.0 rebuilt the browser/PWA presentation and bottom dock while leaving library, playback, storage behavior, and Android WebView styling intact. The root TypeScript check and PWA production build passed locally. GitHub Actions run 25 passed tests, typechecks, PWA and APK builds, and Pages deployment. Mobile responsive review and real iPhone verification remain outstanding. GitHub Actions rebuilds the APK and deploys Pages after changes are pushed to `main`.
 
 ## Verified build environment
 
