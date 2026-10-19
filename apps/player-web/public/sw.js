@@ -1,4 +1,4 @@
-const CACHE_NAME = "offline-music-shell-v8"; // refresh the iOS status bar and bottom-anchored navigation
+const CACHE_NAME = "offline-music-shell-v9"; // refresh the rebuilt PWA interface and safe-area dock
 
 const APP_SHELL = [
   "./",

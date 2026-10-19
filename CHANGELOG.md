@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0 - 2026-10-19 (PWA interface rebuild)
+
+- Rebuilt the browser/PWA presentation and mobile navigation dock while preserving playback, library, and storage behavior. Android WebView keeps its existing interface.
+- Replaced the iOS dock's negative bottom offset with a full-width, safe-area-aware surface fixed to the viewport floor; refreshed PWA layout and light-mode surfaces while preserving the commented dark-mode treatments.
+- Bumped the PWA shell cache to v9. Incremented Android `versionCode` to 21 and the app/workspace version to `1.6.0`; no library data or backup migration is required.
+- Root TypeScript check and PWA production build passed. Responsive browser review passed at 390×844 CSS pixels; real iPhone verification remains outstanding.
+
 ## 1.5.9 - 2026-10-19 (iOS dock and light player refinement)
 
 - Move iPhone navigation about 10 CSS pixels farther down, into the Home Indicator inset, while retaining a separate full-width dock above page content.

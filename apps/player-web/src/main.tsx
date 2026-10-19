@@ -22,6 +22,13 @@ import { InstallLanding } from "./install-landing";
 import { isInstalledPwa } from "./pwa-mode";
 import { getPlayerGestureDestination } from "./player-gesture";
 import "./styles.css";
+import "./pwa-ui.css";
+
+// The Android WebView keeps its established presentation. The redesigned PWA
+// shell is enabled only in browser-hosted builds.
+if (window.location.hostname !== "appassets.androidplatform.net") {
+  document.documentElement.classList.add("pwa-ui-enabled");
+}
 
 type Destination = "home" | "library" | "search" | "playlists" | "queue" | "settings" | "player";
 type IconName = "home" | "library" | "playlist" | "queue" | "settings" | "play" | "pause" | "next" | "previous" | "search" | "plus" | "shuffle" | "repeat" | "close" | "music" | "back" | "download" | "upload" | "sort";
@@ -266,6 +273,7 @@ function isInteractivePlayerTarget(target: EventTarget | null): boolean {
 
 export function App(): ReactNode {
   const androidPackagedAssets = window.location.hostname === "appassets.androidplatform.net";
+  const pwaUiEnabled = !androidPackagedAssets;
   const fileInput = useRef<HTMLInputElement>(null);
   const backupInput = useRef<HTMLInputElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
@@ -305,7 +313,9 @@ export function App(): ReactNode {
     document.documentElement.style.colorScheme = lightMode ? "light" : "dark";
     try { window.localStorage.setItem("offline-music-theme", lightMode ? "light" : "dark"); } catch { /* Theme still applies for this session. */ }
     const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-    themeColor?.setAttribute("content", lightMode ? "#f4f7fc" : "#060913");
+    themeColor?.setAttribute("content", androidPackagedAssets
+      ? lightMode ? "#f4f7fc" : "#060913"
+      : lightMode ? "#f3f6fb" : "#080d18");
     const iosStatusBar = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-status-bar-style"]');
     // Keep the light iOS status bar opaque so the page background does not tint the clock area.
     iosStatusBar?.setAttribute("content", lightMode ? "default" : "black");
@@ -831,7 +841,7 @@ export function App(): ReactNode {
 
   return (
     <>
-    <div className={`app-shell${destination === "player" ? " player-open" : ""}`}>
+    <div className={`app-shell${destination === "player" ? " player-open" : ""}${pwaUiEnabled ? " pwa-ui" : ""}`}>
       <a className="skip-link" href="#main-content">Skip to content</a>
       <aside className="side-rail" aria-label="Main navigation">
         <a className="brand" href="#home" onClick={(event) => { event.preventDefault(); setDestination("home"); }}>
@@ -1198,9 +1208,17 @@ export function App(): ReactNode {
       <input ref={backupInput} className="hidden-input" type="file" name="metadata-backup" aria-label="Choose metadata backup" accept="application/json,.json" onChange={importBackup} />
     </div>
     {createPortal(
-      <nav className="bottom-nav" aria-label="Main navigation">
-        {navItems.map((item) => <button key={item.id} type="button" className={`bottom-nav-item${destination === item.id ? " selected" : ""}`} aria-current={destination === item.id ? "page" : undefined} onClick={() => setDestination(item.id)}><Icon name={item.icon} /><span>{item.label}</span></button>)}
-      </nav>,
+      pwaUiEnabled ? (
+        <div className="pwa-dock">
+          <nav className="bottom-nav pwa-bottom-nav" aria-label="Main navigation">
+            {navItems.map((item) => <button key={item.id} type="button" className={`bottom-nav-item${destination === item.id ? " selected" : ""}`} aria-current={destination === item.id ? "page" : undefined} onClick={() => setDestination(item.id)}><Icon name={item.icon} /><span>{item.label}</span></button>)}
+          </nav>
+        </div>
+      ) : (
+        <nav className="bottom-nav" aria-label="Main navigation">
+          {navItems.map((item) => <button key={item.id} type="button" className={`bottom-nav-item${destination === item.id ? " selected" : ""}`} aria-current={destination === item.id ? "page" : undefined} onClick={() => setDestination(item.id)}><Icon name={item.icon} /><span>{item.label}</span></button>)}
+        </nav>
+      ),
       document.body,
     )}
     </>
