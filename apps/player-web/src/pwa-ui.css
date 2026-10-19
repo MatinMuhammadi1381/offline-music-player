@@ -13,7 +13,7 @@ html.pwa-ui-enabled {
   --surface-glass: rgba(18, 29, 48, 0.82);
   --surface-glass-border: rgba(220, 235, 255, 0.14);
   --ui-scale: 1;
-  --ui-content-max-width: 1280px;
+  --ui-content-max-width: 1829px;
   --ui-viewport-height: 100dvh;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
@@ -108,21 +108,25 @@ html.pwa-ui-enabled select:focus-visible {
 .app-shell.pwa-ui {
   position: relative;
   display: grid;
-  width: 100%;
-  height: 100dvh;
+  width: calc(100vw / 0.7);
+  height: calc(100dvh / 0.7);
   min-height: 0;
   grid-template-columns: 252px minmax(0, 1fr);
   overflow: hidden;
   isolation: isolate;
+  transform: scale(0.7);
+  transform-origin: top left;
   background: var(--color-bg);
   color: var(--color-text-primary);
+  --safe-top: calc(env(safe-area-inset-top, 0px) / 0.7);
+  --safe-bottom: calc(env(safe-area-inset-bottom, 0px) / 0.7);
 }
 
 .pwa-ui .side-rail {
   position: relative;
   z-index: 1;
   width: auto;
-  height: 100dvh;
+  height: 100%;
   padding: calc(26px + var(--safe-top)) 18px 24px;
   border-right: 1px solid var(--color-separator);
   background: var(--color-surface);
@@ -158,7 +162,7 @@ html.pwa-ui-enabled select:focus-visible {
 .pwa-ui .main-content {
   position: relative;
   width: min(100%, var(--ui-content-max-width));
-  height: 100dvh;
+  height: 100%;
   min-height: 0;
   margin: 0 auto;
   padding: calc(26px + var(--safe-top)) clamp(28px, 5vw, 72px) 28px;
@@ -751,7 +755,8 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
 @media (max-width: 760px) {
   .app-shell.pwa-ui {
     display: block;
-    height: 100dvh;
+    width: calc(100vw / 0.7);
+    height: calc(100dvh / 0.7);
   }
 
   .pwa-ui .side-rail {
@@ -760,7 +765,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
 
   .pwa-ui .main-content {
     width: 100%;
-    height: 100dvh;
+    height: 100%;
     padding: calc(10px + var(--safe-top)) 20px calc(88px + var(--safe-bottom));
   }
 
@@ -958,12 +963,13 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
     left: 0;
     display: block;
     width: 100%;
-    height: calc(72px + env(safe-area-inset-bottom, 0px));
+    height: calc(50px + env(safe-area-inset-bottom, 0px));
     margin: 0;
-    padding: 5px max(12px, env(safe-area-inset-left, 0px)) env(safe-area-inset-bottom, 0px);
+    padding: 2px max(12px, env(safe-area-inset-left, 0px)) env(safe-area-inset-bottom, 0px);
     border-top: 1px solid var(--color-separator);
+    border-radius: 16px 16px 0 0;
     background: var(--color-surface);
-    box-shadow: 0 -5px 18px rgba(23, 43, 73, 0.06);
+    box-shadow: 0 -3px 12px rgba(23, 43, 73, 0.06);
     pointer-events: auto;
   }
 
@@ -973,7 +979,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
     display: grid;
     width: 100%;
     max-width: 560px;
-    height: 100%;
+    height: 46px;
     min-height: 0;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: stretch;
@@ -993,22 +999,24 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
     display: flex;
     width: 100%;
     min-width: 0;
-    min-height: 58px;
+    height: 40px;
+    min-height: 40px;
+    align-self: center;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 3px;
     padding: 4px 2px;
     border: 0;
-    border-radius: 15px;
+    border-radius: 10px;
     color: var(--color-text-secondary);
-    font-size: 11px;
+    font-size: 8px;
     line-height: 1.15;
   }
 
   .pwa-dock .pwa-bottom-nav .bottom-nav-item svg {
-    width: 22px;
-    height: 22px;
+    width: 16px;
+    height: 16px;
     flex: 0 0 auto;
     stroke-width: 1.8;
   }

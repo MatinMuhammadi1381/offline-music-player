@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.2 - 2026-10-19 (PWA sizing and bottom navigation)
+
+- Scale the PWA interface to 70% while keeping its bottom dock independently anchored full-width to the viewport; only the dock's top corners are rounded.
+- Keep the Android WebView presentation and application logic unchanged. Bump the PWA shell cache to v11 and Android `versionCode` to 23; no library data or backup migration is required.
+- Root TypeScript check and PWA production build passed. Mobile responsive review and real iPhone behavior remain unverified.
+
 ## 1.6.1 - 2026-10-19 (PWA theme initialization fix)
 
 - Keep the dark palette as the PWA's pre-app default, then apply the saved theme once the player starts. This keeps the install guide readable before the app has initialized its theme.

@@ -1,4 +1,4 @@
-const CACHE_NAME = "offline-music-shell-v10"; // refresh the PWA theme initialization and interface
+const CACHE_NAME = "offline-music-shell-v11"; // refresh the PWA sizing and bottom navigation
 
 const APP_SHELL = [
   "./",

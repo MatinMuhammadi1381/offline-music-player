@@ -4,9 +4,9 @@
 
 This is a development handoff prepared during Phase 10. The project owner authorized proceeding and explicitly deferred iPhone and Android real-device testing until later. That is recorded as an **owner-approved test deferral**, not as test evidence. The PWA is publicly deployed on GitHub Pages at <https://matinmuhammadi1381.github.io/offline-music-player/>. No production signing key, release tag, or production signing identity is available, so this is **not** a production release.
 
-Version is `1.6.1` (`VERSION`) and is bundled into the web app from the root version file so the About screen cannot drift from the project version. This remains a development handoff, not a production release; do not distribute this debug APK as a production release.
+Version is `1.6.2` (`VERSION`) and is bundled into the web app from the root version file so the About screen cannot drift from the project version. This remains a development handoff, not a production release; do not distribute this debug APK as a production release.
 
-Version 1.6.1 fixes pre-app theme colors on the install guide. Version 1.6.0 rebuilt the browser/PWA presentation and bottom dock while leaving library, playback, storage behavior, and Android WebView styling intact. The root TypeScript check and PWA production build passed locally. A 390×844 CSS-pixel browser review confirms the dock ends at the viewport bottom; real iPhone verification remains outstanding. GitHub Actions rebuilds the APK and deploys Pages after changes are pushed to `main`.
+Version 1.6.2 scales the PWA interface to 70% and anchors a full-width navigation dock flush to the viewport bottom, with rounding only on its top corners. Version 1.6.1 fixes pre-app theme colors on the install guide. Version 1.6.0 rebuilt the browser/PWA presentation and bottom dock while leaving library, playback, storage behavior, and Android WebView styling intact. Responsive review, root TypeScript check, PWA production build, GitHub Actions APK build, and Pages deployment are pending. Real iPhone verification remains outstanding. GitHub Actions rebuilds the APK and deploys Pages after changes are pushed to `main`.
 
 ## Verified build environment
 
@@ -36,7 +36,7 @@ To run only the Android build/lint, use `.\gradlew.bat assembleDebug lintDebug` 
 Generated artifacts are kept outside source control in the ignored `release-artifacts/development/` directory:
 
 - `offline-music-player-pwa.zip` — static PWA build. Extract its contents to the document root of an approved HTTPS static host. The archive contains only the app shell; it does not contain user audio.
-- `offline-music-player-android-debug.apk` — the existing local Android debug APK is from an earlier build and was not regenerated for this PWA-only interface update. GitHub Actions builds a fresh APK with `versionName` `1.6.1` (versionCode 22) on push; it uses the Android debug signing identity rather than a production key.
+- `offline-music-player-android-debug.apk` — the existing local Android debug APK is from an earlier build and was not regenerated for this PWA-only interface update. GitHub Actions builds a fresh APK with `versionName` `1.6.2` (versionCode 23) on push; it uses the Android debug signing identity rather than a production key.
 
 SHA-256 checksums:
 
