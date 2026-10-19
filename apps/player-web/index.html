@@ -7,7 +7,13 @@
     <meta name="description" content="A private, offline-first player for music stored on your device." />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Offline Music" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <script>
+      try {
+        const theme = localStorage.getItem("offline-music-theme");
+        if (theme === "dark") document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')?.setAttribute("content", "black");
+      } catch { /* Use the opaque light status bar if local storage is unavailable. */ }
+    </script>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="./icon.svg" />
     <title>Offline Music</title>

@@ -2746,12 +2746,22 @@ button:disabled {
 @supports (-webkit-touch-callout: none) {
   @media (max-width: 760px) {
     .bottom-nav {
-      min-height: calc(var(--mobile-nav-height) * var(--mobile-nav-render-scale));
-      padding: calc(8px * var(--mobile-nav-render-scale));
-      border-radius: calc(24px * var(--mobile-nav-render-scale));
-      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
-      -webkit-backdrop-filter: blur(16px) saturate(1.1);
-      backdrop-filter: blur(16px) saturate(1.1);
+      z-index: 20;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      min-height: calc(var(--mobile-nav-height) * var(--mobile-nav-render-scale) + env(safe-area-inset-bottom, 0px));
+      margin: 0;
+      transform: none;
+      padding: calc(6px * var(--mobile-nav-render-scale)) calc(12px * var(--mobile-nav-render-scale)) env(safe-area-inset-bottom, 0px);
+      border-right: 0;
+      border-bottom: 0;
+      border-left: 0;
+      border-radius: 0;
+      box-shadow: 0 -3px 14px rgba(0, 0, 0, 0.1);
+      -webkit-backdrop-filter: blur(12px) saturate(1.05);
+      backdrop-filter: blur(12px) saturate(1.05);
     }
 
     .bottom-nav-item {
@@ -2768,9 +2778,9 @@ button:disabled {
     }
 
     :root[data-theme="light"] .bottom-nav {
-      border-color: rgba(48, 75, 112, 0.12);
+      border-top: 1px solid rgba(48, 75, 112, 0.12);
       background: rgba(255, 255, 255, 0.96);
-      box-shadow: 0 8px 22px rgba(31, 48, 72, 0.12);
+      box-shadow: 0 -3px 14px rgba(31, 48, 72, 0.08);
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
     }

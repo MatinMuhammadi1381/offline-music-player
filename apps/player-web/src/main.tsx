@@ -308,7 +308,7 @@ export function App(): ReactNode {
     themeColor?.setAttribute("content", lightMode ? "#f4f7fc" : "#060913");
     const iosStatusBar = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-status-bar-style"]');
     // Keep the light iOS status bar opaque so the page background does not tint the clock area.
-    iosStatusBar?.setAttribute("content", lightMode ? "default" : "black-translucent");
+    iosStatusBar?.setAttribute("content", lightMode ? "default" : "black");
   }, [lightMode]);
   const persistentAudioEnabled = runtime.current?.files.getCapabilities().persistentFileReferences.status === "supported";
   const sortOptions: readonly { readonly value: SortField; readonly label: string }[] = [

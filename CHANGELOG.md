@@ -1,4 +1,11 @@
-﻿# Changelog
+# Changelog
+
+## 1.5.7 - 2026-10-19 (iPhone PWA bottom navigation and status bar fix)
+
+- Replaced the floating iPhone navigation capsule with a full-width bar flush to the screen bottom; the home-indicator safe area now belongs to the bar itself.
+- Use an opaque iOS status bar in light mode and a black status bar in dark mode to remove the translucent clock halo while keeping mode-appropriate contrast.
+- Bumped the PWA shell cache so installed copies fetch the new shell. Incremented Android `versionCode` to 18 to keep APK upgrades aligned with the project version; no library data or backup migration is required.
+- Updated the visible app and workspace version to `1.5.7`. TypeScript check and PWA production build passed locally; real-device iPhone verification remains outstanding.
 
 ## 1.5.6 - 2026-10-16 (player screen polish and pull-down navigation)
 
