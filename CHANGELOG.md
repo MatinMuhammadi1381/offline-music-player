@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.1 - 2026-10-19 (PWA theme initialization fix)
+
+- Keep the dark palette as the PWA's pre-app default, then apply the saved theme once the player starts. This keeps the install guide readable before the app has initialized its theme.
+- Bump the PWA shell cache to v10. Increment Android `versionCode` to 22 and the app/workspace version to `1.6.1`; no library data or backup migration is required.
+- Root TypeScript check and PWA production build passed; the install guide and saved light theme were checked in the local browser preview.
+
 ## 1.6.0 - 2026-10-19 (PWA interface rebuild)
 
 - Rebuilt the browser/PWA presentation and mobile navigation dock while preserving playback, library, and storage behavior. Android WebView keeps its existing interface.

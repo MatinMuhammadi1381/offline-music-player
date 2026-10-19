@@ -1,5 +1,31 @@
 /* Browser and installed PWA presentation. Android WebView uses the legacy UI. */
 html.pwa-ui-enabled {
+  --color-bg: #080d18;
+  --color-surface: #101827;
+  --color-surface-raised: #172338;
+  --color-accent: #4da5ff;
+  --color-accent-strong: #1687ff;
+  --color-accent-soft: rgba(39, 139, 255, 0.16);
+  --color-text-primary: #f4f7fc;
+  --color-text-secondary: #aab6c8;
+  --color-text-muted: #75849a;
+  --color-separator: rgba(218, 232, 255, 0.1);
+  --surface-glass: rgba(18, 29, 48, 0.82);
+  --surface-glass-border: rgba(220, 235, 255, 0.14);
+  --ui-scale: 1;
+  --ui-content-max-width: 1280px;
+  --ui-viewport-height: 100dvh;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+  color-scheme: dark;
+  background: #080d18;
+  color: #f4f7fc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+html.pwa-ui-enabled[data-theme="light"] {
   --color-bg: #f3f6fb;
   --color-surface: #ffffff;
   --color-surface-raised: #eaf0f8;
@@ -12,17 +38,9 @@ html.pwa-ui-enabled {
   --color-separator: rgba(30, 54, 87, 0.13);
   --surface-glass: rgba(255, 255, 255, 0.96);
   --surface-glass-border: rgba(48, 75, 112, 0.15);
-  --ui-scale: 1;
-  --ui-content-max-width: 1280px;
-  --ui-viewport-height: 100dvh;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-top: env(safe-area-inset-top, 0px);
   color-scheme: light;
   background: #f3f6fb;
   color: #172235;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
 }
 
 html.pwa-ui-enabled[data-theme="dark"] {
