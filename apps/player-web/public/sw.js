@@ -1,4 +1,4 @@
-const CACHE_NAME = "offline-music-shell-v4"; // refresh the shell and include the updated local artwork manifest
+const CACHE_NAME = "offline-music-shell-v5"; // refresh the iOS PWA status bar and navigation polish
 
 const APP_SHELL = [
   "./",

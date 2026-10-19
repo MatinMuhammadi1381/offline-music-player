@@ -306,6 +306,9 @@ export function App(): ReactNode {
     try { window.localStorage.setItem("offline-music-theme", lightMode ? "light" : "dark"); } catch { /* Theme still applies for this session. */ }
     const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     themeColor?.setAttribute("content", lightMode ? "#f4f7fc" : "#060913");
+    const iosStatusBar = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-status-bar-style"]');
+    // Keep the light iOS status bar opaque so the page background does not tint the clock area.
+    iosStatusBar?.setAttribute("content", lightMode ? "default" : "black-translucent");
   }, [lightMode]);
   const persistentAudioEnabled = runtime.current?.files.getCapabilities().persistentFileReferences.status === "supported";
   const sortOptions: readonly { readonly value: SortField; readonly label: string }[] = [
