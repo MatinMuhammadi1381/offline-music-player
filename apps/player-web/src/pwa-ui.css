@@ -963,9 +963,14 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
   }
 
   .pwa-ui .mini-player {
+    position: fixed;
+    z-index: 2147482999;
+    bottom: calc((60px + env(safe-area-inset-bottom, 0px)) / var(--ui-scale));
+    left: 50%;
     width: min(100%, 460px);
     min-height: 62px;
-    margin: 10px auto 12px;
+    margin: 0;
+    transform: translateX(-50%);
   }
 
   .pwa-dock {
