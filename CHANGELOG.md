@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.9 - 2026-10-19 (iOS dock and light player refinement)
+
+- Move iPhone navigation about 10 CSS pixels farther down, into the Home Indicator inset, while retaining a separate full-width dock above page content.
+- Use a solid light-mode background across the iOS status area to remove any page-gradient tint behind the clock.
+- Increment Android `versionCode` to 20 and the app/workspace version to `1.5.9`; no library data or backup migration is required.
+- Local TypeScript check and PWA production build pass; real iPhone verification remains outstanding.
+
 ## 1.5.8 - 2026-10-19 (iPhone dock anchoring and light player controls)
 
 - Extend the independent iOS navigation dock into the bottom safe-area inset and raise it above page content; reserve navigation space in the player view.

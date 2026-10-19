@@ -2750,7 +2750,7 @@ button:disabled {
       right: 0;
       /* iOS keeps its home-indicator inset outside the fixed viewport. Extend
          the dock into that inset so the nav surface reaches the device edge. */
-      bottom: calc(0px - env(safe-area-inset-bottom, 0px));
+      bottom: calc(0px - env(safe-area-inset-bottom, 0px) - 10px);
       left: 0;
       width: 100%;
       min-height: calc(var(--mobile-nav-height) * var(--mobile-nav-render-scale) + env(safe-area-inset-bottom, 0px));
@@ -2830,6 +2830,10 @@ button:disabled {
 
     :root[data-theme="light"] .player-extra .text-button {
       color: #43536a;
+    }
+
+    :root[data-theme="light"] body {
+      background: var(--color-bg);
     }
   }
 }
