@@ -245,11 +245,11 @@
 - Increased mobile primary-button touch targets to 44 px and darkened their blue gradient to meet a 4.5:1 text contrast target.
 - Routed Android WebView metadata-backup import and export through the correctly filtered SAF document pickers after review exposed an audio-only picker path.
 - Core tests, strict TypeScript checks, PWA production build, and Android APK build/lint pass locally.
-- Phase 9 remains open pending iPhone and Android real-device, audio, safe-area, and system-control acceptance; see `music-player-agent-docs/07-TESTING-AND-ACCEPTANCE.md`.
+- Phase 9 remains open pending iPhone and Android real-device, audio, safe-area, and system-control acceptance.
 
 ## 0.0.1 - 2026-10-14 (phase 10 development handoff preparation)
 
-- Recorded reproducible local build commands, tool versions, development artifact checksums, install/deploy instructions, and explicit release blockers in `music-player-agent-docs/10-DEVELOPMENT-HANDOFF.md`.
+- Recorded reproducible local build commands, tool versions, development artifact checksums, install/deploy instructions, and explicit release blockers during handoff preparation.
 - Prepared a zipped static PWA build and a debug-signed Android APK as local development handoff artifacts; the APK is not production-signed.
 - Added `npm run package:development` to rerun tests/typechecks, build and lint Android (including the shared PWA bundle), verify the PWA archive structure, and write artifact SHA-256 checksums.
 - Recorded the owner's authorization to defer real-device checks until later; this deferral is not described as passed device acceptance.

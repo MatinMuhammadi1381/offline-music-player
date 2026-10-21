@@ -58,12 +58,12 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 
 ## وضعیت پروژه و محدودیت‌ها
 
-- نسخهٔ پروژه: **1.6.6** (طبق [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md)).
+- نسخهٔ پروژه: **1.6.6**.
 - انتشار روی GitHub Pages به معنی تأیید نهایی یا آمادگی production نیست.
 - پخش پس‌زمینه و کنترل‌های media بومی Android هنوز به رابط مشترک برنامه متصل نشده‌اند.
 - PWA آیفون کپی محلی آهنگ‌ها را برای استفاده بین نشست‌ها ذخیره می‌کند، اما iOS تضمین نگهداری چندماهه نمی‌دهد و ممکن است دادهٔ سایت را پاک کند؛ نسخهٔ اصلی آهنگ‌ها را حفظ کنید. نسخهٔ Android فایل‌های انتخاب‌شده را در فضای خصوصی برنامه نگه می‌دارد؛ پاک‌کردن داده‌های برنامه یا حذف آن، این فایل‌ها را حذف می‌کند.
 - پشتیبان JSON فقط فراداده و فهرست‌ها را نگه می‌دارد و شامل فایل صوتی نیست.
-- برای وضعیت دقیق، نتایج تست و موانع انتشار، [گزارش handoff](music-player-agent-docs/10-DEVELOPMENT-HANDOFF.md) و [معیارهای پذیرش](music-player-agent-docs/07-TESTING-AND-ACCEPTANCE.md) را ببینید.
+- برای اجرای تست‌ها و بررسی پروژه، دستورهای بخش توسعهٔ محلی را ببینید.
 
 ## English
 
@@ -101,12 +101,12 @@ Open the [web app](https://matinmuhammadi1381.github.io/offline-music-player/) i
 
 ### Project status and limitations
 
-- Project version: **1.6.6**, following [Semantic Versioning](music-player-agent-docs/06-VERSIONING-AND-RELEASES.md).
+- Project version: **1.6.6**.
 - GitHub Pages availability does not mean the app has passed production or final acceptance.
 - Native Android background playback and media-session controls are not yet connected to the shared UI.
 - iOS may evict browser storage or the user may clear site data; this is not a months-long retention guarantee. Keep original audio files. Android stores selected audio in app-private webview storage between launches; clearing app data or uninstalling removes those copies. JSON backups include metadata and playlists, not audio.
 - Embedded artwork is currently extracted from MP3 ID3 APIC tags; other audio-container artwork is not yet supported.
-- See the [development handoff](music-player-agent-docs/10-DEVELOPMENT-HANDOFF.md) and [acceptance criteria](music-player-agent-docs/07-TESTING-AND-ACCEPTANCE.md) for verification evidence and release blockers.
+- Run the checks in the local development section to verify the project.
 
 ## Run locally
 
@@ -134,7 +134,6 @@ npm run package:development
 - `apps/player-web/` — shared React PWA and browser UI.
 - `apps/android-file-access-spike/` — Android WebView wrapper and system file-picker bridge.
 - `packages/` — shared domain logic, contracts, types, and web-platform adapters.
-- `music-player-agent-docs/` — requirements, roadmap, acceptance criteria, and build handoff.
 - `music-player-uiux-spec/` — product UI/UX specification.
 - `.github/workflows/deploy-pages.yml` — CI checks, PWA/APK build, and GitHub Pages deployment.
 
