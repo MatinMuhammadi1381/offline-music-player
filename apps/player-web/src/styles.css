@@ -1759,7 +1759,16 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   margin: 2px 0 22px;
+}
+
+.home-welcome > div {
+  min-width: 0;
+}
+
+.home-welcome .home-add-button {
+  flex-shrink: 0;
 }
 
 .home-welcome .section-kicker,
@@ -2283,11 +2292,6 @@ button:disabled {
     margin-left: -6px;
   }
 
-  .main-content:has(.home-view) .topbar-actions {
-    display: flex;
-  }
-
-  .main-content:has(.home-view) > .topbar,
   .main-content:has(.search-view) > .topbar {
     display: none;
   }
@@ -2360,9 +2364,20 @@ button:disabled {
     padding-left: 16px;
   }
 
+  .home-welcome {
+    gap: 8px;
+  }
+
   .home-welcome h1,
   .screen-intro h1 {
     font-size: 26px;
+  }
+
+  .home-welcome .home-add-button {
+    min-height: 40px;
+    gap: 6px;
+    padding: 0 10px;
+    font-size: 12px;
   }
 
   .featured-card {

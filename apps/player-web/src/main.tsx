@@ -873,17 +873,13 @@ export function App(): ReactNode {
       </aside>
 
       <main id="main-content" className={`main-content${showMiniPlayer ? " has-mini-player" : ""}`} tabIndex={-1}>
-        <header className="topbar">
+        {destination !== "home" && destination !== "library" && <header className="topbar">
           <div className="topbar-heading">
             {destination === "player" && <IconButton label="Back to library" icon="back" onClick={() => setDestination("library")} />}
             {destination === "playlists" && selectedPlaylist && <IconButton label="Back to playlists" icon="back" onClick={() => setSelectedPlaylistId(null)} />}
-            <h1>{destination === "player" ? "Now Playing" : destination === "home" ? "Listen" : destination === "library" ? "Your Library" : destination === "search" ? "Search" : destination === "playlists" ? "Playlists" : destination === "queue" ? "Queue" : "Settings"}</h1>
+            <h1>{destination === "player" ? "Now Playing" : destination === "search" ? "Search" : destination === "playlists" ? "Playlists" : destination === "queue" ? "Queue" : "Settings"}</h1>
           </div>
-          <div className="topbar-actions">
-            {(destination === "home" || destination === "library") && <button type="button" className="button button-secondary" onClick={chooseFiles}><Icon name="plus" /> <span>Add music</span></button>}
-            {destination === "library" && <IconButton label="Open queue" icon="queue" onClick={() => setDestination("queue")} />}
-          </div>
-        </header>
+        </header>}
 
         {notice && <div className="toast" role="status"><span>{notice}</span><IconButton label="Dismiss message" icon="close" onClick={() => setNotice("")} /></div>}
         {loading ? (
@@ -896,6 +892,7 @@ export function App(): ReactNode {
               <section className="view-section home-view" aria-labelledby="home-heading">
                 <div className="home-welcome">
                   <div><p className="section-kicker">YOUR MUSIC, ALWAYS WITH YOU</p><h1 id="home-heading">Good evening</h1><p className="collection-count">A little space for the music you love.</p></div>
+                  <button type="button" className="button button-secondary home-add-button" onClick={chooseFiles}><Icon name="plus" /> <span>Add music</span></button>
                 </div>
                 <div className="home-section-heading"><h3>Your Playlists</h3><button type="button" className="text-button" onClick={() => setDestination("playlists")}>{library.playlists.length ? "See All" : "Create"}</button></div>
                 {library.playlists.length > 0 ? <div className="recent-grid">
