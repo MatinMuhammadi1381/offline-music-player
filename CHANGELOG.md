@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.8 - 2026-10-22 (mobile PWA startup splash)
+
+- Show the music-note logo and Offline Music name for one second when an installed mobile standalone PWA launches; regular browser tabs, tablets, and the Android WebView do not show the splash.
+- Align the project, workspace packages, and Android version at `1.6.8`; increment Android `versionCode` to 30 and the PWA shell cache to v17. No library data or backup migration is required.
+
 ## 1.6.7 - 2026-10-22 (home and library header refinements)
 
 - Place Add music beside Good evening on the home page, remove the Listen top header, and remove the Library header row above Listen offline while keeping the library controls below it.

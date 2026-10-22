@@ -19,7 +19,7 @@ import {
   requestBrowserStoragePersistence,
 } from "@offline-music-player/web-platform";
 import { InstallLanding } from "./install-landing";
-import { isInstalledPwa } from "./pwa-mode";
+import { isInstalledPwa, isMobilePhone, shouldShowStartupSplash } from "./pwa-mode";
 import { getPlayerGestureDestination } from "./player-gesture";
 import "./styles.css";
 import "./pwa-ui.css";
@@ -81,8 +81,18 @@ function isStandalone(): boolean {
 
 function AppBootstrap(): ReactNode {
   const [installed, setInstalled] = useState(isStandalone);
+  const [showStartupSplash, setShowStartupSplash] = useState(() => shouldShowStartupSplash(
+    isStandalone() && window.location.hostname !== "appassets.androidplatform.net",
+    isMobilePhone(navigator.userAgent),
+  ));
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [serviceWorkerError, setServiceWorkerError] = useState("");
+
+  useEffect(() => {
+    if (!showStartupSplash) return;
+    const timeout = window.setTimeout(() => setShowStartupSplash(false), 1_000);
+    return () => window.clearTimeout(timeout);
+  }, [showStartupSplash]);
 
   useEffect(() => {
     const standaloneQuery = window.matchMedia("(display-mode: standalone)");
@@ -144,7 +154,7 @@ function AppBootstrap(): ReactNode {
     };
   }, []);
 
-  return installed || (import.meta.env.DEV && new URLSearchParams(window.location.search).get("preview") === "1")
+  const appContent = installed || (import.meta.env.DEV && new URLSearchParams(window.location.search).get("preview") === "1")
     ? <App />
     : <InstallLanding
         installPromptAvailable={installPrompt !== null}
@@ -160,6 +170,18 @@ function AppBootstrap(): ReactNode {
         }}
         setupError={serviceWorkerError}
       />;
+
+  return (
+    <>
+      {appContent}
+      {showStartupSplash && installed && (
+        <div className="startup-splash" role="status">
+          <span className="startup-splash-mark"><Icon name="music" size={38} /></span>
+          <span className="startup-splash-title">Offline Music</span>
+        </div>
+      )}
+    </>
+  );
 }
 
 function Icon({ name, size = 21 }: { readonly name: IconName; readonly size?: number }): ReactNode {

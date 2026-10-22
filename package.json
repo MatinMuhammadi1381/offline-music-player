@@ -1,6 +1,6 @@
 {
   "name": "offline-music-player",
-  "version": "1.6.7",
+  "version": "1.6.8",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@12.4.1",
