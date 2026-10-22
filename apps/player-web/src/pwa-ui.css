@@ -546,7 +546,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .empty-art {
 }
 
 .pwa-ui .scroll-panel.playlist-collection-panel {
-  padding-top: 12.36px;
+  padding-top: 12.7px;
   border: 1px solid var(--color-separator);
   background: var(--color-surface);
 }
@@ -910,7 +910,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
   }
 
   .pwa-ui .scroll-panel.playlist-collection-panel {
-    padding-top: 5.15px;
+    padding-top: 12.7px;
     background: transparent;
   }
 
