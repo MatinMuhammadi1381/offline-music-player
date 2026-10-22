@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.2 - 2026-10-22 (Playlist rename controls)
+
+- Expand the playlist name input across the settings dialog's rename row and keep the Save button compact on mobile and desktop.
+- Align the project, workspace packages, and Android version at `1.8.2`; increment Android `versionCode` to 47 and the PWA shell cache to v34. No library data or backup migration is required.
+
 ## 1.8.1 - 2026-10-22 (Playlist settings and artwork)
 
 - Move playlist rename and delete actions into an icon-opened settings dialog, and allow choosing, locally persisting, and removing compressed playlist artwork from the device gallery.

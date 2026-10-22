@@ -2324,13 +2324,15 @@ button:disabled {
   font-weight: 600;
 }
 
-.playlist-settings-rename input {
-  flex: 1;
-  width: 100%;
+.playlist-settings-dialog .playlist-settings-rename input {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
 }
 
-.playlist-settings-rename .button {
-  flex-shrink: 0;
+.playlist-settings-dialog .playlist-settings-rename .button {
+  width: auto;
+  flex: 0 0 auto;
 }
 
 .playlist-settings-actions {

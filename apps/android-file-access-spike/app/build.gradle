@@ -10,8 +10,8 @@ android {
         applicationId "com.offlinemusicplayer.spike"
         minSdk 23
         targetSdk 34
-        versionCode 46
-        versionName "1.8.1"
+        versionCode 47
+        versionName "1.8.2"
     }
 
     sourceSets {

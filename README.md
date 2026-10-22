@@ -3,7 +3,7 @@
 **A private, offline-first music player for Android and iPhone.** Your original audio files stay in the locations you choose; the app does not upload your music.
 
 [![Deploy to GitHub Pages](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml)
-[![Version](https://img.shields.io/badge/version-1.8.1-1687ff)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.8.2-1687ff)](VERSION)
 
 **Web app:** [Open Offline Music Player](https://matinmuhammadi1381.github.io/offline-music-player/)
 
