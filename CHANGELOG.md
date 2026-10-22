@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.4 - 2026-10-22 (now-playing layout refinement)
+
+- Remove the playback-status card below the now-playing controls, including its background and spacing.
+- Enlarge the now-playing cover by about 10% and move the title, progress bar, and controls lower; widen the control background by about 15% across mobile and PWA layouts.
+- Align the project, workspace packages, and Android version at `1.7.4`; increment Android `versionCode` to 37 and the PWA shell cache to v24. No library data or backup migration is required.
+
 ## 1.7.3 - 2026-10-22 (random categories and player polish)
 
 - Assign every library track to exactly one random music category, preserve assignments between launches, and shuffle only the selected category.

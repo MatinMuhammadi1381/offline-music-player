@@ -1184,7 +1184,6 @@ export function App(): ReactNode {
                       <IconButton label="Next track" icon="next" className="control-secondary" onClick={() => run(() => runtime.current?.playback.next() ?? Promise.resolve())} />
                       <IconButton label={`Repeat ${settings.repeatMode}`} icon="repeat" active={settings.repeatMode !== "off"} onClick={cycleRepeat} />
                     </div>
-                    <div className="player-extra"><span>{player.playback.state === "loading" ? "Loading audio…" : player.playback.state === "playing" ? "Playing from this device" : player.playback.state === "error" ? "Audio unavailable" : "Ready when you are"}</span></div>
                   </>
                 ) : <div className="empty-state"><div className="empty-art"><Icon name="music" size={34} /></div><h3>Nothing is playing</h3><p>Choose a track from your library to begin.</p><button type="button" className="button button-primary" onClick={() => setDestination("library")}>Browse library</button></div>}
               </section>

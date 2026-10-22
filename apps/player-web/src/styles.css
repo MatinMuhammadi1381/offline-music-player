@@ -310,7 +310,6 @@ button:disabled {
 .library-tools,
 .sort-controls,
 .row-actions,
-.player-extra,
 .setting-actions,
 .playlist-add-form,
 .playlist-create-form,
@@ -967,7 +966,7 @@ button:disabled {
 }
 
 .artwork-large {
-  width: min(68vw, 410px);
+  width: min(74.8vw, 451px);
   height: auto;
   aspect-ratio: 1;
   flex: 0 0 auto;
@@ -991,7 +990,7 @@ button:disabled {
 
 .player-track {
   width: 100%;
-  margin: 20px 0 22px;
+  margin: 24px 0 27.5px;
   text-align: center;
 }
 
@@ -1082,7 +1081,7 @@ button:disabled {
 
 .player-controls {
   display: flex;
-  width: min(100%, 430px);
+  width: min(115%, 495px);
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -1107,16 +1106,6 @@ button:disabled {
 .player-controls .icon-button.control-main {
   border: 0;
   box-shadow: 0 10px 28px rgba(20, 122, 238, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.24);
-}
-
-.player-extra {
-  width: 100%;
-  justify-content: space-between;
-  margin-top: 7px;
-  padding-top: 9px;
-  border-top: 1px solid rgba(220, 235, 255, 0.075);
-  color: var(--color-text-muted);
-  font-size: 12px;
 }
 
 .text-button {
@@ -2522,13 +2511,13 @@ button:disabled {
   }
 
   .player-open .artwork-large {
-    width: min(94.3vw, 368px);
+    width: min(103.7vw, 405px);
     margin-bottom: 18px;
     border-radius: 24px;
   }
 
   .player-open .player-track {
-    margin: clamp(12px, 2vh, 18px) 0 16px;
+    margin: clamp(14px, 2.4vh, 22px) 0 20px;
     text-align: left;
   }
 
@@ -2538,21 +2527,12 @@ button:disabled {
 
   .player-open .progress-control {
     width: 100%;
-    margin-top: clamp(8px, 2vh, 16px);
+    margin-top: clamp(10px, 2.5vh, 20px);
   }
 
   .player-open .player-controls {
-    width: min(110%, 473px);
-    margin: clamp(20px, 3vh, 26px) 0 11px;
-  }
-
-  .player-open .player-extra {
-    min-height: 62px;
-    margin-top: 18px;
-    padding: 8px 12px;
-    border: 1px solid var(--surface-glass-border);
-    border-radius: 16px;
-    background: var(--surface-glass);
+    width: min(126.5%, 544px);
+    margin: clamp(26px, 3.9vh, 34px) 0 11px;
   }
 }
 
@@ -3033,15 +3013,6 @@ button:disabled {
       border-color: rgba(21, 95, 189, 0.3);
       color: #155fbd;
       background: #d9e8fb;
-    }
-
-    :root[data-theme="light"] .player-extra {
-      border-color: rgba(48, 75, 112, 0.14);
-      color: #66758a;
-    }
-
-    :root[data-theme="light"] .player-extra .text-button {
-      color: #43536a;
     }
 
     :root[data-theme="light"] body {

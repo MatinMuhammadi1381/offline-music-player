@@ -699,7 +699,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
 }
 
 .pwa-ui .artwork-large {
-  width: min(66.7vw, 414px);
+  width: min(73.4vw, 455px);
   margin-bottom: 14px;
   border: 1px solid var(--color-separator);
   border-radius: 26px;
@@ -707,7 +707,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
 }
 
 .pwa-ui .player-track {
-  margin: 8px 0 16px;
+  margin: 9.6px 0 20px;
   text-align: left;
 }
 
@@ -750,20 +750,6 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
   color: #fff;
   background: linear-gradient(145deg, #4b9af4, #1768c9);
   box-shadow: 0 8px 22px rgba(23, 104, 201, 0.25);
-}
-
-.pwa-ui .player-extra {
-  min-height: 54px;
-  margin-top: 15px;
-  padding: 4px 12px;
-  border: 1px solid var(--color-separator);
-  border-radius: 15px;
-  color: var(--color-text-secondary);
-  background: var(--color-surface);
-}
-
-.pwa-ui .player-extra .text-button {
-  color: var(--color-text-primary);
 }
 
 .pwa-ui .mini-player {
@@ -993,13 +979,13 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
   }
 
   .pwa-ui .artwork-large {
-    width: min(87.4vw, 391px);
+    width: min(96.1vw, 430px);
     margin-bottom: 10px;
     border-radius: 24px;
   }
 
   .pwa-ui .player-track {
-    margin: clamp(12px, 2vh, 18px) 0 13px;
+    margin: clamp(14px, 2.4vh, 22px) 0 16.25px;
   }
 
   .pwa-ui .player-track h2 {
@@ -1008,17 +994,13 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
 
   .pwa-ui .player-controls {
     gap: 3px;
-    width: min(110%, 473px);
-    margin-top: clamp(20px, 3vh, 26px);
+    width: min(126.5%, 544px);
+    margin-top: clamp(26px, 3.9vh, 34px);
     padding: 6px;
   }
 
   .pwa-ui.player-open .progress-control {
-    margin-top: clamp(8px, 2vh, 16px);
-  }
-
-  .pwa-ui .player-extra {
-    margin-top: 14px;
+    margin-top: clamp(10px, 2.5vh, 20px);
   }
 
   .pwa-ui .pwa-inline-mini-player {
