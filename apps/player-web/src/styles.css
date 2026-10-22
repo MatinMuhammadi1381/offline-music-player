@@ -2328,7 +2328,8 @@ button:disabled {
   grid-template-rows: repeat(3, minmax(0, 1fr));
   min-height: 0;
   flex: 1;
-  gap: 14px;
+  column-gap: 14px;
+  row-gap: 13.3px;
   margin-bottom: 26px;
 }
 

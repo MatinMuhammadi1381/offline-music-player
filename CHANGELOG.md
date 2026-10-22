@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.8 - 2026-10-22 (Search card spacing)
+
+- Reduce the vertical spacing between Search category cards by about 5% while preserving horizontal spacing across web, PWA, and Android layouts.
+- Align the project, workspace packages, and Android version at `1.7.8`; increment Android `versionCode` to 41 and the PWA shell cache to v28. No library data or backup migration is required.
+
 ## 1.7.7 - 2026-10-22 (mini-player opening motion)
 
 - Expand the now-playing view from the mini-player's actual position with a 1.5-second motion-graphic animation; reduced-motion preferences remain respected.
