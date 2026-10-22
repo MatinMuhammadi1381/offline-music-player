@@ -21,6 +21,7 @@ import {
 import { InstallLanding } from "./install-landing";
 import { isInstalledPwa, isMobilePhone, shouldShowStartupSplash, STARTUP_SPLASH_DURATION_MS } from "./pwa-mode";
 import { getPlayerGestureDestination } from "./player-gesture";
+import { shouldShowMiniPlayer, type Destination } from "./mini-player-state";
 import {
   createCategoryAssignments,
   getCategoryTracks,
@@ -43,7 +44,6 @@ if (isAppleMobileDevice && isStandalone()) {
   document.documentElement.classList.add("ios-standalone-pwa");
 }
 
-type Destination = "home" | "library" | "search" | "playlists" | "queue" | "settings" | "player";
 const destinations: readonly Destination[] = ["home", "library", "search", "playlists", "queue", "settings", "player"];
 const figmaAsset = (name: string): string => `${import.meta.env.BASE_URL}figma/${name}`;
 const musicCategories = [
@@ -578,7 +578,7 @@ export function App(): ReactNode {
   const playbackDurationMs = player.playback.durationMs ?? currentTrack?.durationMs ?? 0;
   const playbackPositionMs = Math.min(Math.max(player.playback.positionMs, 0), playbackDurationMs);
   const playbackProgressPercent = playbackDurationMs > 0 ? playbackPositionMs / playbackDurationMs * 100 : 0;
-  const showMiniPlayer = Boolean(currentTrack && destination !== "player");
+  const showMiniPlayer = shouldShowMiniPlayer(Boolean(currentTrack), destination);
 
   useEffect(() => {
     const mediaSession = navigator.mediaSession;

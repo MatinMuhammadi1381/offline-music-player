@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.5 - 2026-10-22 (library panel and player control sizing)
+
+- Reduce the now-playing control background width by about 5%.
+- Extend the mobile Library track-list panel to the top of the mini-player while visible, then to the bottom navigation when dismissed; the list continues to scroll independently.
+- Align the project, workspace packages, and Android version at `1.7.5`; increment Android `versionCode` to 38 and the PWA shell cache to v25. No library data or backup migration is required.
+
 ## 1.7.4 - 2026-10-22 (now-playing layout refinement)
 
 - Remove the playback-status card below the now-playing controls, including its background and spacing.

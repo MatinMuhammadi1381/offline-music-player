@@ -2,6 +2,10 @@
 html.pwa-ui-enabled {
   --pwa-dock-inline-inset: max(12px, env(safe-area-inset-left, 0px));
   --pwa-dock-content-max-width: 560px;
+  --pwa-dock-height: 50px;
+  --pwa-mini-player-height: 62px;
+  --pwa-mini-player-gap: 3vh;
+  --pwa-layout-reciprocal-scale: 1.428571;
   --color-bg: #080d18;
   --color-surface: #101827;
   --color-surface-raised: #172338;
@@ -806,7 +810,11 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
   .pwa-ui .main-content {
     width: 100%;
     height: 100%;
-    padding: calc(10px + var(--safe-top)) 20px calc(88px + var(--safe-bottom));
+    padding: calc(10px + var(--safe-top)) 20px calc(var(--pwa-dock-height) * var(--pwa-layout-reciprocal-scale) + var(--safe-bottom));
+  }
+
+  .pwa-ui .main-content.has-mini-player {
+    padding-bottom: calc((var(--pwa-dock-height) + var(--pwa-mini-player-height) + var(--pwa-mini-player-gap)) * var(--pwa-layout-reciprocal-scale) + var(--safe-bottom));
   }
 
   .pwa-ui .topbar {
@@ -994,7 +1002,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
 
   .pwa-ui .player-controls {
     gap: 3px;
-    width: min(126.5%, 544px);
+    width: min(120%, 517px);
     margin-top: clamp(26px, 3.9vh, 34px);
     padding: 6px;
   }
@@ -1011,11 +1019,11 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
     position: absolute;
     z-index: 2147482999;
     right: var(--pwa-dock-inline-inset);
-    bottom: calc(100% + 3vh);
+    bottom: calc(100% + var(--pwa-mini-player-gap));
     left: var(--pwa-dock-inline-inset);
     width: auto;
     max-width: var(--pwa-dock-content-max-width);
-    min-height: 52px;
+    min-height: var(--pwa-mini-player-height);
     margin: 0 auto;
   }
 
@@ -1031,7 +1039,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
     left: 0;
     display: block;
     width: 100%;
-    height: calc(50px + env(safe-area-inset-bottom, 0px));
+    height: calc(var(--pwa-dock-height) + env(safe-area-inset-bottom, 0px));
     overflow: visible;
     margin: 0;
     padding: 2px var(--pwa-dock-inline-inset) env(safe-area-inset-bottom, 0px);
