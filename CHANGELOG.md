@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.0 - 2026-10-22 (library and category redesign)
+
+- Remove the inline search field from Library while keeping the dedicated Search screen and its song search.
+- Redesign Browse Categories as larger cards, put Playlist first, and play a randomized queue when a music category is selected. Categories use matching track metadata when available and fall back to the full library when there are no matches.
+- Align the project, workspace packages, and Android version at `1.7.0`; increment Android `versionCode` to 33 and the PWA shell cache to v20. No library data or backup migration is required.
+
 ## 1.6.10 - 2026-10-22 (library track-list panel corners)
 
 - Round only the upper corners of the Library track-list panel; keep its lower corners square across the web app and Android WebView.

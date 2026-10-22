@@ -21,6 +21,7 @@ import {
 import { InstallLanding } from "./install-landing";
 import { isInstalledPwa, isMobilePhone, shouldShowStartupSplash, STARTUP_SPLASH_DURATION_MS } from "./pwa-mode";
 import { getPlayerGestureDestination } from "./player-gesture";
+import { getCategoryTracks, getRandomCategoryQueue } from "./category-playback";
 import "./styles.css";
 import "./pwa-ui.css";
 
@@ -38,6 +39,14 @@ type Destination = "home" | "library" | "search" | "playlists" | "queue" | "sett
 type IconName = "home" | "library" | "playlist" | "queue" | "settings" | "play" | "pause" | "next" | "previous" | "search" | "plus" | "shuffle" | "repeat" | "close" | "music" | "back" | "download" | "upload" | "sort";
 const destinations: readonly Destination[] = ["home", "library", "search", "playlists", "queue", "settings", "player"];
 const figmaAsset = (name: string): string => `${import.meta.env.BASE_URL}figma/${name}`;
+const musicCategories = [
+  { name: "Playlist", tone: "playlists" },
+  { name: "Chill", tone: "chill", term: "chill" },
+  { name: "Focus", tone: "focus", term: "focus" },
+  { name: "Electronic", tone: "electronic", term: "electronic" },
+  { name: "Indie", tone: "indie", term: "indie" },
+  { name: "Ambient", tone: "ambient", term: "ambient" },
+] as const;
 
 declare global {
   interface Window {
@@ -579,6 +588,10 @@ export function App(): ReactNode {
     if (!library) return [];
     return sortTracks(searchTracks(library.tracks, search), { field: sortField, direction: sortDirection });
   }, [library, search, sortDirection, sortField]);
+  const libraryTracks = useMemo(() => {
+    if (!library) return [];
+    return sortTracks(library.tracks, { field: sortField, direction: sortDirection });
+  }, [library, sortDirection, sortField]);
   const matchingPlaylists = useMemo(() => {
     const terms = search.trim().toLocaleLowerCase("en").split(/\s+/u).filter(Boolean);
     if (!library || terms.length === 0) return [];
@@ -786,7 +799,7 @@ export function App(): ReactNode {
     return selected ? app.files.getFile(selected.reference) : undefined;
   };
 
-  const trackRows = (tracks: readonly TrackMetadata[], options: { readonly queueControls?: boolean; readonly queueIndices?: readonly number[]; readonly playlistId?: string } = {}): ReactNode => (
+  const trackRows = (tracks: readonly TrackMetadata[], options: { readonly queueControls?: boolean; readonly queueIndices?: readonly number[]; readonly playlistId?: string; readonly queueTrackIds?: readonly string[] } = {}): ReactNode => (
     <>
     <ul className="track-list">
       {tracks.slice(0, listLimit).map((track, rowIndex) => {
@@ -798,7 +811,7 @@ export function App(): ReactNode {
             <Artwork track={track} file={getAudioFile(track.id)} />
             <button type="button" className="track-copy" onClick={() => {
               if (options.queueControls) run(() => runtime.current?.playback.playQueueItem(queueIndex) ?? Promise.resolve());
-              else playTrack(track.id, options.playlistId ? selectedPlaylist?.trackIds : undefined);
+              else playTrack(track.id, options.playlistId ? selectedPlaylist?.trackIds : options.queueTrackIds);
             }} aria-label={`Play ${track.title}${track.artist ? ` by ${track.artist}` : ""}`}>
               <span className="track-title">{track.title}</span>
               <span className="track-subtitle">{[track.artist, track.album].filter(Boolean).join(" · ") || track.fileName}</span>
@@ -941,10 +954,9 @@ export function App(): ReactNode {
               <section className="view-section" aria-labelledby="library-heading">
                 <div className="collection-heading">
                   <div><h2 id="library-heading">Listen offline.</h2><p className="collection-count">{library.tracks.length} {library.tracks.length === 1 ? "track" : "tracks"} in your collection</p></div>
-                  {visibleTracks.length > 0 && <button type="button" className="button button-primary" onClick={() => playTrack(visibleTracks[0]!.id)}><Icon name="play" /> {search ? "Play results" : "Play collection"}</button>}
+                  {libraryTracks.length > 0 && <button type="button" className="button button-primary" onClick={() => playTrack(libraryTracks[0]!.id, libraryTracks.map((track) => track.id))}><Icon name="play" /> Play collection</button>}
                 </div>
                 <div className="library-tools">
-                  <label className="search-field"><Icon name="search" /><span className="visually-hidden">Search your library</span><input name="library-search" autoComplete="off" value={search} onChange={(event) => { setSearch(event.currentTarget.value); setListLimit(100); }} placeholder="Search tracks, artists, albums…" /></label>
                   <div className="sort-controls">
                     <button type="button" className="button button-secondary library-add-button" aria-label="Add music" title="Add music" onClick={chooseFiles}><Icon name="plus" /><span>Add music</span></button>
                     <label className="visually-hidden" htmlFor="sort-field">Sort library</label>
@@ -1045,12 +1057,11 @@ export function App(): ReactNode {
                       })}>Add unmatched files as new tracks</button>}
                     </div>
                   )}
-                  {visibleTracks.length > 0 ? trackRows(visibleTracks) : (
+                  {libraryTracks.length > 0 ? trackRows(libraryTracks, { queueTrackIds: libraryTracks.map((track) => track.id) }) : (
                     <div className="empty-state">
-                      <div className="empty-art"><Icon name={search ? "search" : "music"} size={34} /></div>
-                      <h3>{search ? "No matches found" : "Your music belongs here"}</h3>
-                      <p>{search ? "Try a different title, artist, or album." : persistentAudioEnabled ? "Choose audio files to copy into this app for offline playback. Keep your originals as a backup." : "Choose audio files from your device. Reselect them after restarting the app."}</p>
-                      {search && <button type="button" className="button button-secondary" onClick={() => setSearch("")}>Clear search</button>}
+                      <div className="empty-art"><Icon name="music" size={34} /></div>
+                      <h3>Your music belongs here</h3>
+                      <p>{persistentAudioEnabled ? "Choose audio files to copy into this app for offline playback. Keep your originals as a backup." : "Choose audio files from your device. Reselect them after restarting the app."}</p>
                     </div>
                   )}
                 </div>
@@ -1061,7 +1072,39 @@ export function App(): ReactNode {
               <section className="view-section search-view" aria-labelledby="search-heading">
                 <div className="screen-intro"><h1 id="search-heading">Search</h1><p>Find a track, artist, album, or playlist.</p></div>
                 <div className="search-field search-screen-field"><Icon name="search" /><label className="visually-hidden" htmlFor="music-search">Search your library</label><input id="music-search" name="music-search" autoComplete="off" value={search} onChange={(event) => { setSearch(event.currentTarget.value); setListLimit(100); }} placeholder="Songs, artists, albums…" /><button type="button" className={`clear-search${search ? " is-visible" : ""}`} aria-label="Clear search" onClick={() => setSearch("")} disabled={!search}><Icon name="close" size={17} /></button></div>
-                {!search && <><h3 className="browse-heading">Browse Categories</h3><div className="category-grid">{[{ name: "Chill", term: "chill", tone: "chill" }, { name: "Focus", term: "focus", tone: "focus" }, { name: "Electronic", term: "electronic", tone: "electronic" }, { name: "Indie", term: "indie", tone: "indie" }, { name: "Ambient", term: "ambient", tone: "ambient" }, { name: "Playlists", destination: "playlists" as const, tone: "playlists" }].map((category) => <button type="button" key={category.name} className={`category-card ${category.tone}`} onClick={() => { if ("destination" in category) setDestination(category.destination); else setSearch(category.term); }}><img src={figmaAsset("search-category-glow.svg")} alt="" width="72" height="72" loading="lazy" /><span>{category.name}</span></button>)}</div></>}
+                {!search && <><h3 className="browse-heading">Browse Categories</h3><div className="category-grid">{musicCategories.map((category) => {
+                  const isPlaylistCategory = !("term" in category);
+                  const categoryTrackCount = isPlaylistCategory ? 0 : getCategoryTracks(library.tracks, category.term).length;
+                  const trackCountLabel = categoryTrackCount === 1 ? "1 track" : `${categoryTrackCount} tracks`;
+                  return (
+                    <button
+                      type="button"
+                      key={category.name}
+                      className={`category-card ${category.tone}`}
+                      aria-label={isPlaylistCategory ? "Open playlists" : `Play a random ${category.name} mix`}
+                      disabled={!isPlaylistCategory && categoryTrackCount === 0}
+                      onClick={() => {
+                        if (isPlaylistCategory) {
+                          setDestination("playlists");
+                          return;
+                        }
+                        const queue = getRandomCategoryQueue(library.tracks, category.term);
+                        if (queue.length > 0) playTrack(queue[0]!.id, queue.map((track) => track.id));
+                      }}
+                    >
+                      <span className="category-card-visual">
+                        <span className="category-card-icon"><Icon name={isPlaylistCategory ? "playlist" : "music"} size={22} /></span>
+                        {!isPlaylistCategory && <span className="category-card-play"><Icon name="play" size={17} /></span>}
+                      </span>
+                      <span className="category-card-copy">
+                        <strong>{category.name}</strong>
+                        <small>{isPlaylistCategory
+                          ? `${library.playlists.length} ${library.playlists.length === 1 ? "playlist" : "playlists"}`
+                          : `${trackCountLabel} · random mix`}</small>
+                      </span>
+                    </button>
+                  );
+                })}</div></>}
                 <div className="home-section-heading search-results-heading"><h3>{search ? "Results" : "Your Music"}</h3></div>
                 <div className="scroll-panel search-results" role="region" aria-label="Search results" tabIndex={0}>
                   {matchingPlaylists.length > 0 && <ul className="playlist-list playlist-search-results">{matchingPlaylists.map((playlist) => <li key={playlist.id}><button type="button" className="playlist-card" onClick={() => { setSelectedPlaylistId(playlist.id); setDestination("playlists"); }}><span className="playlist-art"><Icon name="playlist" /></span><span><strong>{playlist.name}</strong><small>{playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}</small></span><Icon name="back" /></button></li>)}</ul>}
