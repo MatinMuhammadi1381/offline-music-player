@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.7 - 2026-10-22 (home and library header refinements)
+
+- Place Add music beside Good evening on the home page, remove the Listen top header, and remove the Library header row above Listen offline while keeping the library controls below it.
+- Align the project, workspace packages, and Android version at `1.6.7`; increment Android `versionCode` to 29 and the PWA shell cache to v16. No library data or backup migration is required.
+
 ## 1.6.6 - 2026-10-19 (version display and Android download correction)
 
 - Align the user-visible web/PWA and Android WebView version with Android `versionName` `1.6.6`; the About screen reads the root `VERSION` file.
