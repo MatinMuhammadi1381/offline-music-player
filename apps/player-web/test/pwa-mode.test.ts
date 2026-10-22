@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
-import { isInstalledPwa, isMobilePhone, shouldShowStartupSplash } from "../src/pwa-mode.ts";
+import { isInstalledPwa, isMobilePhone, shouldShowStartupSplash, STARTUP_SPLASH_DURATION_MS } from "../src/pwa-mode.ts";
+
+const pwaUiCss = readFileSync(new URL("../src/pwa-ui.css", import.meta.url), "utf8");
 
 test("recognizes the standard standalone display mode", () => {
   assert.equal(isInstalledPwa(true, false), true);
@@ -25,4 +28,20 @@ test("shows the startup splash only in an installed mobile standalone app", () =
   assert.equal(shouldShowStartupSplash(true, true), true);
   assert.equal(shouldShowStartupSplash(true, false), false);
   assert.equal(shouldShowStartupSplash(false, true), false);
+});
+
+test("keeps the startup splash visible for three seconds", () => {
+  assert.equal(STARTUP_SPLASH_DURATION_MS, 3_000);
+});
+
+test("covers the viewport above the mobile navigation dock", () => {
+  const splashRule = pwaUiCss.match(/\.startup-splash\s*\{([^}]*)\}/)?.[1] ?? "";
+  const dockZIndex = pwaUiCss.match(/\.pwa-dock\s*\{[^}]*z-index:\s*(\d+)/s)?.[1];
+  const splashZIndex = splashRule.match(/z-index:\s*(\d+)/)?.[1];
+
+  assert.match(splashRule, /position:\s*fixed/);
+  assert.match(splashRule, /inset:\s*0/);
+  assert.ok(dockZIndex);
+  assert.ok(splashZIndex);
+  assert.ok(Number(splashZIndex) > Number(dockZIndex));
 });

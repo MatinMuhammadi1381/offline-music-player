@@ -1,3 +1,5 @@
+export const STARTUP_SPLASH_DURATION_MS = 3_000;
+
 export function isInstalledPwa(
   displayModeStandalone: boolean,
   navigatorStandalone: boolean,

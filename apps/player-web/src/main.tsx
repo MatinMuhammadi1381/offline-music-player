@@ -19,7 +19,7 @@ import {
   requestBrowserStoragePersistence,
 } from "@offline-music-player/web-platform";
 import { InstallLanding } from "./install-landing";
-import { isInstalledPwa, isMobilePhone, shouldShowStartupSplash } from "./pwa-mode";
+import { isInstalledPwa, isMobilePhone, shouldShowStartupSplash, STARTUP_SPLASH_DURATION_MS } from "./pwa-mode";
 import { getPlayerGestureDestination } from "./player-gesture";
 import "./styles.css";
 import "./pwa-ui.css";
@@ -90,7 +90,7 @@ function AppBootstrap(): ReactNode {
 
   useEffect(() => {
     if (!showStartupSplash) return;
-    const timeout = window.setTimeout(() => setShowStartupSplash(false), 1_000);
+    const timeout = window.setTimeout(() => setShowStartupSplash(false), STARTUP_SPLASH_DURATION_MS);
     return () => window.clearTimeout(timeout);
   }, [showStartupSplash]);
 
@@ -174,11 +174,12 @@ function AppBootstrap(): ReactNode {
   return (
     <>
       {appContent}
-      {showStartupSplash && installed && (
+      {showStartupSplash && installed && createPortal(
         <div className="startup-splash" role="status">
           <span className="startup-splash-mark"><Icon name="music" size={38} /></span>
           <span className="startup-splash-title">Offline Music</span>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

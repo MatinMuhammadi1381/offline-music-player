@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.9 - 2026-10-22 (mobile PWA startup splash)
+
+- Keep the installed mobile standalone PWA startup splash visible for three seconds and render it above the full app, including the iOS navigation dock and mini-player.
+- Align the project, workspace packages, and Android version at `1.6.9`; increment Android `versionCode` to 31 and the PWA shell cache to v18. No library data or backup migration is required.
+
 ## 1.6.8 - 2026-10-22 (mobile PWA startup splash)
 
 - Show the music-note logo and Offline Music name for one second when an installed mobile standalone PWA launches; regular browser tabs, tablets, and the Android WebView do not show the splash.
