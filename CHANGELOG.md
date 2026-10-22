@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.10 - 2026-10-22 (Search card spacing)
+
+- Make Search card rows follow their card height on mobile so unused `1fr` track space no longer creates large visual gaps; tighten row gaps while preserving horizontal spacing and card size.
+- Align the project, workspace packages, and Android version at `1.7.10`; increment Android `versionCode` to 43 and the PWA shell cache to v30. No library data or backup migration is required.
+
 ## 1.7.9 - 2026-10-22 (Search card spacing)
 
 - Reduce the vertical spacing between Search category cards by another 10% across web, PWA, and Android layouts while preserving horizontal spacing and card size.
