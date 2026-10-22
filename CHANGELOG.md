@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.10 - 2026-10-22 (library track-list panel corners)
+
+- Round only the upper corners of the Library track-list panel; keep its lower corners square across the web app and Android WebView.
+- Align the project, workspace packages, and Android version at `1.6.10`; increment Android `versionCode` to 32 and the PWA shell cache to v19. No library data or backup migration is required.
+
 ## 1.6.9 - 2026-10-22 (mobile PWA startup splash)
 
 - Keep the installed mobile standalone PWA startup splash visible for three seconds and render it above the full app, including the iOS navigation dock and mini-player.

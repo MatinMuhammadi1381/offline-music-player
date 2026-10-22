@@ -532,6 +532,10 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .empty-art {
   scrollbar-width: none;
 }
 
+.pwa-ui .scroll-panel.library-track-panel {
+  border-radius: 20px 20px 0 0;
+}
+
 html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
   border-color: var(--surface-glass-border);
   background: linear-gradient(155deg, rgba(21, 33, 53, 0.76), rgba(12, 19, 31, 0.82));

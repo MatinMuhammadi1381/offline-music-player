@@ -1005,7 +1005,7 @@ export function App(): ReactNode {
                     <IconButton label={`Sort ${sortDirection === "ascending" ? "descending" : "ascending"}`} icon="sort" onClick={toggleSortDirection} />
                   </div>
                 </div>
-                <div className="scroll-panel" role="region" aria-label="Music library" tabIndex={0}>
+                <div className="scroll-panel library-track-panel" role="region" aria-label="Music library" tabIndex={0}>
                   {unavailableCount > 0 && (
                     <div className="recovery-banner" role="status">
                       <span className="recovery-icon"><Icon name="music" /></span>

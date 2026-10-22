@@ -278,6 +278,10 @@ button:disabled {
   touch-action: pan-y;
 }
 
+.scroll-panel.library-track-panel {
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
 .scroll-panel::-webkit-scrollbar {
   display: none;
 }
