@@ -7,6 +7,7 @@ import {
   Library,
   ListMusic,
   ListVideo,
+  Image,
   Music2,
   Pause,
   Play,
@@ -17,13 +18,14 @@ import {
   Shuffle,
   SkipBack,
   SkipForward,
+  Trash2,
   Upload,
   X,
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
-export type IconName = "home" | "library" | "playlist" | "queue" | "settings" | "play" | "pause" | "next" | "previous" | "search" | "plus" | "shuffle" | "repeat" | "close" | "music" | "back" | "download" | "upload" | "sort" | "chevron-down";
+export type IconName = "home" | "library" | "playlist" | "queue" | "settings" | "play" | "pause" | "next" | "previous" | "search" | "plus" | "shuffle" | "repeat" | "close" | "music" | "back" | "download" | "upload" | "sort" | "chevron-down" | "image" | "delete";
 const icons: Record<IconName, LucideIcon> = {
   home: House,
   library: Library,
@@ -45,6 +47,8 @@ const icons: Record<IconName, LucideIcon> = {
   upload: Upload,
   sort: ArrowDownWideNarrow,
   "chevron-down": ChevronDown,
+  image: Image,
+  delete: Trash2,
 };
 
 export function Icon({ name, size = 21 }: { readonly name: IconName; readonly size?: number }): ReactNode {

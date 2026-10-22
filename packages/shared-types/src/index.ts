@@ -31,6 +31,7 @@ export interface Playlist {
   readonly id: PlaylistId;
   readonly name: string;
   readonly trackIds: readonly TrackId[];
+  readonly artworkDataUrl?: string;
   readonly createdAt: number;
   readonly updatedAt: number;
 }

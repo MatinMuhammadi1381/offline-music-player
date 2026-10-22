@@ -227,6 +227,23 @@ export class LibraryController {
     }));
   }
 
+  async updatePlaylistArtwork(playlistId: PlaylistId, artworkDataUrl: string | undefined): Promise<void> {
+    const playlist = this.requirePlaylist(playlistId);
+    await this.mutate((library) => ({
+      ...library,
+      playlists: library.playlists.map((item) => {
+        if (item.id !== playlistId) return item;
+        const updatedAt = this.nextTimestamp(playlist.updatedAt);
+        if (artworkDataUrl === undefined) {
+          const { artworkDataUrl: removedArtwork, ...withoutArtwork } = item;
+          void removedArtwork;
+          return { ...withoutArtwork, updatedAt };
+        }
+        return { ...item, artworkDataUrl, updatedAt };
+      }),
+    }));
+  }
+
   async deleteExistingPlaylist(playlistId: PlaylistId): Promise<void> {
     this.requirePlaylist(playlistId);
     await this.mutate((library) => ({

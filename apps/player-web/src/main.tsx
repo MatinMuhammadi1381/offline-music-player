@@ -287,6 +287,33 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Something went wrong. Please try again.";
 }
 
+async function createPlaylistArtwork(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) throw new TypeError("Choose an image file for playlist artwork.");
+  if (file.size > 15 * 1024 * 1024) throw new RangeError("Playlist artwork must be smaller than 15 MB.");
+
+  const bitmap = await createImageBitmap(file);
+  try {
+    for (const size of [512, 384, 256]) {
+      const scale = Math.max(size / bitmap.width, size / bitmap.height);
+      const width = Math.round(bitmap.width * scale);
+      const height = Math.round(bitmap.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Your browser could not prepare the selected image.");
+      context.drawImage(bitmap, (size - width) / 2, (size - height) / 2, width, height);
+      for (const quality of [0.82, 0.7, 0.58]) {
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        if (dataUrl.length <= 500_000) return dataUrl;
+      }
+    }
+    throw new RangeError("This image could not be compressed enough to use as playlist artwork.");
+  } finally {
+    bitmap.close();
+  }
+}
+
 function isInteractivePlayerTarget(target: EventTarget | null): boolean {
   return target instanceof Element
     && target.closest("button, input, select, textarea, a, [contenteditable='true']") !== null;
@@ -297,6 +324,8 @@ export function App(): ReactNode {
   const pwaUiEnabled = document.documentElement.classList.contains("pwa-ui-enabled");
   const fileInput = useRef<HTMLInputElement>(null);
   const backupInput = useRef<HTMLInputElement>(null);
+  const playlistArtworkInput = useRef<HTMLInputElement>(null);
+  const playlistSettingsDialog = useRef<HTMLDialogElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const sortButtonRef = useRef<HTMLButtonElement>(null);
   const playerViewRef = useRef<HTMLElement>(null);
@@ -331,6 +360,7 @@ export function App(): ReactNode {
   const [listLimit, setListLimit] = useState(100);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [renamePlaylistValue, setRenamePlaylistValue] = useState("");
+  const [playlistSettingsOpen, setPlaylistSettingsOpen] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [playlistAddTrackId, setPlaylistAddTrackId] = useState("");
   const [storageMessage, setStorageMessage] = useState("Checking browser storage support…");
@@ -342,6 +372,12 @@ export function App(): ReactNode {
   const [playerDragOffset, setPlayerDragOffset] = useState(0);
   const [playerOpenedFromMiniPlayer, setPlayerOpenedFromMiniPlayer] = useState(false);
   const miniPlayerOpeningSource = useRef<PlayerOpenBounds | null>(null);
+  useEffect(() => {
+    const dialog = playlistSettingsDialog.current;
+    if (!dialog) return;
+    if (playlistSettingsOpen && !dialog.open) dialog.showModal();
+    else if (!playlistSettingsOpen && dialog.open) dialog.close();
+  }, [playlistSettingsOpen]);
   useEffect(() => {
     if (!library) return;
     try {
@@ -992,7 +1028,7 @@ export function App(): ReactNode {
                 <div className="home-section-heading"><h3>Your Playlists</h3><button type="button" className="text-button" onClick={() => setDestination("playlists")}>{library.playlists.length ? "See All" : "Create"}</button></div>
                 {library.playlists.length > 0 ? <div className="recent-grid">
                   {library.playlists.slice(0, 3).map((playlist, index) => <button type="button" className="recent-card" key={playlist.id} onClick={() => { setSelectedPlaylistId(playlist.id); setDestination("playlists"); }}>
-                    <img className="recent-cover" src={figmaAsset(["playlist-night-drive.svg", "playlist-blue-hour.svg", "playlist-focus-flow.svg"][index]!)} alt="" width="104" height="104" loading="lazy" />
+                    <img className="recent-cover" src={playlist.artworkDataUrl ?? figmaAsset(["playlist-night-drive.svg", "playlist-blue-hour.svg", "playlist-focus-flow.svg"][index]!)} alt="" width="104" height="104" loading="lazy" />
                     <strong>{playlist.name}</strong><small>{playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}</small>
                   </button>)}
                 </div> : <button type="button" className="home-recent-empty" onClick={() => setDestination("playlists")}>Create a playlist to bring your music together.</button>}
@@ -1170,7 +1206,7 @@ export function App(): ReactNode {
                 {search && <>
                   <div className="home-section-heading search-results-heading"><h3>Results</h3></div>
                   <div className="scroll-panel search-results" role="region" aria-label="Search results" tabIndex={0}>
-                    {matchingPlaylists.length > 0 && <ul className="playlist-list playlist-search-results">{matchingPlaylists.map((playlist) => <li key={playlist.id}><button type="button" className="playlist-card" onClick={() => { setSelectedPlaylistId(playlist.id); setDestination("playlists"); }}><span className="playlist-art"><Icon name="playlist" /></span><span><strong>{playlist.name}</strong><small>{playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}</small></span><Icon name="back" /></button></li>)}</ul>}
+                    {matchingPlaylists.length > 0 && <ul className="playlist-list playlist-search-results">{matchingPlaylists.map((playlist) => <li key={playlist.id}><button type="button" className="playlist-card" onClick={() => { setSelectedPlaylistId(playlist.id); setDestination("playlists"); }}><span className="playlist-art">{playlist.artworkDataUrl ? <img src={playlist.artworkDataUrl} alt="" /> : <Icon name="playlist" />}</span><span><strong>{playlist.name}</strong><small>{playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}</small></span><Icon name="back" /></button></li>)}</ul>}
                     {visibleTracks.length > 0 ? trackRows(visibleTracks) : matchingPlaylists.length === 0 && <div className="empty-state compact-empty"><div className="empty-art"><Icon name="search" size={30} /></div><h3>No matches found</h3><p>Try a different title, artist, album, or playlist.</p><button type="button" className="button button-secondary" onClick={() => setSearch("")}>Clear search</button></div>}
                   </div>
                 </>}
@@ -1244,31 +1280,86 @@ export function App(): ReactNode {
               <section className={`view-section${selectedPlaylist ? " playlist-detail-view" : ""}`}>
                 {selectedPlaylist ? (
                   <>
-                    <img className="playlist-detail-cover" src={figmaAsset("playlist-cover.svg")} alt="" width="206" height="206" />
-                    <div className="section-heading"><div className="playlist-title-wrap"><div><p className="section-kicker">PLAYLIST</p><h2>{selectedPlaylist.name}</h2><p className="collection-count">{playlistTracks.length} tracks</p></div></div>                    <button type="button" className="button button-danger" onClick={() => {
-                      if (!window.confirm(`Delete the playlist “${selectedPlaylist.name}”? This does not delete audio files.`)) return;
-                      run(async () => {
-                    const app = runtime.current;
-                    if (!app) return;
-                    await app.library.deleteExistingPlaylist(selectedPlaylist.id);
-                    setSelectedPlaylistId(null);
-                    await refreshLibrary();
-                    }); }}>Delete playlist</button></div>
-                    <form className="playlist-rename-form" onSubmit={(event) => {
-                      event.preventDefault();
-                      run(async () => {
-                        const app = runtime.current;
-                        if (!app || !renamePlaylistValue.trim()) return;
-                        await app.library.renameExistingPlaylist(selectedPlaylist.id, renamePlaylistValue);
-                        setRenamePlaylistValue("");
-                        await refreshLibrary();
-                        tell("Playlist renamed.");
-                      });
-                    }}>
-                      <label className="visually-hidden" htmlFor="rename-playlist">Rename playlist</label>
-                      <input id="rename-playlist" name="rename-playlist" autoComplete="off" value={renamePlaylistValue} onChange={(event) => setRenamePlaylistValue(event.currentTarget.value)} placeholder="Rename playlist…" maxLength={80} />
-                      <button type="submit" className="button button-secondary" disabled={!renamePlaylistValue.trim()}>Save name</button>
-                    </form>
+                    <img className="playlist-detail-cover" src={selectedPlaylist.artworkDataUrl ?? figmaAsset("playlist-cover.svg")} alt={`${selectedPlaylist.name} artwork`} width="206" height="206" />
+                    <div className="section-heading">
+                      <div className="playlist-title-wrap"><div><p className="section-kicker">PLAYLIST</p><h2>{selectedPlaylist.name}</h2><p className="collection-count">{playlistTracks.length} tracks</p></div></div>
+                      <IconButton label={`Settings for ${selectedPlaylist.name}`} icon="settings" onClick={() => {
+                        setRenamePlaylistValue(selectedPlaylist.name);
+                        setPlaylistSettingsOpen(true);
+                      }} />
+                    </div>
+                    <dialog
+                      ref={playlistSettingsDialog}
+                      className="playlist-settings-dialog"
+                      aria-labelledby="playlist-settings-title"
+                      onClose={() => setPlaylistSettingsOpen(false)}
+                      onClick={(event) => {
+                        if (event.target === event.currentTarget) setPlaylistSettingsOpen(false);
+                      }}
+                    >
+                      <div className="playlist-settings-content">
+                        <div className="playlist-settings-heading">
+                          <div><p className="section-kicker">PLAYLIST</p><h2 id="playlist-settings-title">Playlist settings</h2></div>
+                          <IconButton label="Close playlist settings" icon="close" onClick={() => setPlaylistSettingsOpen(false)} />
+                        </div>
+                        <form className="playlist-rename-form" onSubmit={(event) => {
+                          event.preventDefault();
+                          run(async () => {
+                            const app = runtime.current;
+                            if (!app || !renamePlaylistValue.trim()) return;
+                            await app.library.renameExistingPlaylist(selectedPlaylist.id, renamePlaylistValue);
+                            await refreshLibrary();
+                            tell("Playlist renamed.");
+                          });
+                        }}>
+                          <label htmlFor="rename-playlist">Playlist name</label>
+                          <div className="playlist-settings-rename">
+                            <input id="rename-playlist" name="rename-playlist" autoComplete="off" value={renamePlaylistValue} onChange={(event) => setRenamePlaylistValue(event.currentTarget.value)} maxLength={80} />
+                            <button type="submit" className="button button-secondary" disabled={!renamePlaylistValue.trim()}>Save</button>
+                          </div>
+                        </form>
+                        <input
+                          ref={playlistArtworkInput}
+                          className="visually-hidden"
+                          type="file"
+                          accept="image/*"
+                          aria-label="Choose playlist artwork from your device"
+                          onChange={(event) => {
+                            const file = event.currentTarget.files?.[0];
+                            event.currentTarget.value = "";
+                            if (!file) return;
+                            run(async () => {
+                              const app = runtime.current;
+                              if (!app) return;
+                              await app.library.updatePlaylistArtwork(selectedPlaylist.id, await createPlaylistArtwork(file));
+                              await refreshLibrary();
+                              tell("Playlist artwork updated and saved on this device.");
+                            });
+                          }}
+                        />
+                        <div className="playlist-settings-actions">
+                          <button type="button" className="button button-secondary" onClick={() => playlistArtworkInput.current?.click()}><Icon name="image" /> Change artwork</button>
+                          {selectedPlaylist.artworkDataUrl && <button type="button" className="button button-secondary" onClick={() => run(async () => {
+                            const app = runtime.current;
+                            if (!app) return;
+                            await app.library.updatePlaylistArtwork(selectedPlaylist.id, undefined);
+                            await refreshLibrary();
+                            tell("Playlist artwork removed.");
+                          })}>Remove artwork</button>}
+                        </div>
+                        <button type="button" className="button button-danger playlist-delete-button" onClick={() => {
+                          if (!window.confirm(`Delete the playlist “${selectedPlaylist.name}”? This does not delete audio files.`)) return;
+                          run(async () => {
+                            const app = runtime.current;
+                            if (!app) return;
+                            await app.library.deleteExistingPlaylist(selectedPlaylist.id);
+                            setPlaylistSettingsOpen(false);
+                            setSelectedPlaylistId(null);
+                            await refreshLibrary();
+                          });
+                        }}><Icon name="delete" /> Delete playlist</button>
+                      </div>
+                    </dialog>
                     <form className="playlist-add-form" onSubmit={(event) => {
                       event.preventDefault();
                       run(async () => {
@@ -1301,7 +1392,7 @@ export function App(): ReactNode {
                     <div className="scroll-panel playlist-collection-panel" role="region" aria-label="Your playlists" tabIndex={0}>
                       {library.playlists.length ? (
                         <ul className="playlist-list playlist-collection-list">{library.playlists.map((playlist) => (
-                          <li key={playlist.id}><button type="button" className="playlist-card" onClick={() => setSelectedPlaylistId(playlist.id)}><span className="playlist-art"><Icon name="playlist" /></span><span><strong>{playlist.name}</strong><small>{playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}</small></span><Icon name="back" /></button></li>
+                          <li key={playlist.id}><button type="button" className="playlist-card" onClick={() => setSelectedPlaylistId(playlist.id)}><span className="playlist-art">{playlist.artworkDataUrl ? <img src={playlist.artworkDataUrl} alt="" /> : <Icon name="playlist" />}</span><span><strong>{playlist.name}</strong><small>{playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}</small></span><Icon name="back" /></button></li>
                         ))}</ul>
                       ) : <div className="empty-state compact-empty"><div className="empty-art"><Icon name="playlist" size={30} /></div><h3>No playlists yet</h3><p>Create a playlist to bring favorite tracks together.</p></div>}
                     </div>

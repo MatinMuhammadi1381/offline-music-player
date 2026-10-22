@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.1 - 2026-10-22 (Playlist settings and artwork)
+
+- Move playlist rename and delete actions into an icon-opened settings dialog, and allow choosing, locally persisting, and removing compressed playlist artwork from the device gallery.
+- Align the project, workspace packages, and Android version at `1.8.1`; increment Android `versionCode` to 46 and the PWA shell cache to v33. Playlist artwork is stored in local library metadata and is not uploaded.
+
 ## 1.8.0 - 2026-10-22 (Playlist top inset)
 
 - Increase the playlist panel's top inset by about 3% (12px to 12.36px on browser; 5px to 5.15px on compact PWA layouts) while preserving the 12.36px gap between cards and the 4px horizontal list inset.

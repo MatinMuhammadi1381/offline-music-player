@@ -316,6 +316,35 @@ test("renames playlists and rejects timestamps that move backward", () => {
   assert.throws(() => renamePlaylist(playlist, "New", 0), /earlier/);
 });
 
+test("validates and persists playlist artwork as metadata", async () => {
+  const artworkDataUrl = `data:image/webp;base64,${"A".repeat(24)}`;
+  const valid = validateLibraryMetadata({
+    schemaVersion: 1,
+    tracks: [],
+    playlists: [{ id: "p", name: "Art", trackIds: [], artworkDataUrl, createdAt: 1, updatedAt: 1 }],
+  });
+  assert.equal(valid.status, "valid");
+  if (valid.status === "valid") assert.equal(valid.library.playlists[0]?.artworkDataUrl, artworkDataUrl);
+  assert.equal(validateLibraryMetadata({
+    schemaVersion: 1,
+    tracks: [],
+    playlists: [{ id: "p", name: "Art", trackIds: [], artworkDataUrl: "javascript:alert(1)", createdAt: 1, updatedAt: 1 }],
+  }).status, "invalid");
+
+  let saved: LibraryMetadata = { schemaVersion: 1, tracks: [], playlists: [] };
+  const controller = new LibraryController(
+    { loadLibrary: async () => saved, saveLibrary: async (library) => { saved = library; } },
+    new FakeAudioFileSource(),
+    { now: () => 2, createId: () => "p" },
+  );
+  await controller.load();
+  await controller.createNewPlaylist("Art");
+  await controller.updatePlaylistArtwork("p", artworkDataUrl);
+  assert.equal(controller.getLibrary().playlists[0]?.artworkDataUrl, artworkDataUrl);
+  await controller.updatePlaylistArtwork("p", undefined);
+  assert.equal("artworkDataUrl" in (controller.getLibrary().playlists[0] ?? {}), false);
+});
+
 test("adds only unique track references to a playlist", () => {
   const playlist = createPlaylist({ id: "p", name: "Daily", trackIds: ["a"], createdAt: 1 });
   const added = addTracksToPlaylist(playlist, ["a", "b", "c", "b"], 2);

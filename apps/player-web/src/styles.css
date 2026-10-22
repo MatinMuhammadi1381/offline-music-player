@@ -1377,6 +1377,13 @@ button:disabled {
   box-shadow: 0 10px 22px rgba(20, 79, 150, 0.2);
 }
 
+.playlist-art img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
 .playlist-title-wrap {
   gap: 12px;
 }
@@ -2258,6 +2265,97 @@ button:disabled {
 
 .playlist-detail-view .section-heading h2 {
   font-size: 28px;
+}
+
+.playlist-settings-dialog {
+  width: min(430px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  max-height: min(620px, calc(100dvh - 40px - var(--safe-top) - var(--safe-bottom)));
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--surface-glass-border);
+  border-radius: 26px;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.48);
+}
+
+.playlist-settings-dialog::backdrop {
+  background: rgba(3, 7, 14, 0.68);
+  backdrop-filter: blur(5px);
+}
+
+.playlist-settings-content {
+  display: grid;
+  gap: 22px;
+  padding: 24px;
+}
+
+.playlist-settings-heading,
+.playlist-settings-rename,
+.playlist-settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.playlist-settings-heading {
+  justify-content: space-between;
+}
+
+.playlist-settings-heading .section-kicker {
+  margin-bottom: 5px;
+}
+
+.playlist-settings-heading h2 {
+  margin: 0;
+  font-size: 23px;
+  letter-spacing: -0.03em;
+}
+
+.playlist-settings-content .playlist-rename-form {
+  display: grid;
+  gap: 8px;
+}
+
+.playlist-settings-content .playlist-rename-form label {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.playlist-settings-rename input {
+  flex: 1;
+  width: 100%;
+}
+
+.playlist-settings-rename .button {
+  flex-shrink: 0;
+}
+
+.playlist-settings-actions {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.playlist-settings-actions .button {
+  justify-content: flex-start;
+}
+
+.playlist-delete-button {
+  justify-content: flex-start;
+}
+
+@media (max-width: 520px) {
+  .playlist-detail-view .section-heading {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .playlist-settings-content {
+    gap: 18px;
+    padding: 20px;
+  }
 }
 
 .home-empty {

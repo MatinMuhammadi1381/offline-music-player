@@ -11,6 +11,7 @@ export const METADATA_BACKUP_MAX_BYTES = 10 * 1024 * 1024;
 const MAX_TRACKS = 50_000;
 const MAX_PLAYLISTS = 10_000;
 const MAX_TEXT_LENGTH = 4_096;
+const MAX_PLAYLIST_ARTWORK_LENGTH = 500_000;
 
 interface MetadataBackup {
   readonly format: typeof METADATA_BACKUP_FORMAT;
@@ -162,13 +163,20 @@ export function validateLibraryMetadata(value: unknown): MetadataImportResult {
       errors.push(`${path} must be an object.`);
       continue;
     }
-    hasOnlyKeys(raw, ["id", "name", "trackIds", "createdAt", "updatedAt"], path, errors);
+    hasOnlyKeys(raw, ["id", "name", "trackIds", "artworkDataUrl", "createdAt", "updatedAt"], path, errors);
     const valid = [
       validId(raw.id, `${path}.id`, errors),
       nonEmptyText(raw.name, `${path}.name`, errors),
       timestamp(raw.createdAt, `${path}.createdAt`, errors),
       timestamp(raw.updatedAt, `${path}.updatedAt`, errors),
     ];
+    if (raw.artworkDataUrl !== undefined
+      && (typeof raw.artworkDataUrl !== "string"
+        || raw.artworkDataUrl.length > MAX_PLAYLIST_ARTWORK_LENGTH
+        || !/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(raw.artworkDataUrl))) {
+      errors.push(`${path}.artworkDataUrl must be a supported base64 image up to ${MAX_PLAYLIST_ARTWORK_LENGTH} characters.`);
+      valid.push(false);
+    }
     if (raw.updatedAt !== undefined && raw.createdAt !== undefined
       && typeof raw.updatedAt === "number" && typeof raw.createdAt === "number"
       && raw.updatedAt < raw.createdAt) {
@@ -210,6 +218,7 @@ export function validateLibraryMetadata(value: unknown): MetadataImportResult {
       id,
       name: raw.name as string,
       trackIds: memberIds,
+      ...(raw.artworkDataUrl === undefined ? {} : { artworkDataUrl: raw.artworkDataUrl as string }),
       createdAt: raw.createdAt as number,
       updatedAt: raw.updatedAt as number,
     });
