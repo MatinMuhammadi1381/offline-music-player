@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.6 - 2026-10-22 (search sizing and app motion)
+
+- Reduce Search category cards visually by 5% while preserving their grid cells and touch targets.
+- Add restrained entrance, selection, and interaction animations across app views, player surfaces, navigation, cards, menus, and empty states; honor reduced-motion preferences.
+- Align the project, workspace packages, and Android version at `1.7.6`; increment Android `versionCode` to 39 and the PWA shell cache to v26. No library data or backup migration is required.
+
 ## 1.7.5 - 2026-10-22 (library panel and player control sizing)
 
 - Reduce the now-playing control background width by about 5%.

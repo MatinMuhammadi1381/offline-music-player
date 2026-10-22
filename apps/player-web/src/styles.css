@@ -223,7 +223,7 @@ button:disabled {
   background: transparent;
   cursor: pointer;
   text-align: left;
-  transition: color 140ms ease, background-color 140ms ease;
+  transition: color 140ms ease, background-color 140ms ease, transform 160ms ease;
 }
 
 .nav-link:hover,
@@ -234,6 +234,11 @@ button:disabled {
 
 .nav-link.selected svg {
   color: var(--color-accent);
+}
+
+.nav-link:active,
+.bottom-nav-item:active {
+  transform: scale(0.95);
 }
 
 .privacy-note {
@@ -260,6 +265,64 @@ button:disabled {
   min-height: 0;
   flex: 1;
   flex-direction: column;
+  animation: view-enter 280ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+@keyframes view-enter {
+  from { opacity: 0; transform: translateY(9px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes item-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mini-player-enter {
+  from { opacity: 0; transform: translateY(9px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes mini-player-exit {
+  to { opacity: 0; transform: translateY(8px) scale(0.97); }
+}
+
+@keyframes nav-icon-settle {
+  0% { transform: scale(0.84); }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.topbar {
+  animation: item-enter 240ms ease-out both;
+}
+
+.view-section > :nth-child(-n + 8),
+.player-view > :nth-child(-n + 6) {
+  animation: item-enter 300ms ease-out both;
+}
+
+.view-section > :nth-child(2) { animation-delay: 25ms; }
+.view-section > :nth-child(3) { animation-delay: 50ms; }
+.view-section > :nth-child(4) { animation-delay: 75ms; }
+.view-section > :nth-child(5) { animation-delay: 100ms; }
+.view-section > :nth-child(6) { animation-delay: 125ms; }
+.view-section > :nth-child(7) { animation-delay: 150ms; }
+.view-section > :nth-child(8) { animation-delay: 175ms; }
+
+.mini-player {
+  transform-origin: center bottom;
+  animation: mini-player-enter 260ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.mini-player.mini-player-closing {
+  pointer-events: none;
+  animation: mini-player-exit 180ms ease-in both;
+}
+
+.bottom-nav-item.selected svg,
+.nav-link.selected svg {
+  animation: nav-icon-settle 220ms ease-out;
 }
 
 .scroll-panel {
@@ -649,6 +712,19 @@ button:disabled {
   contain-intrinsic-size: calc(var(--track-row-height) - 19px);
 }
 
+.track-row > .artwork {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.track-list > .track-row:nth-child(-n + 8) {
+  animation: item-enter 280ms ease-out both;
+}
+
+.track-row:hover > .artwork {
+  transform: scale(1.035);
+  box-shadow: 0 8px 20px rgba(14, 96, 185, 0.2);
+}
+
 .track-row-current .track-title {
   color: var(--color-accent);
 }
@@ -832,6 +908,13 @@ button:disabled {
   justify-content: center;
   padding: 34px 16px;
   text-align: center;
+}
+
+.empty-state,
+.loading-state,
+.error-state,
+.home-empty {
+  animation: item-enter 300ms ease-out both;
 }
 
 .loading-state,
@@ -1184,6 +1267,7 @@ button:disabled {
   cursor: pointer;
   text-align: left;
   transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+  animation: item-enter 280ms ease-out both;
 }
 
 .playlist-card::before {
@@ -1202,6 +1286,22 @@ button:disabled {
   border-color: rgba(77, 165, 255, 0.35);
   background-color: rgba(77, 165, 255, 0.055);
   transform: translateY(-2px);
+}
+
+.playlist-card:active,
+.recent-card:active,
+.home-recent-empty:active {
+  transform: scale(0.985);
+}
+
+.sort-field-menu {
+  transform-origin: top right;
+  animation: menu-enter 150ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+@keyframes menu-enter {
+  from { opacity: 0; transform: translateY(-4px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .playlist-card:focus-visible {
@@ -1267,6 +1367,7 @@ button:disabled {
   margin: 0 0 14px;
   padding: 19px 0;
   border-bottom: 1px solid var(--color-separator);
+  animation: item-enter 280ms ease-out both;
 }
 
 .settings-group h3 {
@@ -1958,6 +2059,7 @@ button:disabled {
   background: transparent;
   cursor: pointer;
   text-align: left;
+  animation: item-enter 280ms ease-out both;
 }
 
 .recent-cover,
@@ -2004,6 +2106,7 @@ button:disabled {
   padding: 16px 18px;
   border-radius: 18px;
   background: #172e59;
+  animation: item-enter 300ms ease-out both;
 }
 
 :root[data-theme="light"] .featured-card {
@@ -2238,6 +2341,10 @@ button:disabled {
   transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
 }
 
+.search-view .category-card {
+  transform: scale(0.95);
+}
+
 .category-card::before,
 .category-card::after {
   position: absolute;
@@ -2265,6 +2372,31 @@ button:disabled {
   transform: translateY(-2px);
   box-shadow: 0 18px 35px rgba(4, 10, 25, 0.24);
 }
+
+.search-view .category-card:hover:not(:disabled) {
+  transform: translateY(-2px) scale(0.95);
+}
+
+.search-view .category-card:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.category-grid > .category-card {
+  animation: item-enter 320ms ease-out both;
+}
+
+.category-grid > .category-card:nth-child(2),
+.recent-grid > .recent-card:nth-child(2),
+.playlist-list > li:nth-child(2) { animation-delay: 35ms; }
+.category-grid > .category-card:nth-child(3),
+.recent-grid > .recent-card:nth-child(3),
+.playlist-list > li:nth-child(3) { animation-delay: 70ms; }
+.category-grid > .category-card:nth-child(4),
+.playlist-list > li:nth-child(4) { animation-delay: 105ms; }
+.category-grid > .category-card:nth-child(5),
+.playlist-list > li:nth-child(5) { animation-delay: 140ms; }
+.category-grid > .category-card:nth-child(6),
+.playlist-list > li:nth-child(6) { animation-delay: 175ms; }
 
 .category-card:focus-visible {
   outline: 3px solid var(--color-accent);

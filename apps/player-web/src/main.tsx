@@ -579,6 +579,21 @@ export function App(): ReactNode {
   const playbackPositionMs = Math.min(Math.max(player.playback.positionMs, 0), playbackDurationMs);
   const playbackProgressPercent = playbackDurationMs > 0 ? playbackPositionMs / playbackDurationMs * 100 : 0;
   const showMiniPlayer = shouldShowMiniPlayer(Boolean(currentTrack), destination);
+  const [miniPlayerRendered, setMiniPlayerRendered] = useState(showMiniPlayer);
+  const lastCurrentTrack = useRef(currentTrack);
+  useEffect(() => {
+    if (currentTrack) lastCurrentTrack.current = currentTrack;
+  }, [currentTrack]);
+  useEffect(() => {
+    if (showMiniPlayer) {
+      setMiniPlayerRendered(true);
+      return;
+    }
+    if (!miniPlayerRendered) return;
+    const timeout = window.setTimeout(() => setMiniPlayerRendered(false), 180);
+    return () => window.clearTimeout(timeout);
+  }, [miniPlayerRendered, showMiniPlayer]);
+  const miniPlayerTrack = currentTrack ?? lastCurrentTrack.current;
 
   useEffect(() => {
     const mediaSession = navigator.mediaSession;
@@ -893,7 +908,7 @@ export function App(): ReactNode {
     ? runtime.current.library.getPlaylistTracks(selectedPlaylist.id)
     : [];
   const renderMiniPlayer = (className: string, track: NonNullable<typeof currentTrack>) => (
-    <div className={className}>
+    <div className={`${className}${showMiniPlayer ? "" : " mini-player-closing"}`}>
       <IconButton
         label={`Dismiss mini player and remove ${track.title} from the queue`}
         icon="close"
@@ -1304,7 +1319,7 @@ export function App(): ReactNode {
             )}
           </>
         )}
-        {showMiniPlayer && currentTrack ? renderMiniPlayer(`mini-player${pwaUiEnabled ? " pwa-inline-mini-player" : ""}`, currentTrack) : null}
+        {miniPlayerRendered && miniPlayerTrack ? renderMiniPlayer(`mini-player${pwaUiEnabled ? " pwa-inline-mini-player" : ""}`, miniPlayerTrack) : null}
       </main>
 
       <input ref={fileInput} className="hidden-input" type="file" name="audio-files" aria-label="Choose audio files" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus" multiple />
@@ -1313,7 +1328,7 @@ export function App(): ReactNode {
     {createPortal(
       pwaUiEnabled ? (
         <div className="pwa-dock">
-          {showMiniPlayer && currentTrack ? renderMiniPlayer("mini-player pwa-dock-mini-player", currentTrack) : null}
+          {miniPlayerRendered && miniPlayerTrack ? renderMiniPlayer("mini-player pwa-dock-mini-player", miniPlayerTrack) : null}
           <nav className="bottom-nav pwa-bottom-nav" aria-label="Main navigation">
             {navItems.map((item) => <button key={item.id} type="button" className={`bottom-nav-item${destination === item.id ? " selected" : ""}`} aria-current={destination === item.id ? "page" : undefined} onClick={() => setDestination(item.id)}><Icon name={item.icon} /><span>{item.label}</span></button>)}
           </nav>
