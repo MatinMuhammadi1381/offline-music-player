@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.9 - 2026-10-22 (Search card spacing)
+
+- Reduce the vertical spacing between Search category cards by another 10% across web, PWA, and Android layouts while preserving horizontal spacing and card size.
+- Align the project, workspace packages, and Android version at `1.7.9`; increment Android `versionCode` to 42 and the PWA shell cache to v29. No library data or backup migration is required.
+
 ## 1.7.8 - 2026-10-22 (Search card spacing)
 
 - Reduce the vertical spacing between Search category cards by about 5% while preserving horizontal spacing across web, PWA, and Android layouts.

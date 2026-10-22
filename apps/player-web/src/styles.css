@@ -2329,7 +2329,7 @@ button:disabled {
   min-height: 0;
   flex: 1;
   column-gap: 14px;
-  row-gap: 13.3px;
+  row-gap: 12px;
   margin-bottom: 26px;
 }
 

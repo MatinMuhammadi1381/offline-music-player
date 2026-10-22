@@ -575,7 +575,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
 
 .pwa-ui .category-grid {
   column-gap: 14px;
-  row-gap: 13.3px;
+  row-gap: 12px;
 }
 
 .pwa-ui .category-card {
@@ -932,7 +932,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: repeat(3, minmax(0, 1fr));
     column-gap: 11px;
-    row-gap: 10.45px;
+    row-gap: 9.4px;
   }
 
   .pwa-ui .category-card {
