@@ -764,10 +764,10 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
 
 .pwa-ui .mini-player {
   width: min(100%, 560px);
-  min-height: 66px;
+  min-height: 56px;
   align-self: center;
   margin: 12px auto 14px;
-  padding: 7px 11px;
+  padding: 6px 9px;
   border-color: var(--color-separator);
   border-radius: 18px;
   color: var(--color-text-primary);
@@ -931,11 +931,13 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
 
   .pwa-ui .category-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
     gap: 11px;
   }
 
   .pwa-ui .category-card {
-    min-height: 128px;
+    min-height: 0;
+    aspect-ratio: 1;
     padding: 14px;
     border-radius: 19px;
   }
@@ -1018,11 +1020,11 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
     position: absolute;
     z-index: 2147482999;
     right: var(--pwa-dock-inline-inset);
-    bottom: calc(100% + 1px);
+    bottom: calc(100% + 3vh);
     left: var(--pwa-dock-inline-inset);
     width: auto;
     max-width: var(--pwa-dock-content-max-width);
-    min-height: 62px;
+    min-height: 52px;
     margin: 0 auto;
   }
 

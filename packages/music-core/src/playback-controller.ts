@@ -118,6 +118,25 @@ export class PlaybackController {
     if (wasCurrent) await this.playCurrent();
   }
 
+  async dismissCurrentTrack(): Promise<void> {
+    const trackId = this.getSnapshot().playback.currentTrackId;
+    if (trackId !== undefined) {
+      const currentIndex = this.queue.currentIndex !== null
+        && this.queue.trackIds[this.queue.currentIndex] === trackId
+        ? this.queue.currentIndex
+        : this.queue.trackIds.indexOf(trackId);
+      if (currentIndex >= 0) {
+        this.queue = { ...removeQueueTrack(this.queue, currentIndex), currentIndex: null };
+      } else {
+        this.queue = { ...this.queue, currentIndex: null };
+      }
+    }
+    this.playbackOverride = undefined;
+    this.endedTrackId = undefined;
+    this.notify();
+    await this.engine.stop();
+  }
+
   moveQueueItem(fromIndex: number, toIndex: number): void {
     this.queue = moveQueueTrack(this.queue, fromIndex, toIndex);
     this.notify();

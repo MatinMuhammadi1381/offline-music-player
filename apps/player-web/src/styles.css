@@ -1283,16 +1283,17 @@ button:disabled {
 }
 
 .mini-player {
+  position: relative;
   align-self: flex-end;
   z-index: 6;
   display: flex;
   width: min(390px, 100%);
   flex: 0 0 auto;
-  min-height: 68px;
+  min-height: 58px;
   align-items: center;
-  gap: 11px;
+  gap: 9px;
   margin-top: 16px;
-  padding: 8px 11px;
+  padding: 6px 9px;
   border: 1px solid var(--surface-glass-border);
   border-radius: 20px;
   color: var(--color-text-primary);
@@ -1318,9 +1319,34 @@ button:disabled {
 }
 
 .mini-player .artwork {
-  width: 48px;
-  height: 48px;
-  border-radius: 13px;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+}
+
+.mini-player .mini-state,
+.mini-player .mini-next {
+  width: 38px;
+  height: 38px;
+}
+
+.mini-dismiss {
+  position: absolute;
+  z-index: 2;
+  top: -34px;
+  right: -10px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--surface-glass-border);
+  border-radius: 50%;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.24);
+}
+
+.mini-dismiss svg {
+  width: 17px;
+  height: 17px;
 }
 
 .mini-copy {
@@ -2107,6 +2133,9 @@ button:disabled {
 .category-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  min-height: 0;
+  flex: 1;
   gap: 14px;
   margin-bottom: 26px;
 }
@@ -2114,11 +2143,12 @@ button:disabled {
 .category-card {
   position: relative;
   display: flex;
-  min-height: 142px;
+  min-height: 0;
   flex-direction: column;
   align-items: stretch;
   justify-content: space-between;
   overflow: hidden;
+  aspect-ratio: 1;
   padding: 17px;
   border: 1px solid rgba(255, 255, 255, 0.11);
   border-radius: 22px;
@@ -2349,8 +2379,8 @@ button:disabled {
   }
 
   .mini-player {
-    min-height: 64px;
-    margin-bottom: 20px;
+    min-height: 58px;
+    margin-bottom: calc(20px + 3vh);
     border-radius: 17px;
     background: var(--surface-glass);
     -webkit-backdrop-filter: blur(20px) saturate(1.25);
@@ -2358,8 +2388,8 @@ button:disabled {
   }
 
   .mini-player .artwork {
-    width: 46px;
-    height: 46px;
+    width: 40px;
+    height: 40px;
     border-radius: 8px;
   }
 

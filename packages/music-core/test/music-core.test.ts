@@ -551,6 +551,27 @@ test("validates and normalizes stored player preferences without accepting unkno
     controller.dispose();
   });
 
+  test("dismissing playback removes the current track, stops audio, and stays idle until another track starts", async () => {
+    const engine = new FakePlaybackEngine();
+    const files = new Map(["a", "b", "c"].map((id) => [id, selectedFile(id)]));
+    const controller = new PlaybackController(engine, (id) => files.get(id));
+    await controller.playQueue(["a", "b", "c"], 1);
+
+    await controller.dismissCurrentTrack();
+
+    assert.deepEqual(controller.getSnapshot().queue.trackIds, ["a", "c"]);
+    assert.equal(controller.getSnapshot().queue.currentIndex, null);
+    assert.equal(controller.getSnapshot().playback.state, "idle");
+    assert.equal(controller.getSnapshot().playback.currentTrackId, undefined);
+    assert.deepEqual(engine.playedTrackIds, ["b"]);
+
+    await controller.playTrack("c");
+    assert.equal(controller.getSnapshot().playback.currentTrackId, "c");
+    assert.equal(controller.getSnapshot().playback.state, "playing");
+    assert.deepEqual(engine.playedTrackIds, ["b", "c"]);
+    controller.dispose();
+  });
+
   test("playback controller targets duplicate queue entries by index", async () => {
     const engine = new FakePlaybackEngine();
     const files = new Map(["a", "b"].map((id) => [id, selectedFile(id)]));

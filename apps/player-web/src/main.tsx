@@ -880,6 +880,12 @@ export function App(): ReactNode {
     : [];
   const renderMiniPlayer = (className: string, track: NonNullable<typeof currentTrack>) => (
     <div className={className}>
+      <IconButton
+        label={`Dismiss mini player and remove ${track.title} from the queue`}
+        icon="close"
+        className="mini-dismiss"
+        onClick={() => run(() => runtime.current?.playback.dismissCurrentTrack() ?? Promise.resolve())}
+      />
       <button type="button" className="mini-open" onClick={() => setDestination("player")} aria-label={`Open player: ${track.title}`}>
         <Artwork track={track} file={getAudioFile(track.id)} />
         <span className="mini-copy"><strong>{track.title}</strong><small>{track.artist ?? track.fileName}</small></span>
@@ -1105,11 +1111,13 @@ export function App(): ReactNode {
                     </button>
                   );
                 })}</div></>}
-                <div className="home-section-heading search-results-heading"><h3>{search ? "Results" : "Your Music"}</h3></div>
-                <div className="scroll-panel search-results" role="region" aria-label="Search results" tabIndex={0}>
-                  {matchingPlaylists.length > 0 && <ul className="playlist-list playlist-search-results">{matchingPlaylists.map((playlist) => <li key={playlist.id}><button type="button" className="playlist-card" onClick={() => { setSelectedPlaylistId(playlist.id); setDestination("playlists"); }}><span className="playlist-art"><Icon name="playlist" /></span><span><strong>{playlist.name}</strong><small>{playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}</small></span><Icon name="back" /></button></li>)}</ul>}
-                  {visibleTracks.length > 0 ? trackRows(visibleTracks) : matchingPlaylists.length === 0 && <div className="empty-state compact-empty"><div className="empty-art"><Icon name="search" size={30} /></div><h3>{search ? "No matches found" : "No music yet"}</h3><p>{search ? "Try a different title, artist, album, or playlist." : "Add music from your device to see it here."}</p>{search ? <button type="button" className="button button-secondary" onClick={() => setSearch("")}>Clear search</button> : <button type="button" className="button button-primary" onClick={chooseFiles}>Add music</button>}</div>}
-                </div>
+                {search && <>
+                  <div className="home-section-heading search-results-heading"><h3>Results</h3></div>
+                  <div className="scroll-panel search-results" role="region" aria-label="Search results" tabIndex={0}>
+                    {matchingPlaylists.length > 0 && <ul className="playlist-list playlist-search-results">{matchingPlaylists.map((playlist) => <li key={playlist.id}><button type="button" className="playlist-card" onClick={() => { setSelectedPlaylistId(playlist.id); setDestination("playlists"); }}><span className="playlist-art"><Icon name="playlist" /></span><span><strong>{playlist.name}</strong><small>{playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}</small></span><Icon name="back" /></button></li>)}</ul>}
+                    {visibleTracks.length > 0 ? trackRows(visibleTracks) : matchingPlaylists.length === 0 && <div className="empty-state compact-empty"><div className="empty-art"><Icon name="search" size={30} /></div><h3>No matches found</h3><p>Try a different title, artist, album, or playlist.</p><button type="button" className="button button-secondary" onClick={() => setSearch("")}>Clear search</button></div>}
+                  </div>
+                </>}
               </section>
             )}
 

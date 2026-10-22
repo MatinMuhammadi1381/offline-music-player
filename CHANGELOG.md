@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.1 - 2026-10-22 (search and mini-player polish)
+
+- Keep Search focused on its browse categories until a query is entered; make category cards larger and approximately square across browser, PWA, and Android WebView.
+- Reduce mini-player height by about 15%, lift it slightly above mobile navigation, and add an accessible dismiss control that stops playback and removes the current track from the queue without auto-playing the next one.
+- Align the project, workspace packages, and Android version at `1.7.1`; increment Android `versionCode` to 34 and the PWA shell cache to v21. No library data or backup migration is required.
+
 ## 1.7.0 - 2026-10-22 (library and category redesign)
 
 - Remove the inline search field from Library while keeping the dedicated Search screen and its song search.
