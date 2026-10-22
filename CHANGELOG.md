@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.0 - 2026-10-22 (Playlist top inset)
+
+- Increase the playlist panel's top inset by about 3% (12px to 12.36px on browser; 5px to 5.15px on compact PWA layouts) while preserving the 12.36px gap between cards and the 4px horizontal list inset.
+- Align the project, workspace packages, and Android version at `1.8.0`; increment Android `versionCode` to 45 and the PWA shell cache to v32. No library data or backup migration is required.
+
 ## 1.7.11 - 2026-10-22 (Playlist panel and card spacing)
 
 - Round the top of the playlist panel and display playlist cards as full-width, inset rows; increase the vertical gap by about 3% across browser, PWA, and Android layouts without changing Search results.

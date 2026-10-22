@@ -1,4 +1,4 @@
-const CACHE_NAME = "offline-music-shell-v31"; // refresh the shared PWA and Android UI
+const CACHE_NAME = "offline-music-shell-v32"; // refresh the shared PWA and Android UI
 
 const APP_SHELL = [
   "./",

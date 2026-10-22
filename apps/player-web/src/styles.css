@@ -352,6 +352,10 @@ button:disabled {
   border-radius: var(--radius-card) var(--radius-card) 0 0;
 }
 
+.scroll-panel.playlist-collection-panel {
+  padding-top: 12.36px;
+}
+
 .scroll-panel::-webkit-scrollbar {
   display: none;
 }
