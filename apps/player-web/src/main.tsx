@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type TouchEvent as ReactTouchEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type TouchEvent as ReactTouchEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { createPortal } from "react-dom";
 import {
@@ -21,7 +21,7 @@ import {
 import { InstallLanding } from "./install-landing";
 import { isInstalledPwa, isMobilePhone, shouldShowStartupSplash, STARTUP_SPLASH_DURATION_MS } from "./pwa-mode";
 import { getPlayerGestureDestination } from "./player-gesture";
-import { shouldShowMiniPlayer, type Destination } from "./mini-player-state";
+import { getMiniPlayerOpeningOrigin, shouldShowMiniPlayer, type Destination, type PlayerOpenBounds } from "./mini-player-state";
 import {
   createCategoryAssignments,
   getCategoryTracks,
@@ -340,6 +340,8 @@ export function App(): ReactNode {
   const [unmatchedFiles, setUnmatchedFiles] = useState<readonly import("@offline-music-player/platform-contracts").SelectedAudioFile[]>([]);
   const [recoverySummary, setRecoverySummary] = useState("");
   const [playerDragOffset, setPlayerDragOffset] = useState(0);
+  const [playerOpenedFromMiniPlayer, setPlayerOpenedFromMiniPlayer] = useState(false);
+  const miniPlayerOpeningSource = useRef<PlayerOpenBounds | null>(null);
   useEffect(() => {
     if (!library) return;
     try {
@@ -580,6 +582,19 @@ export function App(): ReactNode {
   const playbackProgressPercent = playbackDurationMs > 0 ? playbackPositionMs / playbackDurationMs * 100 : 0;
   const showMiniPlayer = shouldShowMiniPlayer(Boolean(currentTrack), destination);
   const [miniPlayerRendered, setMiniPlayerRendered] = useState(showMiniPlayer);
+  useLayoutEffect(() => {
+    if (destination !== "player") {
+      miniPlayerOpeningSource.current = null;
+      if (playerOpenedFromMiniPlayer) setPlayerOpenedFromMiniPlayer(false);
+      return;
+    }
+    const source = miniPlayerOpeningSource.current;
+    const playerView = playerViewRef.current;
+    if (!playerOpenedFromMiniPlayer || !source || !playerView) return;
+    const origin = getMiniPlayerOpeningOrigin(source, playerView.getBoundingClientRect());
+    playerView.style.setProperty("--player-open-origin-x", `${origin.x}px`);
+    playerView.style.setProperty("--player-open-origin-y", `${origin.y}px`);
+  }, [destination, playerOpenedFromMiniPlayer]);
   const lastCurrentTrack = useRef(currentTrack);
   useEffect(() => {
     if (currentTrack) lastCurrentTrack.current = currentTrack;
@@ -915,7 +930,16 @@ export function App(): ReactNode {
         className="mini-dismiss"
         onClick={() => run(() => runtime.current?.playback.dismissCurrentTrack() ?? Promise.resolve())}
       />
-      <button type="button" className="mini-open" onClick={() => setDestination("player")} aria-label={`Open player: ${track.title}`}>
+      <button type="button" className="mini-open" onClick={(event) => {
+        const bounds = event.currentTarget.closest(".mini-player")?.getBoundingClientRect();
+        if (bounds) {
+          miniPlayerOpeningSource.current = { left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height };
+          setPlayerOpenedFromMiniPlayer(true);
+        } else {
+          setPlayerOpenedFromMiniPlayer(false);
+        }
+        setDestination("player");
+      }} aria-label={`Open player: ${track.title}`}>
         <Artwork track={track} file={getAudioFile(track.id)} />
         <span className="mini-copy"><strong>{track.title}</strong><small>{track.artist ?? track.fileName}</small></span>
       </button>
@@ -1156,7 +1180,7 @@ export function App(): ReactNode {
             {destination === "player" && (
               <section
                 ref={playerViewRef}
-                className={`player-view${playerDragOffset > 0 ? " player-view-pulling" : ""}`}
+                className={`player-view${playerOpenedFromMiniPlayer ? " player-view-opening" : ""}${playerDragOffset > 0 ? " player-view-pulling" : ""}`}
                 aria-label="Now Playing"
                 style={playerDragOffset > 0 ? { transform: `translate3d(0, ${playerDragOffset}px, 0)`, transition: "none" } : undefined}
                 onPointerDown={onPlayerPointerDown}

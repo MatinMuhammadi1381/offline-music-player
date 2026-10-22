@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.7 - 2026-10-22 (mini-player opening motion)
+
+- Expand the now-playing view from the mini-player's actual position with a 1.5-second motion-graphic animation; reduced-motion preferences remain respected.
+- Align the project, workspace packages, and Android version at `1.7.7`; increment Android `versionCode` to 40 and the PWA shell cache to v27. No library data or backup migration is required.
+
 ## 1.7.6 - 2026-10-22 (search sizing and app motion)
 
 - Reduce Search category cards visually by 5% while preserving their grid cells and touch targets.

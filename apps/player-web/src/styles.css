@@ -287,6 +287,12 @@ button:disabled {
   to { opacity: 0; transform: translateY(8px) scale(0.97); }
 }
 
+@keyframes player-open-from-mini {
+  0% { opacity: 0; scale: 0.08; filter: blur(10px) saturate(0.7); }
+  72% { opacity: 1; scale: 1.015; filter: blur(1px) saturate(1); }
+  100% { opacity: 1; scale: 1; filter: blur(0) saturate(1); }
+}
+
 @keyframes nav-icon-settle {
   0% { transform: scale(0.84); }
   70% { transform: scale(1.1); }
@@ -986,6 +992,11 @@ button:disabled {
   scrollbar-width: none;
   -ms-overflow-style: none;
   transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.player-view-opening {
+  transform-origin: var(--player-open-origin-x, 50%) var(--player-open-origin-y, 100%);
+  animation: player-open-from-mini 1500ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .player-view::-webkit-scrollbar {
