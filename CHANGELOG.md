@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.11 - 2026-10-22 (Playlist panel and card spacing)
+
+- Round the top of the playlist panel and display playlist cards as full-width, inset rows; increase the vertical gap by about 3% across browser, PWA, and Android layouts without changing Search results.
+- Align the project, workspace packages, and Android version at `1.7.11`; increment Android `versionCode` to 44 and the PWA shell cache to v31. No library data or backup migration is required.
+
 ## 1.7.10 - 2026-10-22 (Search card spacing)
 
 - Make Search card rows follow their card height on mobile so unused `1fr` track space no longer creates large visual gaps; tighten row gaps while preserving horizontal spacing and card size.

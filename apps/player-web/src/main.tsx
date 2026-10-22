@@ -1298,9 +1298,9 @@ export function App(): ReactNode {
                       <input id="new-playlist-name" name="playlist-name" autoComplete="off" value={newPlaylistName} onChange={(event) => setNewPlaylistName(event.currentTarget.value)} placeholder="Name a new playlist…" maxLength={80} />
                       <button type="submit" className="button button-primary" disabled={!newPlaylistName.trim()}><Icon name="plus" /> Create playlist</button>
                     </form>
-                    <div className="scroll-panel" role="region" aria-label="Your playlists" tabIndex={0}>
+                    <div className="scroll-panel playlist-collection-panel" role="region" aria-label="Your playlists" tabIndex={0}>
                       {library.playlists.length ? (
-                        <ul className="playlist-list">{library.playlists.map((playlist) => (
+                        <ul className="playlist-list playlist-collection-list">{library.playlists.map((playlist) => (
                           <li key={playlist.id}><button type="button" className="playlist-card" onClick={() => setSelectedPlaylistId(playlist.id)}><span className="playlist-art"><Icon name="playlist" /></span><span><strong>{playlist.name}</strong><small>{playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}</small></span><Icon name="back" /></button></li>
                         ))}</ul>
                       ) : <div className="empty-state compact-empty"><div className="empty-art"><Icon name="playlist" size={30} /></div><h3>No playlists yet</h3><p>Create a playlist to bring favorite tracks together.</p></div>}

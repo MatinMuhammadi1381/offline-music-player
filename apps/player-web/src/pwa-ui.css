@@ -540,8 +540,14 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .empty-art {
   scrollbar-width: none;
 }
 
-.pwa-ui .scroll-panel.library-track-panel {
+.pwa-ui .scroll-panel.library-track-panel,
+.pwa-ui .scroll-panel.playlist-collection-panel {
   border-radius: 20px 20px 0 0;
+}
+
+.pwa-ui .scroll-panel.playlist-collection-panel {
+  border: 1px solid var(--color-separator);
+  background: var(--color-surface);
 }
 
 html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
