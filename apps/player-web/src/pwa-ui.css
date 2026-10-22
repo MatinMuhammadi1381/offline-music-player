@@ -247,6 +247,10 @@ html.pwa-ui-enabled select:focus-visible {
   -webkit-overflow-scrolling: touch;
 }
 
+.pwa-ui .search-view.search-results-view {
+  overflow-y: hidden;
+}
+
 .pwa-ui .home-view::-webkit-scrollbar,
 .pwa-ui .search-view::-webkit-scrollbar,
 .pwa-ui .player-view::-webkit-scrollbar,
@@ -646,7 +650,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
 .pwa-ui .playlist-card {
   border-color: var(--color-separator);
   color: var(--color-text-secondary);
-  background: var(--color-surface);
+  background: linear-gradient(150deg, rgba(77, 165, 255, 0.14), var(--color-surface) 74%);
 }
 
 .pwa-ui .playlist-card strong {

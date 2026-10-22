@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.2 - 2026-10-22 (search, playlists, and icon refresh)
+
+- Make search results scroll in their own viewport-sized panel and restyle playlists as visual cards.
+- Replace the shared application UI glyphs with ISC-licensed Lucide React icons.
+- Align the project, workspace packages, and Android version at `1.7.2`; increment Android `versionCode` to 35 and the PWA shell cache to v22. No library data or backup migration is required.
+
 ## 1.7.1 - 2026-10-22 (search and mini-player polish)
 
 - Keep Search focused on its browse categories until a query is entered; make category cards larger and approximately square across browser, PWA, and Android WebView.

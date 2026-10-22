@@ -1,6 +1,6 @@
 {
   "name": "@offline-music-player/player-web",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,6 +13,7 @@
     "@offline-music-player/platform-contracts": "workspace:*",
     "@offline-music-player/shared-types": "workspace:*",
     "@offline-music-player/web-platform": "workspace:*",
+    "lucide-react": "^1.61.0",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },

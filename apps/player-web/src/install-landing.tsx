@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { Icon } from "./icon";
 
 type InstallPlatform = "ios" | "android" | "desktop";
 
@@ -34,11 +35,7 @@ export function InstallLanding({
       <div className="install-content">
         <header className="install-brand">
           <span className="install-brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M9 18V5l12-2v13" />
-              <circle cx="6" cy="18" r="3" />
-              <circle cx="18" cy="16" r="3" />
-            </svg>
+            <Icon name="music" size={23} />
           </span>
           <span>Offline Music</span>
         </header>
@@ -57,7 +54,7 @@ export function InstallLanding({
           )}
           <a className="install-help-link" href="#install-help">
             {installPromptAvailable ? "Or follow the install steps" : "See install steps"}
-            <span aria-hidden="true">↓</span>
+            <Icon name="chevron-down" size={17} />
           </a>
 
           <section id="install-help" className="install-help" aria-labelledby="install-help-title">

@@ -22,6 +22,7 @@ import { InstallLanding } from "./install-landing";
 import { isInstalledPwa, isMobilePhone, shouldShowStartupSplash, STARTUP_SPLASH_DURATION_MS } from "./pwa-mode";
 import { getPlayerGestureDestination } from "./player-gesture";
 import { getCategoryTracks, getRandomCategoryQueue } from "./category-playback";
+import { Icon, type IconName } from "./icon";
 import "./styles.css";
 import "./pwa-ui.css";
 
@@ -36,7 +37,6 @@ if (isAppleMobileDevice && isStandalone()) {
 }
 
 type Destination = "home" | "library" | "search" | "playlists" | "queue" | "settings" | "player";
-type IconName = "home" | "library" | "playlist" | "queue" | "settings" | "play" | "pause" | "next" | "previous" | "search" | "plus" | "shuffle" | "repeat" | "close" | "music" | "back" | "download" | "upload" | "sort";
 const destinations: readonly Destination[] = ["home", "library", "search", "playlists", "queue", "settings", "player"];
 const figmaAsset = (name: string): string => `${import.meta.env.BASE_URL}figma/${name}`;
 const musicCategories = [
@@ -192,31 +192,6 @@ function AppBootstrap(): ReactNode {
       )}
     </>
   );
-}
-
-function Icon({ name, size = 21 }: { readonly name: IconName; readonly size?: number }): ReactNode {
-  const paths: Record<IconName, ReactNode> = {
-    library: <><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H20v16H5.5A1.5 1.5 0 0 1 4 18.5z" /><path d="M4 8h16M8 4v16" /></>,
-    home: <><path d="m3.5 10 8.5-7 8.5 7v10a1 1 0 0 1-1 1h-5.3v-7h-4.4v7H4.5a1 1 0 0 1-1-1z" /></>,
-    playlist: <><path d="M4 6h10M4 10h10M4 14h6" /><path d="M17 18V5l4-1v12" /><circle cx="15" cy="18" r="2" /></>,
-    queue: <><path d="M4 6h11M4 10h11M4 14h7" /><path d="m17 15 4 3-4 3z" fill="currentColor" stroke="none" /></>,
-    settings: <><path d="M4 6h6M14 6h6M4 12h2M10 12h10M4 18h10M18 18h2" /><circle cx="12" cy="6" r="2" /><circle cx="8" cy="12" r="2" /><circle cx="16" cy="18" r="2" /></>,
-    play: <path d="m8 5 11 7-11 7z" fill="currentColor" stroke="none" />,
-    pause: <><path d="M8 5h3v14H8zM15 5h3v14h-3z" fill="currentColor" stroke="none" /></>,
-    next: <><path d="m5 5 10 7-10 7z" fill="currentColor" stroke="none" /><path d="M19 5v14" /></>,
-    previous: <><path d="m19 5-10 7 10 7z" fill="currentColor" stroke="none" /><path d="M5 5v14" /></>,
-    search: <><circle cx="10.8" cy="10.8" r="6.3" /><path d="m16 16 4 4" /></>,
-    plus: <><path d="M12 5v14M5 12h14" /></>,
-    shuffle: <><path d="m16 3 4 4-4 4M4 17l4-4a5 5 0 0 1 7 0l5 5M4 7l1.4 1.4" /><path d="M16 17h4v4" /></>,
-    repeat: <><path d="M17 2l4 4-4 4" /><path d="M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4" /><path d="M21 13v2a3 3 0 0 1-3 3H3" /></>,
-    close: <><path d="m6 6 12 12M18 6 6 18" /></>,
-    music: <><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></>,
-    back: <><path d="m15 18-6-6 6-6" /><path d="M9 12h12" /></>,
-    download: <><path d="M12 3v12m-5-5 5 5 5-5" /><path d="M5 17v4h14v-4" /></>,
-    upload: <><path d="M12 16V4m-5 5 5-5 5 5" /><path d="M5 17v4h14v-4" /></>,
-    sort: <><path d="M4 7h15M4 12h10M4 17h5" /><path d="m17 15 2 2 2-2" /></>,
-  };
-  return <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
 }
 
 function Artwork({ track, file, large = false }: { readonly track?: TrackMetadata; readonly file: File | undefined; readonly large?: boolean }): ReactNode {
@@ -999,7 +974,7 @@ export function App(): ReactNode {
                         }}
                       >
                         <span>{sortOptions.find((option) => option.value === sortField)?.label ?? "Title"}</span>
-                        <svg aria-hidden="true" viewBox="0 0 20 20" width="17" height="17"><path d="m5 7.5 5 5 5-5" /></svg>
+                        <Icon name="chevron-down" size={17} />
                       </button>
                       {sortMenuOpen && (
                         <div id="sort-field-options" className="sort-field-menu" role="listbox" aria-label="Sort library">
@@ -1075,7 +1050,7 @@ export function App(): ReactNode {
             )}
 
             {destination === "search" && (
-              <section className="view-section search-view" aria-labelledby="search-heading">
+              <section className={`view-section search-view${search ? " search-results-view" : ""}`} aria-labelledby="search-heading">
                 <div className="screen-intro"><h1 id="search-heading">Search</h1><p>Find a track, artist, album, or playlist.</p></div>
                 <div className="search-field search-screen-field"><Icon name="search" /><label className="visually-hidden" htmlFor="music-search">Search your library</label><input id="music-search" name="music-search" autoComplete="off" value={search} onChange={(event) => { setSearch(event.currentTarget.value); setListLimit(100); }} placeholder="Songs, artists, albums…" /><button type="button" className={`clear-search${search ? " is-visible" : ""}`} aria-label="Clear search" onClick={() => setSearch("")} disabled={!search}><Icon name="close" size={17} /></button></div>
                 {!search && <><h3 className="browse-heading">Browse Categories</h3><div className="category-grid">{musicCategories.map((category) => {
