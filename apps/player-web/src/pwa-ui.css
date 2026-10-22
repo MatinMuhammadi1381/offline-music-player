@@ -699,7 +699,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
 }
 
 .pwa-ui .artwork-large {
-  width: min(58vw, 360px);
+  width: min(66.7vw, 414px);
   margin-bottom: 14px;
   border: 1px solid var(--color-separator);
   border-radius: 26px;
@@ -993,13 +993,13 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
   }
 
   .pwa-ui .artwork-large {
-    width: min(76vw, 340px);
+    width: min(87.4vw, 391px);
     margin-bottom: 10px;
     border-radius: 24px;
   }
 
   .pwa-ui .player-track {
-    margin: 8px 0 13px;
+    margin: clamp(12px, 2vh, 18px) 0 13px;
   }
 
   .pwa-ui .player-track h2 {
@@ -1008,8 +1008,13 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
 
   .pwa-ui .player-controls {
     gap: 3px;
-    margin-top: 14px;
+    width: min(110%, 473px);
+    margin-top: clamp(20px, 3vh, 26px);
     padding: 6px;
+  }
+
+  .pwa-ui.player-open .progress-control {
+    margin-top: clamp(8px, 2vh, 16px);
   }
 
   .pwa-ui .player-extra {
@@ -1170,7 +1175,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
   }
 
   .pwa-ui .artwork-large {
-    width: min(42vh, 230px);
+    width: min(48.3vh, 265px);
   }
 }
 

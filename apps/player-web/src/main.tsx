@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type TouchEvent as ReactTouchEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type TouchEvent as ReactTouchEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { createPortal } from "react-dom";
 import {
@@ -21,7 +21,14 @@ import {
 import { InstallLanding } from "./install-landing";
 import { isInstalledPwa, isMobilePhone, shouldShowStartupSplash, STARTUP_SPLASH_DURATION_MS } from "./pwa-mode";
 import { getPlayerGestureDestination } from "./player-gesture";
-import { getCategoryTracks, getRandomCategoryQueue } from "./category-playback";
+import {
+  createCategoryAssignments,
+  getCategoryTracks,
+  getRandomCategoryQueue,
+  parseCategoryAssignments,
+  reconcileCategoryAssignments,
+  type CategoryAssignments,
+} from "./category-playback";
 import { Icon, type IconName } from "./icon";
 import "./styles.css";
 import "./pwa-ui.css";
@@ -47,6 +54,8 @@ const musicCategories = [
   { name: "Indie", tone: "indie", term: "indie" },
   { name: "Ambient", tone: "ambient", term: "ambient" },
 ] as const;
+const automaticCategoryNames = musicCategories.flatMap((category) => "term" in category ? [category.name] : []);
+const categoryAssignmentsStorageKey = "offline-music-category-assignments";
 
 declare global {
   interface Window {
@@ -294,6 +303,17 @@ export function App(): ReactNode {
   const playerGestureStart = useRef<{ readonly source: "pointer" | "touch"; readonly id: number; readonly x: number; readonly y: number } | null>(null);
   const runtime = useRef<AppRuntime | null>(null);
   const [library, setLibrary] = useState<LibraryMetadata | null>(null);
+  const [categoryAssignments, setCategoryAssignments] = useState<CategoryAssignments>(() => {
+    try {
+      const serialized = window.localStorage.getItem(categoryAssignmentsStorageKey);
+      const parsed = parseCategoryAssignments(serialized, automaticCategoryNames);
+      if (serialized && !parsed) console.warn("Saved music category assignments are invalid; they will be regenerated.");
+      return parsed ?? createCategoryAssignments([], automaticCategoryNames, () => 0);
+    } catch (error) {
+      console.error("Could not load saved music category assignments.", error);
+      return createCategoryAssignments([], automaticCategoryNames, () => 0);
+    }
+  });
   const [settings, setSettings] = useState<PlayerSettings>(DEFAULT_PLAYER_SETTINGS);
   const [lightMode, setLightMode] = useState(() => {
     try { return window.localStorage.getItem("offline-music-theme") === "light"; } catch { return false; }
@@ -320,6 +340,22 @@ export function App(): ReactNode {
   const [unmatchedFiles, setUnmatchedFiles] = useState<readonly import("@offline-music-player/platform-contracts").SelectedAudioFile[]>([]);
   const [recoverySummary, setRecoverySummary] = useState("");
   const [playerDragOffset, setPlayerDragOffset] = useState(0);
+  useEffect(() => {
+    if (!library) return;
+    try {
+      const reconciled = reconcileCategoryAssignments(
+        categoryAssignments,
+        library.tracks.map((track) => track.id),
+        automaticCategoryNames,
+      );
+      setCategoryAssignments(reconciled);
+      window.localStorage.setItem(categoryAssignmentsStorageKey, JSON.stringify(reconciled));
+    } catch (error) {
+      const message = `Music category assignments could not be saved: ${errorMessage(error)}`;
+      console.error(message, error);
+      setNotice(message);
+    }
+  }, [categoryAssignments, library]);
   useEffect(() => {
     document.documentElement.dataset.theme = lightMode ? "light" : "dark";
     document.documentElement.style.colorScheme = lightMode ? "light" : "dark";
@@ -539,6 +575,9 @@ export function App(): ReactNode {
     const id = player.playback.currentTrackId;
     return library?.tracks.find((track) => track.id === id);
   }, [library, player.playback.currentTrackId]);
+  const playbackDurationMs = player.playback.durationMs ?? currentTrack?.durationMs ?? 0;
+  const playbackPositionMs = Math.min(Math.max(player.playback.positionMs, 0), playbackDurationMs);
+  const playbackProgressPercent = playbackDurationMs > 0 ? playbackPositionMs / playbackDurationMs * 100 : 0;
   const showMiniPlayer = Boolean(currentTrack && destination !== "player");
 
   useEffect(() => {
@@ -1055,7 +1094,10 @@ export function App(): ReactNode {
                 <div className="search-field search-screen-field"><Icon name="search" /><label className="visually-hidden" htmlFor="music-search">Search your library</label><input id="music-search" name="music-search" autoComplete="off" value={search} onChange={(event) => { setSearch(event.currentTarget.value); setListLimit(100); }} placeholder="Songs, artists, albums…" /><button type="button" className={`clear-search${search ? " is-visible" : ""}`} aria-label="Clear search" onClick={() => setSearch("")} disabled={!search}><Icon name="close" size={17} /></button></div>
                 {!search && <><h3 className="browse-heading">Browse Categories</h3><div className="category-grid">{musicCategories.map((category) => {
                   const isPlaylistCategory = !("term" in category);
-                  const categoryTrackCount = isPlaylistCategory ? 0 : getCategoryTracks(library.tracks, category.term).length;
+                  const categoryTracks = isPlaylistCategory
+                    ? []
+                    : getCategoryTracks(library.tracks, categoryAssignments.categories[category.name] ?? []);
+                  const categoryTrackCount = categoryTracks.length;
                   const trackCountLabel = categoryTrackCount === 1 ? "1 track" : `${categoryTrackCount} tracks`;
                   return (
                     <button
@@ -1069,7 +1111,7 @@ export function App(): ReactNode {
                           setDestination("playlists");
                           return;
                         }
-                        const queue = getRandomCategoryQueue(library.tracks, category.term);
+                        const queue = getRandomCategoryQueue(categoryTracks);
                         if (queue.length > 0) playTrack(queue[0]!.id, queue.map((track) => track.id));
                       }}
                     >
@@ -1121,7 +1163,18 @@ export function App(): ReactNode {
                     <div className="player-track"><h2>{currentTrack.title}</h2><p>{currentTrack.artist ?? "Unknown artist"}{currentTrack.album ? ` · ${currentTrack.album}` : ""}</p></div>
                     {player.playback.failure && <div className="player-error" role="alert"><strong>Playback needs attention</strong><p>{player.playback.failure.message}</p><button type="button" className="button button-secondary" onClick={recoverFiles}>Reselect audio</button></div>}
                     <div className="progress-control">
-                      <input aria-label="Playback position" type="range" min="0" max={player.playback.durationMs ?? currentTrack.durationMs ?? 0} value={Math.min(player.playback.positionMs, player.playback.durationMs ?? currentTrack.durationMs ?? 0)} disabled={!player.playback.durationMs && !currentTrack.durationMs} onChange={(event) => run(() => runtime.current?.playback.seek(Number(event.currentTarget.value)) ?? Promise.resolve())} />
+                      <input
+                        aria-label="Playback position"
+                        type="range"
+                        min="0"
+                        max={playbackDurationMs}
+                        value={playbackPositionMs}
+                        style={{
+                          backgroundImage: `radial-gradient(ellipse 12px 14px at ${playbackProgressPercent}% 50%, rgba(77, 165, 255, 0.95), transparent 100%), linear-gradient(90deg, #4da5ff 0%, #4da5ff ${playbackProgressPercent}%, #9ca7b4 ${playbackProgressPercent}%, #9ca7b4 100%)`,
+                        } satisfies CSSProperties}
+                        disabled={!playbackDurationMs}
+                        onChange={(event) => run(() => runtime.current?.playback.seek(Number(event.currentTarget.value)) ?? Promise.resolve())}
+                      />
                       <div><span>{formatTime(player.playback.positionMs)}</span><span>{formatTime(player.playback.durationMs ?? currentTrack.durationMs ?? 0)}</span></div>
                     </div>
                     <div className="player-controls">
@@ -1131,7 +1184,7 @@ export function App(): ReactNode {
                       <IconButton label="Next track" icon="next" className="control-secondary" onClick={() => run(() => runtime.current?.playback.next() ?? Promise.resolve())} />
                       <IconButton label={`Repeat ${settings.repeatMode}`} icon="repeat" active={settings.repeatMode !== "off"} onClick={cycleRepeat} />
                     </div>
-                    <div className="player-extra"><button type="button" className="text-button" onClick={() => setDestination("queue")}><Icon name="queue" /> Up next</button><span>{player.playback.state === "loading" ? "Loading audio…" : player.playback.state === "playing" ? "Playing from this device" : player.playback.state === "error" ? "Audio unavailable" : "Ready when you are"}</span></div>
+                    <div className="player-extra"><span>{player.playback.state === "loading" ? "Loading audio…" : player.playback.state === "playing" ? "Playing from this device" : player.playback.state === "error" ? "Audio unavailable" : "Ready when you are"}</span></div>
                   </>
                 ) : <div className="empty-state"><div className="empty-art"><Icon name="music" size={34} /></div><h3>Nothing is playing</h3><p>Choose a track from your library to begin.</p><button type="button" className="button button-primary" onClick={() => setDestination("library")}>Browse library</button></div>}
               </section>

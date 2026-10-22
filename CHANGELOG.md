@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.3 - 2026-10-22 (random categories and player polish)
+
+- Assign every library track to exactly one random music category, preserve assignments between launches, and shuffle only the selected category.
+- Remove the Up next link from the now-playing panel and refine its cover size, spacing, and glowing blue progress indicator.
+- Align the project, workspace packages, and Android version at `1.7.3`; increment Android `versionCode` to 36 and the PWA shell cache to v23. No library data or backup migration is required.
+
 ## 1.7.2 - 2026-10-22 (search, playlists, and icon refresh)
 
 - Make search results scroll in their own viewport-sized panel and restyle playlists as visual cards.
