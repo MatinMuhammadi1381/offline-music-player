@@ -2,10 +2,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperti
 import { createRoot } from "react-dom/client";
 import { createPortal } from "react-dom";
 import {
-  JsonMetadataBackupService,
   LibraryController,
   PlaybackController,
-  restoreMetadataBackup,
   searchTracks,
   sortTracks,
   DEFAULT_PLAYER_SETTINGS,
@@ -15,7 +13,6 @@ import { BrowserAudioFileSource, createInputFileChooser, HtmlAudioPlaybackEngine
 import { extractEmbeddedArtwork } from "@offline-music-player/web-platform";
 import type { PlayerSnapshot, TrackIntegrity } from "@offline-music-player/music-core";
 import {
-  getBrowserStoragePersistenceStatus,
   requestBrowserStoragePersistence,
 } from "@offline-music-player/web-platform";
 import { InstallLanding } from "./install-landing";
@@ -323,7 +320,6 @@ export function App(): ReactNode {
   const androidPackagedAssets = window.location.hostname === "appassets.androidplatform.net";
   const pwaUiEnabled = document.documentElement.classList.contains("pwa-ui-enabled");
   const fileInput = useRef<HTMLInputElement>(null);
-  const backupInput = useRef<HTMLInputElement>(null);
   const playlistArtworkInput = useRef<HTMLInputElement>(null);
   const playlistSettingsDialog = useRef<HTMLDialogElement>(null);
   const playlistMusicDialog = useRef<HTMLDialogElement>(null);
@@ -369,7 +365,6 @@ export function App(): ReactNode {
   const [stagedPlaylistTrackIds, setStagedPlaylistTrackIds] = useState<readonly string[]>([]);
   const [playlistMusicSearch, setPlaylistMusicSearch] = useState("");
   const [playlistPickerTrackId, setPlaylistPickerTrackId] = useState<string | null>(null);
-  const [storageMessage, setStorageMessage] = useState("Checking browser storage support…");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
   const [pendingRelinks, setPendingRelinks] = useState<readonly PendingRelink[]>([]);
@@ -590,8 +585,7 @@ export function App(): ReactNode {
     void Promise.all([
       libraryController.load(),
       repository.loadSettings(),
-      getBrowserStoragePersistenceStatus(navigator.storage),
-    ]).then(async ([loadedLibrary, loadedSettings, storage]) => {
+    ]).then(async ([loadedLibrary, loadedSettings]) => {
       if (!mounted) return;
       setLibrary(loadedLibrary);
       setSettings(loadedSettings);
@@ -600,13 +594,6 @@ export function App(): ReactNode {
       playback.setRepeatMode(loadedSettings.repeatMode);
       playback.setShuffleEnabled(loadedSettings.shuffleEnabled);
       setIntegrity(await libraryController.checkIntegrity());
-      setStorageMessage(androidPackagedAssets
-        ? "Songs and library details are saved in this app and remain after it closes. They are removed if you clear app data or uninstall the app."
-        : storage.status === "supported"
-          ? storage.granted ? "Persistent storage is granted. Audio copies stay in this app between launches, but iOS can still remove app data."
-            : "Persistent storage was not granted. Audio copies stay in this app between launches, but iOS may remove browser data."
-          : storage.status === "unsupported" ? "Audio copies stay in this app between launches. This browser cannot request eviction protection, so keep the originals."
-            : "Audio copies are stored on this device. Storage eviction protection could not be confirmed; keep the originals.");
       setLoading(false);
     }).catch((error: unknown) => {
       if (!mounted) return;
@@ -795,10 +782,7 @@ export function App(): ReactNode {
       return;
     }
     if (persistentAudioEnabled && !androidPackagedAssets) {
-      const persistence = await requestBrowserStoragePersistence(navigator.storage);
-      if (persistence.status !== "supported") {
-        setStorageMessage("Audio copies will be saved on this device, but iOS may clear app data. Keep your original files.");
-      }
+      await requestBrowserStoragePersistence(navigator.storage);
     }
     const linked = await app.library.relinkFiles(result.files);
     const ambiguousFiles = linked.ambiguous.flatMap((entry) => {
@@ -856,62 +840,6 @@ export function App(): ReactNode {
       tell("Playlist created.");
     });
   };
-
-  const exportBackup = (): void => run(async () => {
-    if (!library) return;
-    const backup = await new JsonMetadataBackupService().exportMetadata(library);
-    if (window.OfflineMusicAndroid) {
-      window.OfflineMusicAndroid.saveMetadataBackup(await backup.text());
-      tell("Choose where to save the metadata backup.");
-      return;
-    }
-    const url = URL.createObjectURL(backup);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "offline-music-backup.json";
-    anchor.click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
-    tell("Metadata backup exported. Audio files and file permissions are not included.");
-  });
-
-  const importBackup = (): void => run(async () => {
-    const input = backupInput.current;
-    const file = input?.files?.[0];
-    const app = runtime.current;
-    if (!file || !app) {
-      if (input) input.value = "";
-      return;
-    }
-    try {
-      const service = new JsonMetadataBackupService();
-      const result = await restoreMetadataBackup(file, service, app.repository);
-      if (result.status === "invalid") {
-        tell(`Backup rejected: ${result.errors.join(" ")}`);
-        return;
-      }
-      await app.library.load();
-      await refreshLibrary();
-      setSelectedPlaylistId(null);
-      setPendingRelinks([]);
-      setUnmatchedFiles([]);
-      tell("Library metadata restored. Reselect audio files to regain access.");
-    } finally {
-      input.value = "";
-    }
-  });
-
-  const requestPersistence = (): void => run(async () => {
-    if (androidPackagedAssets) {
-      setStorageMessage("Songs are saved in this app and remain across launches. They are removed if you clear app data or uninstall the app.");
-      return;
-    }
-    const status = await requestBrowserStoragePersistence(navigator.storage);
-    setStorageMessage(status.status === "supported"
-      ? status.granted ? "Persistent storage is granted. App audio and metadata remain best-effort and can still be deleted."
-        : "Persistent storage was not granted. iOS may remove stored audio and metadata; keep original audio and export a metadata backup."
-      : status.status === "unsupported" ? "Persistent storage requests are not available in this browser."
-        : "The persistent storage request failed. Your music files were not changed.");
-  });
 
   const navItems: { readonly id: Exclude<Destination, "player">; readonly label: string; readonly icon: IconName }[] = [
     { id: "home", label: "Listen", icon: "home" },
@@ -1531,16 +1459,6 @@ export function App(): ReactNode {
                     <div className="setting-row"><span><strong>Repeat</strong><small>Current mode: {settings.repeatMode === "off" ? "Off" : settings.repeatMode === "queue" ? "Queue" : "Track"}.</small></span><button type="button" className="button button-secondary" onClick={cycleRepeat}>Change</button></div>
                   </div>
                   <div className="settings-group">
-                    <h3>Library backup</h3>
-                    <p className="setting-copy">{persistentAudioEnabled ? "Backups include track details and playlists, not audio. Audio copies are stored only in this app and are not included in metadata backups." : "Backups include track details and playlists, not audio files or file-access permissions."}</p>
-                    <div className="setting-actions"><button type="button" className="button button-secondary" onClick={exportBackup}><Icon name="download" /> Export metadata</button><button type="button" className="button button-secondary" onClick={() => backupInput.current?.click()}><Icon name="upload" /> Import backup</button></div>
-                  </div>
-                  <div className="settings-group">
-                    <h3>{androidPackagedAssets ? "App storage" : "Browser storage"}</h3>
-                    <p className="setting-copy">{storageMessage}</p>
-                    {!androidPackagedAssets && <button type="button" className="button button-secondary" onClick={requestPersistence}>Request persistent storage</button>}
-                  </div>
-                  <div className="settings-group">
                     <h3>About and privacy</h3>
                     <p className="setting-copy">Offline Music · Version {appVersion.trim()} development build</p>
                     <p className="setting-copy">{persistentAudioEnabled ? persistencePrivacyMessage : "Audio access is session-only and may need to be restored after restarting the app. Audio is not copied into browser storage."} Background playback depends on browser and platform behavior and has not been confirmed on your device.</p>
@@ -1641,7 +1559,6 @@ export function App(): ReactNode {
       )}
 
       <input ref={fileInput} className="hidden-input" type="file" name="audio-files" aria-label="Choose audio files" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus" multiple />
-      <input ref={backupInput} className="hidden-input" type="file" name="metadata-backup" aria-label="Choose metadata backup" accept="application/json,.json" onChange={importBackup} />
     </div>
     {createPortal(
       pwaUiEnabled ? (

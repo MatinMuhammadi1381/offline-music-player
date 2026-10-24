@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.0 - 2026-10-24 (Settings cleanup)
+
+- Remove Library backup and Browser storage from the Settings list while keeping the other Settings groups unchanged.
+- Align the project, workspace packages, and Android version at `1.9.0`; increment Android `versionCode` to 55 and the PWA shell cache to v42. No library data or backup migration is required.
+
 ## 1.8.9 - 2026-10-24 (Contact links)
 
 - Display Telegram, Instagram, and GitHub as side-by-side icon-only links, and keep both phone numbers visible as a vertical list; correct the Instagram username to `matin_muhammadi.2001`.
