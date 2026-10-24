@@ -7,9 +7,9 @@ import {
   validatePlayerSettings,
 } from "../../music-core/src/settings.ts";
 import { LibraryController } from "../../music-core/src/library-controller.ts";
-import type { LibraryMetadata, PlayerSettings } from "../../shared-types/src/index.ts";
+import type { AudioFileStore, LibraryMetadata, PlayerSettings } from "../../shared-types/src/index.ts";
 import type { AudioElementPort, ObjectUrlPort } from "../src/html-audio-playback-engine.ts";
-import { BrowserAudioFileSource, createInputFileChooser } from "../src/browser-audio-file-source.ts";
+import { BrowserAudioFileSource, createInputFileChooser, type AndroidMediaBridge } from "../src/browser-audio-file-source.ts";
 import { extractEmbeddedArtwork } from "../src/embedded-artwork.ts";
 import { IndexedDbLibraryRepository } from "../src/index.ts";
 import { HtmlAudioPlaybackEngine } from "../src/html-audio-playback-engine.ts";
@@ -479,6 +479,68 @@ test("reports browser file-picker cancellation and directory limitations honestl
   assert.equal(capabilities.directorySelection.status, "unsupported");
   assert.equal(capabilities.persistentFileReferences.status, "unsupported");
   assert.equal(capabilities.multipleFileSelection.status, "unknown");
+});
+
+test("imports scanned Android audio durably and rolls back its URI mapping on storage failure", async () => {
+  const registered: { readonly trackId: string; readonly uri: string }[] = [];
+  const deleted: string[] = [];
+  let failStorage = false;
+  const bridge: AndroidMediaBridge = {
+    saveMetadataBackup: () => {},
+    setTheme: () => {},
+    registerSelectedTracks: () => "",
+    linkTrack: () => "",
+    deleteTrack: (trackId) => { deleted.push(trackId); return ""; },
+    getPlaybackUri: () => "",
+    registerScannedTrack: (trackId, uri) => { registered.push({ trackId, uri }); return ""; },
+    openScannedMedia: () => "",
+    readScannedMediaChunk: () => {},
+    closeScannedMedia: () => {},
+    acknowledgeScanPage: () => "",
+    startInitialScan: () => {},
+    setArtwork: () => {},
+    playTrack: () => {},
+    pausePlayback: () => {},
+    seekPlayback: () => {},
+    stopPlayback: () => {},
+  };
+  const audioStore: AudioFileStore = {
+    saveAudioFiles: async (entries) => {
+      if (failStorage) throw new Error("IndexedDB quota exceeded.");
+      assert.equal(entries.length, 1);
+      assert.equal(await entries[0]!.file.text(), "scan audio");
+    },
+    loadAudioFiles: async () => [],
+    deleteAudioFile: async () => {},
+  };
+  const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  Object.defineProperty(globalThis, "window", { configurable: true, value: { OfflineMusicAndroid: bridge } });
+  try {
+    const source = new BrowserAudioFileSource(async () => null, audioStore, "android");
+    const track = createTrack({
+      id: "android-mediastore:content://media/external/audio/media/4",
+      fileName: "scan.mp3",
+      title: "Scanned track",
+      fileSizeBytes: 10,
+    });
+    const file = new File(["scan audio"], track.fileName, { type: "audio/mpeg" });
+    const selected = await source.importScannedFile(track, file, "content://media/external/audio/media/4");
+    assert.equal(selected.track.id, track.id);
+    assert.equal(selected.reference.platform, "android");
+    assert.equal(source.getFile(selected.reference), file);
+    assert.deepEqual(registered[0], { trackId: track.id, uri: "content://media/external/audio/media/4" });
+
+    failStorage = true;
+    const failedTrack = { ...track, id: "android-mediastore:content://media/external/audio/media/5" };
+    await assert.rejects(
+      source.importScannedFile(failedTrack, file, "content://media/external/audio/media/5"),
+      /IndexedDB quota exceeded/,
+    );
+    assert.deepEqual(deleted, [failedTrack.id]);
+  } finally {
+    if (originalWindow) Object.defineProperty(globalThis, "window", originalWindow);
+    else Reflect.deleteProperty(globalThis, "window");
+  }
 });
 
 test("persists only validated metadata using a single IndexedDB transaction", async () => {

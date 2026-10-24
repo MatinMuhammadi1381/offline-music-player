@@ -22,7 +22,7 @@ export interface AndroidMediaBridge {
   openScannedMedia(uri: string): string;
   readScannedMediaChunk(token: string, requestId: string): void;
   closeScannedMedia(token: string): void;
-  markInitialScanComplete(): string;
+  acknowledgeScanPage(scanId: string, pageIndex: number): string;
   startInitialScan(): void;
   setArtwork(trackId: string, artworkBase64: string): void;
   playTrack(trackId: string, title: string, artist: string, album: string, durationMs: number): void;

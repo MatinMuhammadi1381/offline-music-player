@@ -40,12 +40,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public final class SharedPlayerActivity extends Activity {
     private static final int REQUEST_AUDIO_FILES = 20;
     private static final int REQUEST_METADATA_BACKUP_EXPORT = 21;
     private static final int REQUEST_NOTIFICATIONS = 22;
+    private static final int REQUEST_MEDIA_SCAN_PERMISSION = 23;
+    private static final int MEDIA_SCAN_PAGE_SIZE = 100;
     private static final String ASSET_HOST = "appassets.androidplatform.net";
     private static final String ASSET_PREFIX = "/assets/player/";
     private static final String PLAYER_BASE_URL = "https://" + ASSET_HOST + ASSET_PREFIX;
@@ -57,9 +64,17 @@ public final class SharedPlayerActivity extends Activity {
     private Intent pendingPlaybackIntent;
     private volatile ArrayList<Uri> selectedAudioUris = new ArrayList<>();
     private final Set<String> persistableAudioUris = Collections.synchronizedSet(new HashSet<>());
+    private final Map<String, InputStream> scannedMediaStreams = new ConcurrentHashMap<>();
+    private final ExecutorService mediaReadExecutor = Executors.newSingleThreadExecutor();
     private WebView webView;
     private TextView errorView;
     private boolean serviceReceiverRegistered;
+    private boolean initialScanStarted;
+    private AndroidAudioScanner.ScanOperation initialScanOperation;
+    private ArrayList<AndroidAudioScanner.AudioItem> pendingScanItems;
+    private String pendingScanId;
+    private int pendingScanOffset;
+    private int pendingScanPageIndex;
     private final BroadcastReceiver serviceReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -260,6 +275,10 @@ public final class SharedPlayerActivity extends Activity {
     protected void onDestroy() {
         pendingBackupJson = null;
         pendingPlaybackIntent = null;
+        pendingScanItems = null;
+        if (initialScanOperation != null) initialScanOperation.cancel();
+        mediaReadExecutor.shutdownNow();
+        closeScannedMediaStreams();
         if (serviceReceiverRegistered) {
             unregisterReceiver(serviceReceiver);
             serviceReceiverRegistered = false;
@@ -411,6 +430,15 @@ public final class SharedPlayerActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_MEDIA_SCAN_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startMediaScan();
+            } else {
+                initialScanStarted = false;
+                dispatchWindowEvent("offline-music-android-scan-permission", new JSONObject());
+            }
+            return;
+        }
         if (requestCode != REQUEST_NOTIFICATIONS || pendingPlaybackIntent == null) return;
         Intent playbackIntent = pendingPlaybackIntent;
         pendingPlaybackIntent = null;
@@ -505,6 +533,107 @@ public final class SharedPlayerActivity extends Activity {
         }
 
         @android.webkit.JavascriptInterface
+        public String registerScannedTrack(String trackId, String uriValue) {
+            if (trackId == null || trackId.isEmpty() || uriValue == null) {
+                return "Android could not save the scanned audio reference.";
+            }
+            Uri uri = Uri.parse(uriValue);
+            if (!"content".equals(uri.getScheme()) || !AndroidAudioScanner.hasReadPermission(SharedPlayerActivity.this)) {
+                return "Android does not have permission to read this scanned audio file.";
+            }
+            boolean saved = getSharedPreferences(MEDIA_URI_PREFERENCES, MODE_PRIVATE)
+                    .edit().putString("uri:" + trackId, uri.toString()).commit();
+            return saved ? "" : "Android could not save the scanned audio reference.";
+        }
+
+        @android.webkit.JavascriptInterface
+        public String openScannedMedia(String uriValue) {
+            try {
+                Uri uri = Uri.parse(uriValue);
+                if (!"content".equals(uri.getScheme()) || !AndroidAudioScanner.hasReadPermission(SharedPlayerActivity.this)) {
+                    return new JSONObject().put("error", "Android does not have permission to read this scanned audio file.").toString();
+                }
+                InputStream input = getContentResolver().openInputStream(uri);
+                if (input == null) throw new IOException("The Android media provider returned no audio stream.");
+                String token = UUID.randomUUID().toString();
+                scannedMediaStreams.put(token, input);
+                return new JSONObject().put("token", token).toString();
+            } catch (IOException | org.json.JSONException | SecurityException exception) {
+                try {
+                    return new JSONObject().put("error", "Could not open scanned audio: " + exception.getMessage()).toString();
+                } catch (org.json.JSONException jsonException) {
+                    return "{\"error\":\"Could not open scanned audio.\"}";
+                }
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public void readScannedMediaChunk(String token, String requestId) {
+            if (token == null || requestId == null) return;
+            mediaReadExecutor.execute(() -> {
+                InputStream input = scannedMediaStreams.get(token);
+                if (input == null) {
+                    dispatchMediaChunk(requestId, "", true, "The Android audio stream is no longer available.");
+                    return;
+                }
+                byte[] buffer = new byte[64 * 1024];
+                try {
+                    int count;
+                    do {
+                        count = input.read(buffer);
+                    } while (count == 0);
+                    boolean eof = count < 0;
+                    String chunk = eof ? "" : Base64.encodeToString(buffer, 0, count, Base64.NO_WRAP);
+                    dispatchMediaChunk(requestId, chunk, eof, null);
+                } catch (IOException exception) {
+                    closeScannedMedia(token);
+                    dispatchMediaChunk(requestId, "", true, "Could not read scanned audio: " + exception.getMessage());
+                }
+            });
+        }
+
+        @android.webkit.JavascriptInterface
+        public void closeScannedMedia(String token) {
+            InputStream input = scannedMediaStreams.remove(token);
+            if (input == null) return;
+            try {
+                input.close();
+            } catch (IOException exception) {
+                android.util.Log.w("OfflineMusic", "Could not close scanned audio stream.", exception);
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public synchronized String acknowledgeScanPage(String scanId, int pageIndex) {
+            if (pendingScanItems == null || pendingScanId == null
+                    || !pendingScanId.equals(scanId) || pendingScanPageIndex != pageIndex) {
+                return "Android audio scan page acknowledgement was stale.";
+            }
+            boolean lastPage = pendingScanItems.isEmpty()
+                    || pendingScanOffset + MEDIA_SCAN_PAGE_SIZE >= pendingScanItems.size();
+            if (lastPage) {
+                try {
+                    AndroidAudioScanner.markInitialScanComplete(SharedPlayerActivity.this);
+                } catch (IllegalStateException exception) {
+                    return exception.getMessage();
+                }
+                pendingScanItems = null;
+                pendingScanId = null;
+                initialScanStarted = false;
+                return "";
+            }
+            pendingScanOffset += MEDIA_SCAN_PAGE_SIZE;
+            pendingScanPageIndex++;
+            runOnUiThread(SharedPlayerActivity.this::dispatchNextScanPage);
+            return "";
+        }
+
+        @android.webkit.JavascriptInterface
+        public void startInitialScan() {
+            runOnUiThread(SharedPlayerActivity.this::startInitialAudioScan);
+        }
+
+        @android.webkit.JavascriptInterface
         public void setArtwork(String trackId, String artworkBase64) {
             if (trackId == null || artworkBase64 == null || artworkBase64.length() > 1_500_000) {
                 return;
@@ -586,6 +715,108 @@ public final class SharedPlayerActivity extends Activity {
 
     private interface ServiceIntentMutator {
         void apply(Intent intent);
+    }
+
+    private void startInitialAudioScan() {
+        if (initialScanStarted || AndroidAudioScanner.isInitialScanComplete(this)) return;
+        initialScanStarted = true;
+        if (!AndroidAudioScanner.ensureReadPermission(this, REQUEST_MEDIA_SCAN_PERMISSION)) return;
+        startMediaScan();
+    }
+
+    private void startMediaScan() {
+        initialScanOperation = AndroidAudioScanner.scanAsync(this, new AndroidAudioScanner.ScanCallback() {
+            @Override
+            public void onSuccess(java.util.List<AndroidAudioScanner.AudioItem> items) {
+                pendingScanItems = new ArrayList<>(items);
+                pendingScanId = UUID.randomUUID().toString();
+                pendingScanOffset = 0;
+                pendingScanPageIndex = 0;
+                dispatchNextScanPage();
+            }
+
+            @Override
+            public void onFailure(Exception exception) {
+                initialScanStarted = false;
+                JSONObject detail = new JSONObject();
+                try {
+                    detail.put("message", exception.getMessage() == null
+                            ? "The Android audio library could not be scanned." : exception.getMessage());
+                } catch (org.json.JSONException jsonException) {
+                    android.util.Log.e("OfflineMusic", "Could not encode Android scan failure.", jsonException);
+                }
+                dispatchWindowEvent("offline-music-android-scan-error", detail);
+            }
+        });
+    }
+
+    private void dispatchMediaChunk(String requestId, String chunk, boolean eof, String error) {
+        JSONObject detail = new JSONObject();
+        try {
+            detail.put("requestId", requestId);
+            detail.put("chunk", chunk);
+            detail.put("eof", eof);
+            if (error != null) detail.put("error", error);
+        } catch (org.json.JSONException exception) {
+            android.util.Log.e("OfflineMusic", "Could not encode scanned audio chunk.", exception);
+            return;
+        }
+        dispatchWindowEvent("offline-music-android-media-chunk", detail);
+    }
+
+    private void dispatchNextScanPage() {
+        ArrayList<AndroidAudioScanner.AudioItem> items = pendingScanItems;
+        String scanId = pendingScanId;
+        if (items == null || scanId == null) return;
+        JSONObject detail = new JSONObject();
+        JSONArray results = new JSONArray();
+        int end = Math.min(pendingScanOffset + MEDIA_SCAN_PAGE_SIZE, items.size());
+        try {
+            for (int index = pendingScanOffset; index < end; index++) {
+                AndroidAudioScanner.AudioItem item = items.get(index);
+                JSONObject entry = new JSONObject()
+                        .put("stableId", item.stableId)
+                        .put("uri", item.uri.toString())
+                        .put("fileName", item.fileName)
+                        .put("title", item.title)
+                        .put("fileSizeBytes", item.fileSizeBytes)
+                        .put("addedAtMs", item.addedAtMs);
+                if (item.artist != null) entry.put("artist", item.artist);
+                if (item.album != null) entry.put("album", item.album);
+                if (item.mimeType != null) entry.put("mimeType", item.mimeType);
+                if (item.durationMs != null) entry.put("durationMs", item.durationMs);
+                results.put(entry);
+            }
+            detail.put("scanId", scanId);
+            detail.put("pageIndex", pendingScanPageIndex);
+            detail.put("totalItems", items.size());
+            detail.put("isLastPage", end >= items.size());
+            detail.put("items", results);
+            dispatchWindowEvent("offline-music-android-scan", detail);
+        } catch (org.json.JSONException exception) {
+            initialScanStarted = false;
+            pendingScanItems = null;
+            pendingScanId = null;
+            JSONObject failure = new JSONObject();
+            try {
+                failure.put("message", "Could not encode Android audio scan results: " + exception.getMessage());
+            } catch (org.json.JSONException ignored) {
+                android.util.Log.e("OfflineMusic", "Could not encode Android scan failure.", exception);
+            }
+            dispatchWindowEvent("offline-music-android-scan-error", failure);
+        }
+    }
+
+    private void closeScannedMediaStreams() {
+        for (String token : scannedMediaStreams.keySet()) {
+            InputStream input = scannedMediaStreams.remove(token);
+            if (input == null) continue;
+            try {
+                input.close();
+            } catch (IOException exception) {
+                android.util.Log.w("OfflineMusic", "Could not close scanned audio stream.", exception);
+            }
+        }
     }
 
     private void writeMetadataBackup(int resultCode, Intent data) {

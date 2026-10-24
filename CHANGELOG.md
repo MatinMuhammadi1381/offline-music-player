@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.3 - 2026-10-24 (Android playback and library scan)
+
+- Connect Android playback to a foreground media service with system notification, lock-screen controls, track metadata, available MP3 artwork, and playback progress.
+- Scan local Android audio on first launch and import it sequentially into the shared offline library, with paged metadata, retry-safe stable IDs, and no completion marker on failed imports.
+- Align the project and workspace packages at `1.9.3`; increment Android `versionCode` to 58 and the PWA shell cache to v45. No library data or backup migration is required.
+
 ## 1.9.1 - 2026-10-24 (Settings contact icons)
 
 - Enlarge Contact icons in Settings by about 30%, from 24px to 31px, without changing other icons.

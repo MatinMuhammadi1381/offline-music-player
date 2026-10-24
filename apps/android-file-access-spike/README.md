@@ -37,7 +37,7 @@ Record the manufacturer, model, Android version, and build number shown by the p
 
 ## Data and permissions
 
-- The shared UI requests audio through Android's system document picker and does not request broad storage or network permission.
+- Manual selection uses Android's system document picker. The first-launch MediaStore scan requests `READ_MEDIA_AUDIO` on Android 13+ or `READ_EXTERNAL_STORAGE` on Android 6–12; the APK has no network permission.
 - Selected audio bytes are copied into the app's private WebView IndexedDB store, keyed by track ID. Runtime `File` objects are restored from that store after app restart. The Android bridge separately persists the matching system picker URI and read grant for native playback.
 - Track, playlist, and settings metadata use the WebView's IndexedDB storage. Audio bytes and Android content URIs are not copied into metadata backups.
 - The shared UI's JSON backup import uses the Android document picker; export uses Android's create-document picker and writes only the metadata JSON to the user-selected location. Backups never include audio or picker permissions; restoring one still requires selecting the original files again.
@@ -52,9 +52,7 @@ Record the manufacturer, model, Android version, and build number shown by the p
 
 ## Android library scanner
 
-`AndroidAudioScanner` provides a MediaStore-only scanner for Android's audio collections and a branded launch splash for the packaged app. Request permission with `ensureReadPermission(activity, requestCode)`; API 33+ uses `READ_MEDIA_AUDIO`, while API 23–32 uses `READ_EXTERNAL_STORAGE`. After the activity receives a grant, call `scanAsync(context, callback)` (or call `scan(context)` from a worker thread). Each result includes an Android content URI, metadata, and a stable MediaStore-based `stableId`; use that stable ID as the shared track ID to make repeated scans idempotent. Permission denial leaves the initial scan pending. Call `markInitialScanComplete(context)` only after all scan results have been durably imported.
-
-The scanner helper is not yet connected to the shared WebView library: its results are content URIs, while the current library import path expects audio bytes stored in WebView IndexedDB. The bridge must read each URI, transfer the bytes/metadata into the shared player, and only then mark the initial scan complete. Audio is queried locally and is never uploaded.
+The shared player starts a MediaStore scan on first launch after requesting `READ_MEDIA_AUDIO` (Android 13+) or `READ_EXTERNAL_STORAGE` (Android 6–12). It imports audio bytes and metadata into the same WebView IndexedDB library used by manual selection, using the scanner's stable MediaStore ID as each track ID so retries skip already imported tracks. The native bridge transfers one file at a time through asynchronous 64 KiB content-URI reads and sends metadata in acknowledged pages of at most 100 tracks; it does not send whole audio payloads through one WebView call or retain a full collection in JavaScript. The initial-scan marker is committed only after the final page's audio and track metadata are durable. On failure the marker remains unset; reopening the app retries, and stable IDs prevent duplicate imports. Audio is queried and copied locally, never uploaded.
 
 ## Current limitations
 

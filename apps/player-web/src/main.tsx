@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import {
   LibraryController,
   PlaybackController,
+  createTrack,
   searchTracks,
   sortTracks,
   DEFAULT_PLAYER_SETTINGS,
@@ -78,6 +79,133 @@ interface PendingRelink {
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
   readonly userChoice: Promise<{ readonly outcome: "accepted" | "dismissed"; readonly platform: string }>;
+}
+
+interface AndroidScannedAudio {
+  readonly stableId: string;
+  readonly uri: string;
+  readonly fileName: string;
+  readonly title: string;
+  readonly artist?: string;
+  readonly album?: string;
+  readonly mimeType?: string;
+  readonly durationMs?: number;
+  readonly fileSizeBytes: number;
+  readonly addedAtMs: number;
+}
+
+interface AndroidMediaChunk {
+  readonly requestId: string;
+  readonly chunk: string;
+  readonly eof: boolean;
+  readonly error?: string;
+}
+
+interface AndroidScanPage {
+  readonly scanId: string;
+  readonly pageIndex: number;
+  readonly totalItems: number;
+  readonly isLastPage: boolean;
+  readonly items: readonly AndroidScannedAudio[];
+}
+
+function parseAndroidScannedAudio(value: unknown): AndroidScanPage {
+  if (typeof value !== "object" || value === null || !Array.isArray((value as { items?: unknown }).items)) {
+    throw new Error("Android returned invalid media scan results.");
+  }
+  const page = value as {
+    scanId?: unknown;
+    pageIndex?: unknown;
+    totalItems?: unknown;
+    isLastPage?: unknown;
+    items: unknown[];
+  };
+  if (typeof page.scanId !== "string" || !Number.isSafeInteger(page.pageIndex) || (page.pageIndex as number) < 0
+      || !Number.isSafeInteger(page.totalItems) || (page.totalItems as number) < 0
+      || typeof page.isLastPage !== "boolean") {
+    throw new Error("Android returned invalid media scan page metadata.");
+  }
+  const items = page.items.map((entry): AndroidScannedAudio => {
+    if (typeof entry !== "object" || entry === null) throw new Error("Android returned invalid media metadata.");
+    const item = entry as Record<string, unknown>;
+    if (typeof item.stableId !== "string" || typeof item.uri !== "string"
+        || typeof item.fileName !== "string" || typeof item.title !== "string"
+        || typeof item.fileSizeBytes !== "number" || !Number.isSafeInteger(item.fileSizeBytes)
+        || item.fileSizeBytes < 0 || typeof item.addedAtMs !== "number"
+        || !Number.isFinite(item.addedAtMs) || item.addedAtMs < 0
+        || (item.artist !== undefined && typeof item.artist !== "string")
+        || (item.album !== undefined && typeof item.album !== "string")
+        || (item.mimeType !== undefined && typeof item.mimeType !== "string")
+        || (item.durationMs !== undefined && (typeof item.durationMs !== "number"
+          || !Number.isFinite(item.durationMs) || item.durationMs < 0))) {
+      throw new Error("Android returned invalid media metadata.");
+    }
+    return {
+      stableId: item.stableId,
+      uri: item.uri,
+      fileName: item.fileName,
+      title: item.title,
+      fileSizeBytes: item.fileSizeBytes,
+      addedAtMs: item.addedAtMs,
+      ...(typeof item.artist === "string" ? { artist: item.artist } : {}),
+      ...(typeof item.album === "string" ? { album: item.album } : {}),
+      ...(typeof item.mimeType === "string" ? { mimeType: item.mimeType } : {}),
+      ...(typeof item.durationMs === "number" ? { durationMs: item.durationMs } : {}),
+    };
+  });
+  return {
+    scanId: page.scanId,
+    pageIndex: page.pageIndex as number,
+    totalItems: page.totalItems as number,
+    isLastPage: page.isLastPage,
+    items,
+  };
+}
+
+async function readAndroidScannedAudio(
+  bridge: NonNullable<Window["OfflineMusicAndroid"]>,
+  uri: string,
+): Promise<Blob> {
+  let opened: { readonly token?: string; readonly error?: string };
+  try {
+    opened = JSON.parse(bridge.openScannedMedia(uri)) as typeof opened;
+  } catch {
+    throw new Error("Android could not open a scanned audio file.");
+  }
+  if (!opened.token || opened.error) throw new Error(opened.error ?? "Android could not open a scanned audio file.");
+  const token = opened.token;
+
+  const chunks: ArrayBuffer[] = [];
+  try {
+    while (true) {
+      const requestId = crypto.randomUUID();
+      const nextChunk = await new Promise<AndroidMediaChunk>((resolve, reject) => {
+        const timeout = window.setTimeout(() => {
+          window.removeEventListener("offline-music-android-media-chunk", receiveChunk);
+          reject(new Error("Timed out while reading scanned audio from Android."));
+        }, 30_000);
+        const receiveChunk = (event: Event): void => {
+          const detail = (event as CustomEvent<AndroidMediaChunk>).detail;
+          if (detail?.requestId !== requestId) return;
+          window.clearTimeout(timeout);
+          window.removeEventListener("offline-music-android-media-chunk", receiveChunk);
+          resolve(detail);
+        };
+        window.addEventListener("offline-music-android-media-chunk", receiveChunk);
+        bridge.readScannedMediaChunk(token, requestId);
+      });
+      if (nextChunk.error) throw new Error(nextChunk.error);
+      if (nextChunk.chunk) {
+        const decoded = atob(nextChunk.chunk);
+        const bytes = new Uint8Array(decoded.length);
+        for (let index = 0; index < decoded.length; index++) bytes[index] = decoded.charCodeAt(index);
+        chunks.push(bytes.buffer);
+      }
+      if (nextChunk.eof) return new Blob(chunks);
+    }
+  } finally {
+    bridge.closeScannedMedia(token);
+  }
 }
 
 function isStandalone(): boolean {
@@ -548,6 +676,7 @@ export function App(): ReactNode {
     const playback = new PlaybackController(audio, (trackId) => libraryController.getFile(trackId));
     runtime.current = { files, repository, library: libraryController, audio, playback };
     const playbackSubscription = playback.subscribe(setPlayer);
+    const scanImportCounts = new Map<string, number>();
     const onNativeControl = (event: Event): void => {
       const detail = (event as CustomEvent<{ readonly action?: string; readonly positionMs?: number }>).detail;
       const operation = detail?.action === "next" ? playback.next()
@@ -560,8 +689,85 @@ export function App(): ReactNode {
     const onNativePermissionDenied = (): void => {
       setNotice("Notification permission is off. Audio will play, but Android may hide the player notification and lock-screen controls.");
     };
+    const onAndroidScanPermissionDenied = (): void => {
+      setNotice("Music library access was not granted. Android did not scan or import any audio.");
+    };
+    const onAndroidScanError = (event: Event): void => {
+      const detail = (event as CustomEvent<{ readonly message?: string }>).detail;
+      setNotice(`Android music import was not completed. No scan completion was saved. ${detail?.message ?? "Reopen the app to retry."}`);
+    };
+    const onAndroidScan = (event: Event): void => {
+      if (!androidBridge) return;
+      let page: AndroidScanPage;
+      try {
+        page = parseAndroidScannedAudio((event as CustomEvent<unknown>).detail);
+      } catch (error) {
+        setNotice(errorMessage(error));
+        return;
+      }
+      void (async () => {
+        const importedIds = new Set<string>();
+        const existingIds = new Set(libraryController.getLibrary().tracks.map((track) => track.id));
+        for (const [index, item] of page.items.entries()) {
+          if (existingIds.has(item.stableId)) continue;
+          setNotice(`Importing ${page.pageIndex * 100 + index + 1} of ${page.totalItems} tracks from Android...`);
+          const track = createTrack({
+            id: item.stableId,
+            fileName: item.fileName,
+            title: item.title,
+            fileSizeBytes: item.fileSizeBytes,
+            addedAt: item.addedAtMs,
+            ...(item.artist ? { artist: item.artist } : {}),
+            ...(item.album ? { album: item.album } : {}),
+            ...(item.mimeType ? { mimeType: item.mimeType } : {}),
+            ...(item.durationMs === undefined ? {} : { durationMs: item.durationMs }),
+          });
+          const blob = await readAndroidScannedAudio(androidBridge, item.uri);
+          if (blob.size !== item.fileSizeBytes) {
+            throw new Error(`Android returned incomplete audio for "${item.fileName}".`);
+          }
+          const audioFile = new File([blob], track.fileName, {
+            type: track.mimeType ?? "application/octet-stream",
+            lastModified: track.addedAt,
+          });
+          const selected = await files.importScannedFile(track, audioFile, item.uri);
+          try {
+            await libraryController.addSelectedFiles([selected]);
+          } catch (error) {
+            try {
+              await files.deleteStoredFile(track.id);
+            } catch (cleanupError) {
+              throw new Error(`${errorMessage(error)} Cleanup also failed: ${errorMessage(cleanupError)}`);
+            }
+            throw error;
+          }
+          existingIds.add(track.id);
+          importedIds.add(track.id);
+        }
+        setLibrary(libraryController.getLibrary());
+        setIntegrity(await libraryController.checkIntegrity());
+        const totalImported = (scanImportCounts.get(page.scanId) ?? 0) + importedIds.size;
+        scanImportCounts.set(page.scanId, totalImported);
+        const acknowledgementError = androidBridge.acknowledgeScanPage(page.scanId, page.pageIndex);
+        if (acknowledgementError) throw new Error(acknowledgementError);
+        if (page.isLastPage) {
+          scanImportCounts.delete(page.scanId);
+          setNotice(totalImported === 0
+            ? page.totalItems === 0 ? "No audio files were found on this Android device." : "Android music library is already up to date."
+            : `Imported ${totalImported} track${totalImported === 1 ? "" : "s"} from this Android device.`);
+        } else if (importedIds.size === 0) {
+          setNotice(`Android library scan: ${page.pageIndex * 100 + page.items.length} of ${page.totalItems} tracks checked...`);
+        }
+      })().catch((error: unknown) => {
+        setLibrary(libraryController.getLibrary());
+        setNotice(`Android music import was incomplete. Reopen the app to retry safely. ${errorMessage(error)}`);
+      });
+    };
     window.addEventListener("offline-music-native-control", onNativeControl);
     window.addEventListener("offline-music-native-playback-permission", onNativePermissionDenied);
+    window.addEventListener("offline-music-android-scan-permission", onAndroidScanPermissionDenied);
+    window.addEventListener("offline-music-android-scan-error", onAndroidScanError);
+    window.addEventListener("offline-music-android-scan", onAndroidScan);
     let mounted = true;
     const mediaSession = navigator.mediaSession;
     const registeredMediaActions: MediaSessionAction[] = [];
@@ -609,6 +815,7 @@ export function App(): ReactNode {
       playback.setShuffleEnabled(loadedSettings.shuffleEnabled);
       setIntegrity(await libraryController.checkIntegrity());
       setLoading(false);
+      if (androidBridge) androidBridge.startInitialScan();
     }).catch((error: unknown) => {
       if (!mounted) return;
       setNotice(`The library could not be opened: ${errorMessage(error)}`);
@@ -622,6 +829,9 @@ export function App(): ReactNode {
       audio.dispose();
       window.removeEventListener("offline-music-native-control", onNativeControl);
       window.removeEventListener("offline-music-native-playback-permission", onNativePermissionDenied);
+      window.removeEventListener("offline-music-android-scan-permission", onAndroidScanPermissionDenied);
+      window.removeEventListener("offline-music-android-scan-error", onAndroidScanError);
+      window.removeEventListener("offline-music-android-scan", onAndroidScan);
       if (mediaSession) {
         for (const action of registeredMediaActions) mediaSession.setActionHandler(action, null);
       }

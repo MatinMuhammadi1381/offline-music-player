@@ -3,7 +3,7 @@
 **A private, offline-first music player for Android and iPhone.** Your original audio files stay in the locations you choose; the app does not upload your music.
 
 [![Deploy to GitHub Pages](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml)
-[![Version](https://img.shields.io/badge/version-1.9.1-1687ff)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.9.3-1687ff)](VERSION)
 
 **Web app:** [Open Offline Music Player](https://matinmuhammadi1381.github.io/offline-music-player/)
 
@@ -61,9 +61,10 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 
 ## وضعیت پروژه و محدودیت‌ها
 
-- نسخهٔ پروژه: **1.9.1**.
+- نسخهٔ پروژه: **1.9.3**.
 - انتشار روی GitHub Pages به معنی تأیید نهایی یا آمادگی production نیست.
-- پخش پس‌زمینه و کنترل‌های media بومی Android هنوز به رابط مشترک برنامه متصل نشده‌اند.
+- Android در اجرای اول پس از دریافت مجوز audio library، آهنگ‌های MediaStore را به کتابخانهٔ مشترک وارد می‌کند؛ در صورت قطع‌شدن، واردکردن دوباره با شناسه‌های پایدار از تکرار آهنگ جلوگیری می‌کند.
+- پخش پس‌زمینهٔ Android از media notification و کنترل‌های صفحهٔ قفل سیستم، فرادادهٔ آهنگ، کاور جاسازی‌شدهٔ MP3 در صورت وجود و نمایش پیشرفت استفاده می‌کند. Android 13+ برای نمایش اعلان در نوار اعلان‌ها به مجوز notification نیاز دارد.
 - PWA آیفون کپی محلی آهنگ‌ها را برای استفاده بین نشست‌ها ذخیره می‌کند، اما iOS تضمین نگهداری چندماهه نمی‌دهد و ممکن است دادهٔ سایت را پاک کند؛ نسخهٔ اصلی آهنگ‌ها را حفظ کنید. نسخهٔ Android فایل‌های انتخاب‌شده را در فضای خصوصی برنامه نگه می‌دارد؛ پاک‌کردن داده‌های برنامه یا حذف آن، این فایل‌ها را حذف می‌کند.
 - پشتیبان JSON فقط فراداده و فهرست‌ها را نگه می‌دارد و شامل فایل صوتی نیست.
 - برای اجرای تست‌ها و بررسی پروژه، دستورهای بخش توسعهٔ محلی را ببینید.
@@ -81,8 +82,10 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 - Updated mobile navigation icons and a dedicated adaptive Android launcher icon.
 - Local library and sorting, a dedicated music search, card-based music categories with randomly partitioned, non-overlapping tracks that persist between launches, playback queue, and playlists.
 - A Settings contact section with direct Telegram, Instagram, phone, and GitHub links.
+- Android scans local MediaStore audio on first launch after permission and imports tracks into the shared offline library; stable IDs prevent duplicates if an interrupted import is retried.
+- Android background playback uses a foreground media service with system-rendered media notifications and lock-screen controls, track metadata, embedded MP3 artwork when available, and playback progress. Android 13+ notification permission affects notification-drawer visibility; presentation varies by device.
 - Displays embedded ID3 cover artwork for MP3 files when present; images are read locally and are not uploaded or saved in library metadata.
-- On the iPhone PWA, selected audio is copied into private, origin-local IndexedDB so it can be reopened for playback; it is never uploaded. Android's packaged app stores copied audio in app-private webview storage, which survives relaunch and is removed by clearing app data or uninstalling.
+- On the iPhone PWA, selected audio is copied into private, origin-local IndexedDB so it can be reopened for playback; it is never uploaded. Android's packaged app stores copied audio in app-private WebView IndexedDB storage and retains the Android-granted URI needed by native playback; clearing app data or uninstalling removes those copies and permissions.
 - Local metadata/settings persistence and JSON metadata-only backups.
 - The PWA shell is cached after the first successful load for offline app launch.
 - Online page launches check for the latest app shell; the cached shell remains available when offline.
@@ -106,7 +109,7 @@ Open the [web app](https://matinmuhammadi1381.github.io/offline-music-player/) i
 
 ### Project status and limitations
 
-- Project version: **1.9.1**.
+- Project version: **1.9.3**.
 - GitHub Pages availability does not mean the app has passed production or final acceptance.
 - Android background playback, system media notifications, lock-screen controls, and playback progress are connected to the shared player. Android supplies the notification and lock-screen layout; the app provides track metadata, embedded MP3 artwork when available, a blue accent, and standard media controls. Android 13+ requires notification permission for the notification drawer.
 - iOS may evict browser storage or the user may clear site data; this is not a months-long retention guarantee. Keep original audio files. Android stores selected audio in app-private WebView storage and retains the picker-granted URI needed by native background playback; clearing app data or uninstalling removes those copies and permissions. JSON backups include metadata and playlists, not audio.
