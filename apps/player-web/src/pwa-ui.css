@@ -6,6 +6,7 @@ html.pwa-ui-enabled {
   --pwa-mini-player-height: 62px;
   --pwa-mini-player-gap: 3vh;
   --pwa-layout-reciprocal-scale: 1.428571;
+  --player-content-offset: calc(var(--ui-viewport-height, 100dvh) * var(--pwa-layout-reciprocal-scale) * 0.3);
   --color-bg: #080d18;
   --color-surface: #101827;
   --color-surface-raised: #172338;
@@ -684,7 +685,7 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
 
 .pwa-ui .player-view {
   width: min(100%, 700px);
-  justify-content: center;
+  justify-content: flex-start;
   padding: 0 0 22px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -1169,6 +1170,15 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
 
   .pwa-ui .player-view {
     justify-content: flex-start;
+  }
+
+  .pwa-ui .player-content {
+    display: grid;
+    grid-template-columns: minmax(150px, 36vh) minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto;
+    column-gap: 28px;
+    align-items: center;
+    justify-items: stretch;
   }
 
   .pwa-ui .artwork-large {

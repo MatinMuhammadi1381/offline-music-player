@@ -18,6 +18,7 @@
   --ui-scale: 1;
   --ui-content-max-width: 1160px;
   --ui-viewport-height: 100vh;
+  --player-content-offset: calc(var(--ui-viewport-height, 100dvh) * 0.3);
   --radius-card: 22px;
   --radius-control: 15px;
   --mobile-nav-height: 68px;
@@ -985,7 +986,7 @@ button:disabled {
   flex: 1;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   margin: 0 auto;
   padding: 0 0 28px;
   overflow-y: auto;
@@ -993,6 +994,15 @@ button:disabled {
   scrollbar-width: none;
   -ms-overflow-style: none;
   transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.player-content {
+  display: flex;
+  width: 100%;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  margin-top: var(--player-content-offset);
 }
 
 .player-view-opening {
@@ -3053,15 +3063,20 @@ button:disabled {
   }
 
   .player-view {
-    display: grid;
+    display: flex;
     min-height: 0;
     flex: 1;
+    align-items: stretch;
+    overflow-y: auto;
+  }
+
+  .player-content {
+    display: grid;
     grid-template-columns: minmax(150px, 36vh) minmax(0, 1fr);
     grid-template-rows: auto auto auto auto;
     column-gap: 28px;
     align-items: center;
     justify-items: stretch;
-    overflow-y: auto;
   }
 
   .artwork-large {

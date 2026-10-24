@@ -1288,35 +1288,37 @@ export function App(): ReactNode {
                 <div className="player-dismiss-row">
                   <div className="player-drag-hint" aria-hidden="true"><span className="player-drag-indicator" /> Pull down to return</div>
                 </div>
-                {currentTrack ? (
-                  <>
-                    <Artwork track={currentTrack} file={getAudioFile(currentTrack.id)} large />
-                    <div className="player-track"><h2>{currentTrack.title}</h2><p>{currentTrack.artist ?? "Unknown artist"}{currentTrack.album ? ` · ${currentTrack.album}` : ""}</p></div>
-                    {player.playback.failure && <div className="player-error" role="alert"><strong>Playback needs attention</strong><p>{player.playback.failure.message}</p><button type="button" className="button button-secondary" onClick={recoverFiles}>Reselect audio</button></div>}
-                    <div className="progress-control">
-                      <input
-                        aria-label="Playback position"
-                        type="range"
-                        min="0"
-                        max={playbackDurationMs}
-                        value={playbackPositionMs}
-                        style={{
-                          backgroundImage: `radial-gradient(ellipse 12px 14px at ${playbackProgressPercent}% 50%, rgba(77, 165, 255, 0.95), transparent 100%), linear-gradient(90deg, #4da5ff 0%, #4da5ff ${playbackProgressPercent}%, #9ca7b4 ${playbackProgressPercent}%, #9ca7b4 100%)`,
-                        } satisfies CSSProperties}
-                        disabled={!playbackDurationMs}
-                        onChange={(event) => run(() => runtime.current?.playback.seek(Number(event.currentTarget.value)) ?? Promise.resolve())}
-                      />
-                      <div><span>{formatTime(player.playback.positionMs)}</span><span>{formatTime(player.playback.durationMs ?? currentTrack.durationMs ?? 0)}</span></div>
-                    </div>
-                    <div className="player-controls">
-                      <IconButton label="Toggle shuffle" icon="shuffle" active={settings.shuffleEnabled} onClick={toggleShuffle} />
-                      <IconButton label="Previous track" icon="previous" className="control-secondary" onClick={() => run(() => runtime.current?.playback.previous() ?? Promise.resolve())} />
-                      <IconButton label={player.playback.state === "playing" ? "Pause" : "Play"} icon={player.playback.state === "playing" ? "pause" : "play"} className="control-main" onClick={() => run(() => runtime.current?.playback.togglePlayback() ?? Promise.resolve())} />
-                      <IconButton label="Next track" icon="next" className="control-secondary" onClick={() => run(() => runtime.current?.playback.next() ?? Promise.resolve())} />
-                      <IconButton label={`Repeat ${settings.repeatMode}`} icon="repeat" active={settings.repeatMode !== "off"} onClick={cycleRepeat} />
-                    </div>
-                  </>
-                ) : <div className="empty-state"><div className="empty-art"><Icon name="music" size={34} /></div><h3>Nothing is playing</h3><p>Choose a track from your library to begin.</p><button type="button" className="button button-primary" onClick={() => setDestination("library")}>Browse library</button></div>}
+                <div className="player-content">
+                  {currentTrack ? (
+                    <>
+                      <Artwork track={currentTrack} file={getAudioFile(currentTrack.id)} large />
+                      <div className="player-track"><h2>{currentTrack.title}</h2><p>{currentTrack.artist ?? "Unknown artist"}{currentTrack.album ? ` · ${currentTrack.album}` : ""}</p></div>
+                      {player.playback.failure && <div className="player-error" role="alert"><strong>Playback needs attention</strong><p>{player.playback.failure.message}</p><button type="button" className="button button-secondary" onClick={recoverFiles}>Reselect audio</button></div>}
+                      <div className="progress-control">
+                        <input
+                          aria-label="Playback position"
+                          type="range"
+                          min="0"
+                          max={playbackDurationMs}
+                          value={playbackPositionMs}
+                          style={{
+                            backgroundImage: `radial-gradient(ellipse 12px 14px at ${playbackProgressPercent}% 50%, rgba(77, 165, 255, 0.95), transparent 100%), linear-gradient(90deg, #4da5ff 0%, #4da5ff ${playbackProgressPercent}%, #9ca7b4 ${playbackProgressPercent}%, #9ca7b4 100%)`,
+                          } satisfies CSSProperties}
+                          disabled={!playbackDurationMs}
+                          onChange={(event) => run(() => runtime.current?.playback.seek(Number(event.currentTarget.value)) ?? Promise.resolve())}
+                        />
+                        <div><span>{formatTime(player.playback.positionMs)}</span><span>{formatTime(player.playback.durationMs ?? currentTrack.durationMs ?? 0)}</span></div>
+                      </div>
+                      <div className="player-controls">
+                        <IconButton label="Toggle shuffle" icon="shuffle" active={settings.shuffleEnabled} onClick={toggleShuffle} />
+                        <IconButton label="Previous track" icon="previous" className="control-secondary" onClick={() => run(() => runtime.current?.playback.previous() ?? Promise.resolve())} />
+                        <IconButton label={player.playback.state === "playing" ? "Pause" : "Play"} icon={player.playback.state === "playing" ? "pause" : "play"} className="control-main" onClick={() => run(() => runtime.current?.playback.togglePlayback() ?? Promise.resolve())} />
+                        <IconButton label="Next track" icon="next" className="control-secondary" onClick={() => run(() => runtime.current?.playback.next() ?? Promise.resolve())} />
+                        <IconButton label={`Repeat ${settings.repeatMode}`} icon="repeat" active={settings.repeatMode !== "off"} onClick={cycleRepeat} />
+                      </div>
+                    </>
+                  ) : <div className="empty-state"><div className="empty-art"><Icon name="music" size={34} /></div><h3>Nothing is playing</h3><p>Choose a track from your library to begin.</p><button type="button" className="button button-primary" onClick={() => setDestination("library")}>Browse library</button></div>}
+                </div>
               </section>
             )}
 

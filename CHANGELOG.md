@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.5 - 2026-10-24 (Lower mini player content)
+
+- Move the open player content down by 30% of the viewport while keeping the player view scrollable and preserving the drag gesture area and safe-area insets.
+- Align the project, workspace packages, and Android version at `1.8.5`; increment Android `versionCode` to 50 and the PWA shell cache to v37. No library data or backup migration is required.
+
 ## 1.8.4 - 2026-10-24 (Mini player polish)
 
 - Shorten the mini-player expansion animation to one second, remove the Now Playing and Library controls, and remove the artwork's Local collection overlay.
