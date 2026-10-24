@@ -987,7 +987,6 @@ export function App(): ReactNode {
                   setPlaylistPickerTrackId(track.id);
                   setPlaylistPickerOpen(true);
                 }} />
-                <IconButton label={`Add ${track.title} to queue`} icon="plus" onClick={() => runtime.current?.playback.enqueue([track.id])} />
                 <IconButton label={`Remove ${track.title} from library`} icon="close" onClick={() => {
                   const confirmation = persistentAudioEnabled
                     ? `Remove “${track.title}” and its saved audio copy from this app? Your original file is not deleted.`
