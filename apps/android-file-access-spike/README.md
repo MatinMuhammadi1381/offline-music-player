@@ -50,6 +50,12 @@ Record the manufacturer, model, Android version, and build number shown by the p
 - The WebView uses app-private IndexedDB for library metadata, settings, and audio copies, and restores audio into in-memory `File` references at launch. The Android-only playback engine sends track IDs and metadata to `PlaybackService`; the service reads the separately persisted content URI, publishes MediaSession state and system media controls, and broadcasts playback progress and transport actions back to the WebView.
 - Validate 320, 360, 390, and 430 CSS px widths, portrait and short landscape, safe areas, enlarged text, and absence of clipped controls or horizontal overflow on real devices.
 
+## Android library scanner
+
+`AndroidAudioScanner` provides a MediaStore-only scanner for Android's audio collections and a branded launch splash for the packaged app. Request permission with `ensureReadPermission(activity, requestCode)`; API 33+ uses `READ_MEDIA_AUDIO`, while API 23–32 uses `READ_EXTERNAL_STORAGE`. After the activity receives a grant, call `scanAsync(context, callback)` (or call `scan(context)` from a worker thread). Each result includes an Android content URI, metadata, and a stable MediaStore-based `stableId`; use that stable ID as the shared track ID to make repeated scans idempotent. Permission denial leaves the initial scan pending. Call `markInitialScanComplete(context)` only after all scan results have been durably imported.
+
+The scanner helper is not yet connected to the shared WebView library: its results are content URIs, while the current library import path expects audio bytes stored in WebView IndexedDB. The bridge must read each URI, transfer the bytes/metadata into the shared player, and only then mark the initial scan complete. Audio is queried locally and is never uploaded.
+
 ## Current limitations
 
 - No Android phone or emulator is connected in the current environment.
