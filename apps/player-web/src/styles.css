@@ -18,7 +18,7 @@
   --ui-scale: 1;
   --ui-content-max-width: 1160px;
   --ui-viewport-height: 100vh;
-  --player-content-offset: calc(var(--ui-viewport-height, 100dvh) * 0.3);
+  --player-content-offset: calc(var(--ui-viewport-height, 100dvh) * 0.15);
   --radius-card: 22px;
   --radius-control: 15px;
   --mobile-nav-height: 68px;
