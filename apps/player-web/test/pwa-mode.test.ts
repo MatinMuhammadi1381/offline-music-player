@@ -4,6 +4,7 @@ import test from "node:test";
 import { isInstalledPwa, isMobilePhone, shouldShowStartupSplash, STARTUP_SPLASH_DURATION_MS } from "../src/pwa-mode.ts";
 
 const pwaUiCss = readFileSync(new URL("../src/pwa-ui.css", import.meta.url), "utf8");
+const sharedUiCss = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
 test("recognizes the standard standalone display mode", () => {
   assert.equal(isInstalledPwa(true, false), true);
@@ -32,6 +33,14 @@ test("shows the startup splash only in an installed mobile standalone app", () =
 
 test("keeps the startup splash visible for three seconds", () => {
   assert.equal(STARTUP_SPLASH_DURATION_MS, 3_000);
+});
+
+test("uses the same 10% player-content offset in browser and scaled PWA layouts", () => {
+  const browserOffset = sharedUiCss.match(/--player-content-offset:\s*calc\(var\(--ui-viewport-height,\s*100dvh\)\s*\*\s*([\d.]+)\)/)?.[1];
+  const pwaOffset = pwaUiCss.match(/--player-content-offset:\s*calc\(var\(--ui-viewport-height,\s*100dvh\)\s*\*\s*var\(--pwa-layout-reciprocal-scale\)\s*\*\s*([\d.]+)\)/)?.[1];
+
+  assert.equal(browserOffset, "0.1");
+  assert.equal(pwaOffset, "0.1");
 });
 
 test("covers the viewport above the mobile navigation dock", () => {

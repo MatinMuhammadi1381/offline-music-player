@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.7 - 2026-10-24 (Raise mini player content)
+
+- Move the open player content up from a 15% to 10% viewport offset while keeping the drag handle, scrolling, and safe-area insets unchanged; use the same offset in regular and scaled PWA layouts.
+- Align the project, workspace packages, and Android version at `1.8.7`; increment Android `versionCode` to 52 and the PWA shell cache to v39. No library data or backup migration is required.
+
 ## 1.8.6 - 2026-10-24 (Adjust mini player position)
 
 - Reduce the open player content offset from 30% to 15% of the viewport while keeping the drag handle, scrolling, and safe-area insets unchanged.

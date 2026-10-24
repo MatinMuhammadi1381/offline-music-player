@@ -6,7 +6,7 @@ html.pwa-ui-enabled {
   --pwa-mini-player-height: 62px;
   --pwa-mini-player-gap: 3vh;
   --pwa-layout-reciprocal-scale: 1.428571;
-  --player-content-offset: calc(var(--ui-viewport-height, 100dvh) * var(--pwa-layout-reciprocal-scale) * 0.15);
+  --player-content-offset: calc(var(--ui-viewport-height, 100dvh) * var(--pwa-layout-reciprocal-scale) * 0.1);
   --color-bg: #080d18;
   --color-surface: #101827;
   --color-surface-raised: #172338;
