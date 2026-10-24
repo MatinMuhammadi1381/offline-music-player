@@ -3,7 +3,7 @@
 **A private, offline-first music player for Android and iPhone.** Your original audio files stay in the locations you choose; the app does not upload your music.
 
 [![Deploy to GitHub Pages](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml)
-[![Version](https://img.shields.io/badge/version-1.8.7-1687ff)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.8.8-1687ff)](VERSION)
 
 **Web app:** [Open Offline Music Player](https://matinmuhammadi1381.github.io/offline-music-player/)
 
@@ -26,6 +26,7 @@
 - رابط واکنش‌گرا و موبایل‌محور برای وب، PWA آیفون و برنامهٔ اندروید
 - دسته‌های موسیقی به‌شکل تصادفی و بدون آهنگ تکراری بین دسته‌ها تقسیم می‌شوند و این تقسیم‌بندی بعد از بازکردن دوبارهٔ برنامه حفظ می‌شود.
 - کتابخانهٔ محلی و مرتب‌سازی، جست‌وجوی جداگانهٔ آهنگ‌ها، دسته‌های کارت‌شکل با میکس تصادفی و فهرست‌های پخش
+- بخش تماس در تنظیمات با پیوندهای مستقیم تلگرام، اینستاگرام، تماس تلفنی و گیت‌هاب
 - پوستهٔ ثابت در اندازهٔ صفحه با بخش‌های مستقل؛ در گوشی پنل‌های کتابخانه و پلی‌لیست تا درست بالای نوار تمام‌عرض پایین باز می‌مانند و اسکرول فقط داخل پنل انجام می‌شود.
 - صفحهٔ راهنمای نصب متناسب با iPhone، Android و رایانه؛ پخش‌کننده پس از نصب و اجرای آیکون برنامه باز می‌شود.
 - نوار پخش کوچک در چیدمان جا دارد و روی پنل‌ها نمی‌افتد؛ فضای پیمایش انتهای فهرست، نمایش کامل آخرین آهنگ‌ها را ممکن می‌کند.
@@ -60,7 +61,7 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 
 ## وضعیت پروژه و محدودیت‌ها
 
-- نسخهٔ پروژه: **1.8.7**.
+- نسخهٔ پروژه: **1.8.8**.
 - انتشار روی GitHub Pages به معنی تأیید نهایی یا آمادگی production نیست.
 - پخش پس‌زمینه و کنترل‌های media بومی Android هنوز به رابط مشترک برنامه متصل نشده‌اند.
 - PWA آیفون کپی محلی آهنگ‌ها را برای استفاده بین نشست‌ها ذخیره می‌کند، اما iOS تضمین نگهداری چندماهه نمی‌دهد و ممکن است دادهٔ سایت را پاک کند؛ نسخهٔ اصلی آهنگ‌ها را حفظ کنید. نسخهٔ Android فایل‌های انتخاب‌شده را در فضای خصوصی برنامه نگه می‌دارد؛ پاک‌کردن داده‌های برنامه یا حذف آن، این فایل‌ها را حذف می‌کند.
@@ -79,6 +80,7 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 - Subtle transitions animate screen changes, navigation, cards, controls, and the mini-player; system reduced-motion preferences are respected, and Search category cards are 5% smaller.
 - Updated mobile navigation icons and a dedicated adaptive Android launcher icon.
 - Local library and sorting, a dedicated music search, card-based music categories with randomly partitioned, non-overlapping tracks that persist between launches, playback queue, and playlists.
+- A Settings contact section with direct Telegram, Instagram, phone, and GitHub links.
 - Displays embedded ID3 cover artwork for MP3 files when present; images are read locally and are not uploaded or saved in library metadata.
 - On the iPhone PWA, selected audio is copied into private, origin-local IndexedDB so it can be reopened for playback; it is never uploaded. Android's packaged app stores copied audio in app-private webview storage, which survives relaunch and is removed by clearing app data or uninstalling.
 - Local metadata/settings persistence and JSON metadata-only backups.

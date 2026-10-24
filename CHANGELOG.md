@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.8 - 2026-10-24 (Contact settings)
+
+- Add a Contact section to Settings with fully clickable Telegram, Instagram, phone, and GitHub links and platform-colored icons.
+- Align the project, workspace packages, and Android version at `1.8.8`; increment Android `versionCode` to 53 and the PWA shell cache to v40. No library data or backup migration is required.
+
 ## 1.8.7 - 2026-10-24 (Raise mini player content)
 
 - Move the open player content up from a 15% to 10% viewport offset while keeping the drag handle, scrolling, and safe-area insets unchanged; use the same offset in regular and scaled PWA layouts.

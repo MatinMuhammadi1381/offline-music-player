@@ -22,6 +22,7 @@ import { InstallLanding } from "./install-landing";
 import { isInstalledPwa, isMobilePhone, shouldShowStartupSplash, STARTUP_SPLASH_DURATION_MS } from "./pwa-mode";
 import { getPlayerGestureDestination } from "./player-gesture";
 import { getMiniPlayerOpeningOrigin, shouldShowMiniPlayer, type Destination, type PlayerOpenBounds } from "./mini-player-state";
+import { CONTACT_LINKS } from "./contact-links";
 import {
   createCategoryAssignments,
   getCategoryTracks,
@@ -30,7 +31,7 @@ import {
   reconcileCategoryAssignments,
   type CategoryAssignments,
 } from "./category-playback";
-import { Icon, type IconName } from "./icon";
+import { ContactPlatformIcon, Icon, type IconName } from "./icon";
 import "./styles.css";
 import "./pwa-ui.css";
 
@@ -1543,6 +1544,23 @@ export function App(): ReactNode {
                     <h3>About and privacy</h3>
                     <p className="setting-copy">Offline Music · Version {appVersion.trim()} development build</p>
                     <p className="setting-copy">{persistentAudioEnabled ? persistencePrivacyMessage : "Audio access is session-only and may need to be restored after restarting the app. Audio is not copied into browser storage."} Background playback depends on browser and platform behavior and has not been confirmed on your device.</p>
+                  </div>
+                  <div className="settings-group">
+                    <h3>Contact</h3>
+                    <div className="contact-links">
+                      {CONTACT_LINKS.map((contact) => (
+                        <a
+                          key={contact.href}
+                          className={`contact-link contact-link-${contact.platform}`}
+                          href={contact.href}
+                          target={contact.external ? "_blank" : undefined}
+                          rel={contact.external ? "noreferrer" : undefined}
+                        >
+                          <span className="contact-link-icon"><ContactPlatformIcon platform={contact.platform} /></span>
+                          <span><strong>{contact.label}</strong><small>{contact.value}</small></span>
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </section>

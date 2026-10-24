@@ -1408,6 +1408,67 @@ button:disabled {
   margin: 0 0 13px;
 }
 
+.contact-links {
+  display: grid;
+}
+
+.contact-link {
+  display: flex;
+  min-height: 68px;
+  align-items: center;
+  gap: 14px;
+  border-top: 1px solid rgba(218, 232, 255, 0.07);
+  color: var(--color-text);
+  text-decoration: none;
+  transition: background-color 160ms ease;
+}
+
+.contact-link:hover {
+  background: var(--color-surface);
+}
+
+.contact-link:focus-visible {
+  position: relative;
+  z-index: 1;
+  border-radius: 8px;
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.contact-link > span:last-child {
+  display: grid;
+  gap: 5px;
+}
+
+.contact-link strong {
+  font-size: 14px;
+}
+
+.contact-link small {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.contact-link-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+}
+
+.contact-link-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.contact-link-telegram .contact-link-icon { color: #229ed9; }
+.contact-link-phone .contact-link-icon { color: #25d366; }
+.contact-link-github .contact-link-icon { color: #f0f6fc; }
+:root[data-theme="light"] .setting-row,
+:root[data-theme="light"] .contact-link { border-top: 1px solid var(--color-separator); }
+:root[data-theme="light"] .contact-link-github .contact-link-icon { color: #181717; }
+
 .setting-actions {
   flex-wrap: wrap;
   gap: 10px;
@@ -1953,7 +2014,6 @@ button:disabled {
 
 :root[data-theme="light"] .side-rail { background: rgba(255, 255, 255, 0.9); }
 :root[data-theme="light"] html { scrollbar-color: #b4c0d0 var(--color-bg); }
-:root[data-theme="light"] .setting-row { border-top: 1px solid var(--color-separator); }
 :root[data-theme="light"] .switch::before { background: #6b7789; }
 :root[data-theme="light"] .switch-on::before { background: var(--color-accent-strong); }
 /* Listen screens: shared blue-led music interface based on the approved Figma file. */
