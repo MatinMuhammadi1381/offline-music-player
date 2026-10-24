@@ -326,6 +326,8 @@ export function App(): ReactNode {
   const backupInput = useRef<HTMLInputElement>(null);
   const playlistArtworkInput = useRef<HTMLInputElement>(null);
   const playlistSettingsDialog = useRef<HTMLDialogElement>(null);
+  const playlistMusicDialog = useRef<HTMLDialogElement>(null);
+  const playlistPickerDialog = useRef<HTMLDialogElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const sortButtonRef = useRef<HTMLButtonElement>(null);
   const playerViewRef = useRef<HTMLElement>(null);
@@ -361,8 +363,12 @@ export function App(): ReactNode {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [renamePlaylistValue, setRenamePlaylistValue] = useState("");
   const [playlistSettingsOpen, setPlaylistSettingsOpen] = useState(false);
+  const [playlistMusicOpen, setPlaylistMusicOpen] = useState(false);
+  const [playlistPickerOpen, setPlaylistPickerOpen] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
-  const [playlistAddTrackId, setPlaylistAddTrackId] = useState("");
+  const [stagedPlaylistTrackIds, setStagedPlaylistTrackIds] = useState<readonly string[]>([]);
+  const [playlistMusicSearch, setPlaylistMusicSearch] = useState("");
+  const [playlistPickerTrackId, setPlaylistPickerTrackId] = useState<string | null>(null);
   const [storageMessage, setStorageMessage] = useState("Checking browser storage support…");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
@@ -378,6 +384,18 @@ export function App(): ReactNode {
     if (playlistSettingsOpen && !dialog.open) dialog.showModal();
     else if (!playlistSettingsOpen && dialog.open) dialog.close();
   }, [playlistSettingsOpen]);
+  useEffect(() => {
+    const dialog = playlistMusicDialog.current;
+    if (!dialog) return;
+    if (playlistMusicOpen && !dialog.open) dialog.showModal();
+    else if (!playlistMusicOpen && dialog.open) dialog.close();
+  }, [playlistMusicOpen]);
+  useEffect(() => {
+    const dialog = playlistPickerDialog.current;
+    if (!dialog) return;
+    if (playlistPickerOpen && !dialog.open) dialog.showModal();
+    else if (!playlistPickerOpen && dialog.open) dialog.close();
+  }, [playlistPickerOpen]);
   useEffect(() => {
     if (!library) return;
     try {
@@ -704,6 +722,36 @@ export function App(): ReactNode {
     void operation().catch((error: unknown) => tell(errorMessage(error)));
   };
 
+  const addTrackToPlaylist = (trackId: string, playlistId: string): void => run(async () => {
+    const app = runtime.current;
+    const track = library?.tracks.find((item) => item.id === trackId);
+    const playlist = library?.playlists.find((item) => item.id === playlistId);
+    if (!app || !track || !playlist) return;
+    if (playlist.trackIds.includes(trackId)) {
+      tell(`${track.title} is already in ${playlist.name}.`);
+      setPlaylistPickerOpen(false);
+      return;
+    }
+    await app.library.addTracksToExistingPlaylist(playlistId, [trackId]);
+    await refreshLibrary();
+    setPlaylistPickerOpen(false);
+    tell(`Added ${track.title} to ${playlist.name}.`);
+  });
+
+  const savePlaylistAdditions = (): void => {
+    const trackIds = [...stagedPlaylistTrackIds];
+    if (!selectedPlaylist || trackIds.length === 0) return;
+    run(async () => {
+      const app = runtime.current;
+      if (!app) return;
+      await app.library.addTracksToExistingPlaylist(selectedPlaylist.id, trackIds);
+      await refreshLibrary();
+      setStagedPlaylistTrackIds([]);
+      setPlaylistMusicOpen(false);
+      tell(`${trackIds.length} ${trackIds.length === 1 ? "track" : "tracks"} added to ${selectedPlaylist.name}.`);
+    });
+  };
+
   const playTrack = (trackId: string, queueTrackIds?: readonly string[]): void => run(async () => {
     const app = runtime.current;
     if (!app || !library) return;
@@ -898,12 +946,20 @@ export function App(): ReactNode {
             </button>
             {options.queueControls ? (
               <div className="row-actions">
+                <IconButton label={`Add ${track.title} to a playlist`} icon="plus" onClick={() => {
+                  setPlaylistPickerTrackId(track.id);
+                  setPlaylistPickerOpen(true);
+                }} />
                 <IconButton label={`Move ${track.title} up`} icon="back" disabled={queueIndex <= 0} onClick={() => run(() => runtime.current?.playback.moveQueueItem(queueIndex, queueIndex - 1) ?? Promise.resolve())} />
                 <IconButton label={`Move ${track.title} down`} icon="back" className="rotate-icon" disabled={queueIndex < 0 || queueIndex >= player.queue.trackIds.length - 1} onClick={() => run(() => runtime.current?.playback.moveQueueItem(queueIndex, queueIndex + 1) ?? Promise.resolve())} />
                 <IconButton label={`Remove ${track.title} from queue`} icon="close" onClick={() => queueIndex >= 0 && run(() => runtime.current?.playback.removeQueueItem(queueIndex) ?? Promise.resolve())} />
               </div>
             ) : options.playlistId ? (
               <div className="row-actions">
+                <IconButton label={`Add ${track.title} to a playlist`} icon="plus" onClick={() => {
+                  setPlaylistPickerTrackId(track.id);
+                  setPlaylistPickerOpen(true);
+                }} />
                 <IconButton label={`Move ${track.title} up in playlist`} icon="back" disabled={(selectedPlaylist?.trackIds.indexOf(track.id) ?? 0) <= 0} onClick={() => run(async () => {
                   const app = runtime.current;
                   if (!app || !options.playlistId) return;
@@ -927,6 +983,10 @@ export function App(): ReactNode {
               </div>
             ) : (
               <div className="row-actions">
+                <IconButton label={`Add ${track.title} to a playlist`} icon="plus" onClick={() => {
+                  setPlaylistPickerTrackId(track.id);
+                  setPlaylistPickerOpen(true);
+                }} />
                 <IconButton label={`Add ${track.title} to queue`} icon="plus" onClick={() => runtime.current?.playback.enqueue([track.id])} />
                 <IconButton label={`Remove ${track.title} from library`} icon="close" onClick={() => {
                   const confirmation = persistentAudioEnabled
@@ -1360,23 +1420,80 @@ export function App(): ReactNode {
                         }}><Icon name="delete" /> Delete playlist</button>
                       </div>
                     </dialog>
-                    <form className="playlist-add-form" onSubmit={(event) => {
-                      event.preventDefault();
-                      run(async () => {
-                        const app = runtime.current;
-                        if (!app || !playlistAddTrackId) return;
-                        await app.library.addTracksToExistingPlaylist(selectedPlaylist.id, [playlistAddTrackId]);
-                        setPlaylistAddTrackId("");
-                        await refreshLibrary();
-                      });
-                    }}>
-                      <label className="visually-hidden" htmlFor="playlist-track">Choose a track</label>
-                      <select id="playlist-track" value={playlistAddTrackId} onChange={(event) => setPlaylistAddTrackId(event.currentTarget.value)}>
-                        <option value="">Add a track…</option>
-                        {library.tracks.filter((track) => !selectedPlaylist.trackIds.includes(track.id)).map((track) => <option key={track.id} value={track.id}>{track.title}</option>)}
-                      </select>
-                      <button type="submit" className="button button-secondary" disabled={!playlistAddTrackId}><Icon name="plus" /> Add track</button>
-                    </form>
+                    <div className="playlist-add-form">
+                      <button type="button" className="button button-secondary" onClick={() => {
+                        setStagedPlaylistTrackIds([]);
+                        setPlaylistMusicSearch("");
+                        setPlaylistMusicOpen(true);
+                      }}><Icon name="plus" /> Add music</button>
+                    </div>
+                    <dialog
+                      ref={playlistMusicDialog}
+                      className="playlist-music-dialog"
+                      aria-labelledby="playlist-music-title"
+                      onClose={() => {
+                        setPlaylistMusicOpen(false);
+                        setStagedPlaylistTrackIds([]);
+                        setPlaylistMusicSearch("");
+                      }}
+                      onClick={(event) => {
+                        if (event.target === event.currentTarget) setPlaylistMusicOpen(false);
+                      }}
+                    >
+                      <div className="playlist-music-content">
+                        <div className="playlist-settings-heading">
+                          <div><p className="section-kicker">{selectedPlaylist.name}</p><h2 id="playlist-music-title">Add music</h2></div>
+                          <IconButton label="Close add music" icon="close" onClick={() => setPlaylistMusicOpen(false)} />
+                        </div>
+                        <label className="visually-hidden" htmlFor="playlist-music-search">Search all library tracks</label>
+                        <input
+                          id="playlist-music-search"
+                          className="playlist-music-search"
+                          type="search"
+                          autoComplete="off"
+                          placeholder="Search your music…"
+                          value={playlistMusicSearch}
+                          onChange={(event) => setPlaylistMusicSearch(event.currentTarget.value)}
+                        />
+                        <div className="playlist-music-list" role="region" aria-label="Available library music" tabIndex={0}>
+                          {(() => {
+                            const stagedIds = new Set(stagedPlaylistTrackIds);
+                            const query = playlistMusicSearch.trim().toLocaleLowerCase();
+                            const availableTracks = library.tracks.filter((track) =>
+                              !selectedPlaylist.trackIds.includes(track.id)
+                              && !stagedIds.has(track.id)
+                              && (!query || [track.title, track.artist, track.album, track.fileName]
+                                .some((value) => value?.toLocaleLowerCase().includes(query))),
+                            );
+                            return availableTracks.length ? (
+                              <ul className="track-list">
+                                {availableTracks.map((track) => (
+                                  <li className="track-row" key={track.id}>
+                                    <Artwork track={track} file={getAudioFile(track.id)} />
+                                    <span className="track-copy">
+                                      <span className="track-title">{track.title}</span>
+                                      <span className="track-subtitle">{[track.artist, track.album].filter(Boolean).join(" · ") || track.fileName}</span>
+                                    </span>
+                                    <IconButton label={`Add ${track.title} to ${selectedPlaylist.name}`} icon="plus" onClick={() => {
+                                      setStagedPlaylistTrackIds((ids) => ids.includes(track.id) ? ids : [...ids, track.id]);
+                                    }} />
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <div className="empty-state compact-empty">
+                                <h3>{query ? "No matching tracks" : "All library tracks are in this playlist"}</h3>
+                                <p>{query ? "Try a different title, artist, album, or filename." : "There are no more tracks to add."}</p>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                        <div className="playlist-music-footer">
+                          <span>{stagedPlaylistTrackIds.length} {stagedPlaylistTrackIds.length === 1 ? "track" : "tracks"} selected</span>
+                          <button type="button" className="button button-primary" disabled={stagedPlaylistTrackIds.length === 0} onClick={savePlaylistAdditions}>Save</button>
+                        </div>
+                      </div>
+                    </dialog>
                     <div className="scroll-panel" role="region" aria-label={`${selectedPlaylist.name} tracks`} tabIndex={0}>
                       {playlistTracks.length ? trackRows(playlistTracks, { playlistId: selectedPlaylist.id }) : <div className="empty-state compact-empty"><h3>This playlist is empty</h3><p>Add tracks from your local library.</p></div>}
                     </div>
@@ -1436,6 +1553,60 @@ export function App(): ReactNode {
         )}
         {miniPlayerRendered && miniPlayerTrack ? renderMiniPlayer(`mini-player${pwaUiEnabled ? " pwa-inline-mini-player" : ""}`, miniPlayerTrack) : null}
       </main>
+
+      {library && (
+        <dialog
+          ref={playlistPickerDialog}
+          className="playlist-picker-dialog"
+          aria-labelledby="playlist-picker-title"
+          onClose={() => {
+            setPlaylistPickerOpen(false);
+            setPlaylistPickerTrackId(null);
+          }}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setPlaylistPickerOpen(false);
+          }}
+        >
+          <div className="playlist-picker-content">
+            <div className="playlist-settings-heading">
+              <div><p className="section-kicker">ADD TRACK</p><h2 id="playlist-picker-title">Choose a playlist</h2></div>
+              <IconButton label="Close playlist picker" icon="close" onClick={() => setPlaylistPickerOpen(false)} />
+            </div>
+            {library.playlists.length ? (
+              <ul className="playlist-list playlist-picker-list">
+                {library.playlists.map((playlist) => {
+                  const alreadyAdded = playlist.trackIds.includes(playlistPickerTrackId ?? "");
+                  return (
+                    <li key={playlist.id}>
+                      <button
+                        type="button"
+                        className="playlist-card playlist-picker-card"
+                        aria-label={`${alreadyAdded ? "Already added to" : "Add to"} ${playlist.name}`}
+                        disabled={alreadyAdded}
+                        onClick={() => playlistPickerTrackId && addTrackToPlaylist(playlistPickerTrackId, playlist.id)}
+                      >
+                        <span className="playlist-art">{playlist.artworkDataUrl ? <img src={playlist.artworkDataUrl} alt="" /> : <Icon name="playlist" />}</span>
+                        <span><strong>{playlist.name}</strong><small>{playlist.trackIds.length} {playlist.trackIds.length === 1 ? "track" : "tracks"}</small></span>
+                        <span className="playlist-picker-action">{alreadyAdded ? "Already added" : "Add track"}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <div className="empty-state compact-empty">
+                <div className="empty-art"><Icon name="playlist" size={30} /></div>
+                <h3>No playlists yet</h3>
+                <p>Create a playlist first, then add this track from any music list.</p>
+                <button type="button" className="button button-primary" onClick={() => {
+                  setPlaylistPickerOpen(false);
+                  setDestination("playlists");
+                }}>Create a playlist</button>
+              </div>
+            )}
+          </div>
+        </dialog>
+      )}
 
       <input ref={fileInput} className="hidden-input" type="file" name="audio-files" aria-label="Choose audio files" accept="audio/*,.mp3,.m4a,.aac,.wav,.flac,.ogg,.opus" multiple />
       <input ref={backupInput} className="hidden-input" type="file" name="metadata-backup" aria-label="Choose metadata backup" accept="application/json,.json" onChange={importBackup} />

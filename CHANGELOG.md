@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.3 - 2026-10-24 (Playlist music flows)
+
+- Replace the playlist track dropdown with an Add music dialog that lists library tracks, stages selections without duplicates, and saves them together.
+- Add a playlist-picker action to track rows so songs from Library, Search, Home, and Queue can be added to a playlist; include an empty-state path to create a playlist.
+- Align the project, workspace packages, and Android version at `1.8.3`; increment Android `versionCode` to 48 and the PWA shell cache to v35. No library data or backup migration is required.
+
 ## 1.8.2 - 2026-10-22 (Playlist rename controls)
 
 - Expand the playlist name input across the settings dialog's rename row and keep the Save button compact on mobile and desktop.
