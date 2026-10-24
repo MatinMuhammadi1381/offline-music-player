@@ -58,8 +58,9 @@
     <string name="service_resumed">Playback resumed.</string>
     <string name="service_paused">Playback paused.</string>
     <string name="notification_channel_name">Local audio playback</string>
-    <string name="notification_channel_description">Media controls for the Android file-access feasibility test.</string>
-    <string name="notification_title">Local audio test</string>
+    <string name="notification_channel_description">Playback controls and progress for Offline Music.</string>
+    <string name="notification_title">Offline Music</string>
+    <string name="notification_unknown_artist">Unknown artist</string>
     <string name="notification_preparing">Preparing local audio</string>
     <string name="notification_playing">Playing local audio</string>
     <string name="notification_paused">Playback paused</string>

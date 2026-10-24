@@ -11,6 +11,32 @@ import type {
 import type { TrackId, TrackMetadata } from "../../shared-types/src/index.ts";
 import { createTrack, createTrackId } from "../../music-core/src/tracks.ts";
 
+export interface AndroidMediaBridge {
+  saveMetadataBackup(backupJson: string): void;
+  setTheme(lightMode: boolean): void;
+  registerSelectedTracks(tracksJson: string): string;
+  linkTrack(sourceTrackId: string, targetTrackId: string): string;
+  deleteTrack(trackId: string): string;
+  getPlaybackUri(trackId: string): string;
+  registerScannedTrack(trackId: string, uri: string): string;
+  openScannedMedia(uri: string): string;
+  readScannedMediaChunk(token: string, requestId: string): void;
+  closeScannedMedia(token: string): void;
+  markInitialScanComplete(): string;
+  startInitialScan(): void;
+  setArtwork(trackId: string, artworkBase64: string): void;
+  playTrack(trackId: string, title: string, artist: string, album: string, durationMs: number): void;
+  pausePlayback(): void;
+  seekPlayback(positionMs: number): void;
+  stopPlayback(): void;
+}
+
+declare global {
+  interface Window {
+    OfflineMusicAndroid?: AndroidMediaBridge;
+  }
+}
+
 export type BrowserFileChooser = () => Promise<readonly File[] | null>;
 
 const BROWSER_CAPABILITIES: PlatformCapabilities = {
@@ -129,10 +155,24 @@ export class BrowserAudioFileSource implements AudioFileSource {
         },
       };
     });
+    if (this.platform === "android" && typeof window !== "undefined" && window.OfflineMusicAndroid) {
+      const registrationError = window.OfflineMusicAndroid.registerSelectedTracks(JSON.stringify(
+        selected.map(({ track }) => ({ id: track.id, fileName: track.fileName })),
+      ));
+      if (registrationError) {
+        return {
+          status: "failed",
+          error: { code: "unavailable", message: registrationError },
+        };
+      }
+    }
     if (this.audioFileStore) {
       try {
         await this.audioFileStore.saveAudioFiles(selected.map(({ track, file }) => ({ trackId: track.id, file })));
       } catch (error) {
+        if (this.platform === "android" && typeof window !== "undefined") {
+          for (const { track } of selected) window.OfflineMusicAndroid?.deleteTrack(track.id);
+        }
         return {
           status: "failed",
           error: {
@@ -191,6 +231,10 @@ export class BrowserAudioFileSource implements AudioFileSource {
         this.selectedFiles.delete(selected.reference.token);
       }
     }
+    if (this.platform === "android" && typeof window !== "undefined") {
+      const bridgeError = window.OfflineMusicAndroid?.linkTrack(selected.reference.token, trackId);
+      if (bridgeError) throw new Error(bridgeError);
+    }
     const reference: AudioFileReference = {
       platform: this.platform,
       token: trackId,
@@ -200,8 +244,42 @@ export class BrowserAudioFileSource implements AudioFileSource {
     return reference;
   }
 
+  async importScannedFile(
+    track: TrackMetadata,
+    file: File,
+    uri: string,
+  ): Promise<SelectedAudioFile> {
+    if (this.platform !== "android" || !this.audioFileStore || typeof window === "undefined") {
+      throw new Error("Android scanned audio cannot be imported by this file source.");
+    }
+    const bridge = window.OfflineMusicAndroid;
+    if (!bridge) throw new Error("The Android media import bridge is unavailable.");
+    const registrationError = bridge.registerScannedTrack(track.id, uri);
+    if (registrationError) throw new Error(registrationError);
+    try {
+      await this.audioFileStore.saveAudioFiles([{ trackId: track.id, file }]);
+    } catch (error) {
+      const cleanupError = bridge.deleteTrack(track.id);
+      if (cleanupError) {
+        throw new Error(`Could not store "${track.fileName}" and could not clean up its Android reference: ${cleanupError}`);
+      }
+      throw error;
+    }
+    const reference: AudioFileReference = {
+      platform: "android",
+      token: track.id,
+      persistence: "persistable",
+    };
+    this.selectedFiles.set(reference.token, file);
+    return { track, reference };
+  }
+
   async deleteStoredFile(trackId: TrackId): Promise<void> {
     if (this.audioFileStore) await this.audioFileStore.deleteAudioFile(trackId);
+    if (this.platform === "android" && typeof window !== "undefined") {
+      const bridgeError = window.OfflineMusicAndroid?.deleteTrack(trackId);
+      if (bridgeError) throw new Error(bridgeError);
+    }
     this.selectedFiles.delete(trackId);
   }
 

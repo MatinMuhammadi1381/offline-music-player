@@ -108,8 +108,8 @@ Open the [web app](https://matinmuhammadi1381.github.io/offline-music-player/) i
 
 - Project version: **1.9.1**.
 - GitHub Pages availability does not mean the app has passed production or final acceptance.
-- Native Android background playback and media-session controls are not yet connected to the shared UI.
-- iOS may evict browser storage or the user may clear site data; this is not a months-long retention guarantee. Keep original audio files. Android stores selected audio in app-private webview storage between launches; clearing app data or uninstalling removes those copies. JSON backups include metadata and playlists, not audio.
+- Android background playback, system media notifications, lock-screen controls, and playback progress are connected to the shared player. Android supplies the notification and lock-screen layout; the app provides track metadata, embedded MP3 artwork when available, a blue accent, and standard media controls. Android 13+ requires notification permission for the notification drawer.
+- iOS may evict browser storage or the user may clear site data; this is not a months-long retention guarantee. Keep original audio files. Android stores selected audio in app-private WebView storage and retains the picker-granted URI needed by native background playback; clearing app data or uninstalling removes those copies and permissions. JSON backups include metadata and playlists, not audio.
 - Embedded artwork is currently extracted from MP3 ID3 APIC tags; other audio-container artwork is not yet supported.
 - Run the checks in the local development section to verify the project.
 

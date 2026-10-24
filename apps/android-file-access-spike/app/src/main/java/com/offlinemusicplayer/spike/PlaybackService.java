@@ -8,15 +8,21 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.media.AudioAttributes;
+import android.media.MediaMetadata;
 import android.media.MediaPlayer;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.Handler;
+import android.os.Looper;
 
 import java.io.IOException;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -29,11 +35,24 @@ public final class PlaybackService extends Service {
     public static final String ACTION_PREVIOUS = "com.offlinemusicplayer.spike.action.PREVIOUS";
     public static final String ACTION_SEEK = "com.offlinemusicplayer.spike.action.SEEK";
     public static final String ACTION_STOP = "com.offlinemusicplayer.spike.action.STOP";
+    public static final String ACTION_SET_ARTWORK = "com.offlinemusicplayer.spike.action.SET_ARTWORK";
     public static final String EXTRA_QUEUE = "queue";
     public static final String EXTRA_QUEUE_INDEX = "queue_index";
     public static final String EXTRA_REPEAT_MODE = "repeat_mode";
     public static final String EXTRA_SHUFFLE_ENABLED = "shuffle_enabled";
     public static final String EXTRA_SEEK_POSITION = "seek_position";
+    public static final String EXTRA_TRACK_ID = "track_id";
+    public static final String EXTRA_TITLE = "title";
+    public static final String EXTRA_ARTIST = "artist";
+    public static final String EXTRA_ALBUM = "album";
+    public static final String EXTRA_DURATION = "duration";
+    public static final String EXTRA_ARTWORK_PATH = "artwork_path";
+    public static final String EXTRA_POSITION = "position";
+    public static final String EXTRA_STATE = "state";
+    public static final String EXTRA_FAILURE = "failure";
+    public static final String EXTRA_CONTROL_ACTION = "control_action";
+    public static final String ACTION_SHARED_CONTROL = "com.offlinemusicplayer.spike.action.SHARED_CONTROL";
+    public static final String ACTION_SHARED_STATE = "com.offlinemusicplayer.spike.action.SHARED_STATE";
 
     private static final String CHANNEL_ID = "music_playback";
     private static final int NOTIFICATION_ID = 34;
@@ -47,6 +66,16 @@ public final class PlaybackService extends Service {
 
     private final IBinder binder = new LocalBinder();
     private final ArrayList<Uri> queue = new ArrayList<>();
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable playbackTicker = new Runnable() {
+        @Override
+        public void run() {
+            if (mediaPlayer == null || !prepared || !mediaPlayer.isPlaying()) return;
+            updatePlaybackState(PlaybackState.STATE_PLAYING);
+            updateNotification(getString(R.string.notification_playing));
+            handler.postDelayed(this, 1_000);
+        }
+    };
     private MediaPlayer mediaPlayer;
     private MediaSession mediaSession;
     private StatusListener statusListener;
@@ -55,6 +84,13 @@ public final class PlaybackService extends Service {
     private int currentIndex = -1;
     private boolean shuffleEnabled;
     private boolean prepared;
+    private boolean sharedUiPlayback;
+    private String currentTrackId;
+    private String currentTitle;
+    private String currentArtist;
+    private String currentAlbum;
+    private Bitmap currentArtwork;
+    private String playbackFailure;
 
     public interface StatusListener {
         void onStatusChanged(String status);
@@ -94,17 +130,20 @@ public final class PlaybackService extends Service {
 
             @Override
             public void onSkipToNext() {
-                skipToNext();
+                if (sharedUiPlayback) broadcastControl("next", 0);
+                else skipToNext();
             }
 
             @Override
             public void onSkipToPrevious() {
-                skipToPrevious();
+                if (sharedUiPlayback) broadcastControl("previous", 0);
+                else skipToPrevious();
             }
 
             @Override
             public void onSeekTo(long position) {
-                seekTo((int) Math.min(Integer.MAX_VALUE, Math.max(0, position)));
+                if (sharedUiPlayback) broadcastControl("seek", (int) Math.min(Integer.MAX_VALUE, Math.max(0, position)));
+                else seekTo((int) Math.min(Integer.MAX_VALUE, Math.max(0, position)));
             }
         });
         mediaSession.setActive(true);
@@ -116,6 +155,14 @@ public final class PlaybackService extends Service {
         String action = intent == null ? null : intent.getAction();
         if (ACTION_PLAY.equals(action)) {
             setQueueFromIntent(intent);
+            sharedUiPlayback = intent.hasExtra(EXTRA_TRACK_ID);
+            currentTrackId = intent.getStringExtra(EXTRA_TRACK_ID);
+            currentTitle = intent.getStringExtra(EXTRA_TITLE);
+            currentArtist = intent.getStringExtra(EXTRA_ARTIST);
+            currentAlbum = intent.getStringExtra(EXTRA_ALBUM);
+            currentArtwork = null;
+            playbackFailure = null;
+            updateMediaMetadata(intent.getLongExtra(EXTRA_DURATION, 0));
             startPlayback(intent.getData());
         } else if (ACTION_PAUSE.equals(action)) {
             pausePlayback();
@@ -124,13 +171,24 @@ public final class PlaybackService extends Service {
         } else if (ACTION_TOGGLE.equals(action)) {
             togglePlayback();
         } else if (ACTION_NEXT.equals(action)) {
-            skipToNext();
+            if (sharedUiPlayback) broadcastControl("next", 0);
+            else skipToNext();
         } else if (ACTION_PREVIOUS.equals(action)) {
-            skipToPrevious();
+            if (sharedUiPlayback) broadcastControl("previous", 0);
+            else skipToPrevious();
         } else if (ACTION_SEEK.equals(action) && intent != null) {
             seekTo(intent.getIntExtra(EXTRA_SEEK_POSITION, 0));
         } else if (ACTION_STOP.equals(action)) {
             stopPlayback();
+        } else if (ACTION_SET_ARTWORK.equals(action) && intent != null) {
+            String artworkPath = intent.getStringExtra(EXTRA_ARTWORK_PATH);
+            if (sharedUiPlayback && currentTrackId != null
+                    && currentTrackId.equals(intent.getStringExtra(EXTRA_TRACK_ID))) {
+                setArtwork(artworkPath);
+            } else if (mediaPlayer == null) {
+                stopSelf(startId);
+            }
+            if (artworkPath != null) new File(artworkPath).delete();
         }
         return START_NOT_STICKY;
     }
@@ -162,6 +220,8 @@ public final class PlaybackService extends Service {
         int duration = Math.max(0, mediaPlayer.getDuration());
         mediaPlayer.seekTo(Math.max(0, Math.min(positionMs, duration)));
         updatePlaybackState(mediaPlayer.isPlaying() ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED);
+        updateNotification(mediaPlayer.isPlaying()
+                ? getString(R.string.notification_playing) : getString(R.string.notification_paused));
     }
 
     private void setQueueFromIntent(Intent intent) {
@@ -223,19 +283,30 @@ public final class PlaybackService extends Service {
         mediaPlayer.setOnPreparedListener(player -> {
             prepared = true;
             player.start();
+            updateMediaMetadata(player.getDuration());
             setStatus(getString(R.string.service_playing));
             updatePlaybackState(PlaybackState.STATE_PLAYING);
             updateNotification(getString(R.string.notification_playing));
+            handler.removeCallbacks(playbackTicker);
+            handler.postDelayed(playbackTicker, 1_000);
         });
         mediaPlayer.setOnCompletionListener(player -> {
-            if ("track".equals(repeatMode)) {
+            if (sharedUiPlayback) {
+                handler.removeCallbacks(playbackTicker);
+                mediaSession.setPlaybackState(new PlaybackState.Builder()
+                        .setActions(MEDIA_ACTIONS)
+                        .setState(PlaybackState.STATE_STOPPED, player.getDuration(), 0.0f)
+                        .build());
+                broadcastState("ended", player.getDuration(), player.getDuration());
+            } else if ("track".equals(repeatMode)) {
                 startPlayback(queue.get(currentIndex));
             } else {
                 skipToNext();
             }
         });
         mediaPlayer.setOnErrorListener((player, what, extra) -> {
-            setStatus(getString(R.string.service_playback_error, what, extra));
+            playbackFailure = getString(R.string.service_playback_error, what, extra);
+            setStatus(playbackFailure);
             updatePlaybackState(PlaybackState.STATE_ERROR);
             stopForegroundCompat();
             releasePlayer();
@@ -262,10 +333,13 @@ public final class PlaybackService extends Service {
         setStatus(getString(R.string.service_resumed));
         updatePlaybackState(PlaybackState.STATE_PLAYING);
         updateNotification(getString(R.string.notification_playing));
+        handler.removeCallbacks(playbackTicker);
+        handler.postDelayed(playbackTicker, 1_000);
     }
 
     private void pausePlayback() {
         if (mediaPlayer != null && prepared && mediaPlayer.isPlaying()) mediaPlayer.pause();
+        handler.removeCallbacks(playbackTicker);
         setStatus(getString(R.string.service_paused));
         updatePlaybackState(PlaybackState.STATE_PAUSED);
         updateNotification(getString(R.string.notification_paused));
@@ -315,6 +389,7 @@ public final class PlaybackService extends Service {
     }
 
     private void stopPlayback() {
+        handler.removeCallbacks(playbackTicker);
         releasePlayer();
         queue.clear();
         currentIndex = -1;
@@ -323,6 +398,7 @@ public final class PlaybackService extends Service {
     }
 
     private void finishPlayback() {
+        handler.removeCallbacks(playbackTicker);
         releasePlayer();
         updatePlaybackState(PlaybackState.STATE_STOPPED);
         stopForegroundCompat();
@@ -349,10 +425,13 @@ public final class PlaybackService extends Service {
 
     private void updatePlaybackState(int state) {
         if (mediaSession == null) return;
+        long position = mediaPlayer != null && prepared ? mediaPlayer.getCurrentPosition() : 0;
         mediaSession.setPlaybackState(new PlaybackState.Builder()
                 .setActions(MEDIA_ACTIONS)
-                .setState(state, mediaPlayer != null && prepared ? mediaPlayer.getCurrentPosition() : 0, 1.0f)
+                .setState(state, position, state == PlaybackState.STATE_PLAYING ? 1.0f : 0.0f)
                 .build());
+        if (sharedUiPlayback) broadcastState(state, position,
+                mediaPlayer != null && prepared ? mediaPlayer.getDuration() : 0);
     }
 
     private void createNotificationChannel() {
@@ -365,7 +444,7 @@ public final class PlaybackService extends Service {
     }
 
     private Notification buildNotification(String text) {
-        Intent openApp = new Intent(this, MainActivity.class);
+        Intent openApp = new Intent(this, SharedPlayerActivity.class);
         PendingIntent contentIntent = PendingIntent.getActivity(
                 this, 1, openApp, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
@@ -373,9 +452,12 @@ public final class PlaybackService extends Service {
                 ? new Notification.Builder(this, CHANNEL_ID)
                 : new Notification.Builder(this);
         builder
-                .setSmallIcon(android.R.drawable.ic_media_play)
-                .setContentTitle(getString(R.string.notification_title))
-                .setContentText(text)
+                .setSmallIcon(R.drawable.ic_stat_music)
+                .setColor(0xFF0A84FF)
+                .setContentTitle(currentTitle == null || currentTitle.trim().isEmpty()
+                        ? getString(R.string.notification_title) : currentTitle)
+                .setContentText(currentArtist == null || currentArtist.trim().isEmpty()
+                        ? text : currentArtist + " · " + text)
                 .setContentIntent(contentIntent)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setOngoing(true)
@@ -393,6 +475,12 @@ public final class PlaybackService extends Service {
                 .setStyle(new Notification.MediaStyle()
                         .setMediaSession(mediaSession.getSessionToken())
                         .setShowActionsInCompactView(0, 1, 2));
+        if (currentArtwork != null) builder.setLargeIcon(currentArtwork);
+        if (mediaPlayer != null && prepared && mediaPlayer.getDuration() > 0) {
+            int duration = mediaPlayer.getDuration();
+            int position = Math.min(duration, Math.max(0, mediaPlayer.getCurrentPosition()));
+            builder.setProgress(1_000, (int) (1_000L * position / duration), false);
+        }
         return builder.build();
     }
 
@@ -407,6 +495,67 @@ public final class PlaybackService extends Service {
 
     private void updateNotification(String text) {
         getSystemService(NotificationManager.class).notify(NOTIFICATION_ID, buildNotification(text));
+    }
+
+    private void updateMediaMetadata(long duration) {
+        if (mediaSession == null) return;
+        MediaMetadata.Builder metadata = new MediaMetadata.Builder()
+                .putString(MediaMetadata.METADATA_KEY_TITLE,
+                        currentTitle == null || currentTitle.trim().isEmpty()
+                                ? getString(R.string.notification_title) : currentTitle)
+                .putString(MediaMetadata.METADATA_KEY_ARTIST,
+                        currentArtist == null || currentArtist.trim().isEmpty()
+                                ? getString(R.string.notification_unknown_artist) : currentArtist)
+                .putString(MediaMetadata.METADATA_KEY_ALBUM,
+                        currentAlbum == null || currentAlbum.trim().isEmpty()
+                                ? getString(R.string.notification_title) : currentAlbum);
+        if (duration > 0) metadata.putLong(MediaMetadata.METADATA_KEY_DURATION, duration);
+        if (currentArtwork != null) {
+            metadata.putBitmap(MediaMetadata.METADATA_KEY_ART, currentArtwork);
+            metadata.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, currentArtwork);
+        }
+        mediaSession.setMetadata(metadata.build());
+    }
+
+    private void setArtwork(String path) {
+        if (path == null) return;
+        Bitmap artwork = BitmapFactory.decodeFile(path);
+        if (artwork == null) return;
+        currentArtwork = artwork;
+        updateMediaMetadata(mediaPlayer != null && prepared ? mediaPlayer.getDuration() : 0);
+        updateNotification(mediaPlayer != null && prepared && mediaPlayer.isPlaying()
+                ? getString(R.string.notification_playing) : getString(R.string.notification_paused));
+    }
+
+    private void broadcastState(int state, long position, long duration) {
+        broadcastState(stateName(state), position, duration);
+    }
+
+    private void broadcastState(String state, long position, long duration) {
+        Intent event = new Intent(ACTION_SHARED_STATE);
+        event.setPackage(getPackageName());
+        event.putExtra(EXTRA_STATE, state);
+        event.putExtra(EXTRA_TRACK_ID, currentTrackId);
+        event.putExtra(EXTRA_POSITION, position);
+        event.putExtra(EXTRA_DURATION, duration);
+        if (playbackFailure != null) event.putExtra(EXTRA_FAILURE, playbackFailure);
+        sendBroadcast(event);
+    }
+
+    private void broadcastControl(String action, int positionMs) {
+        Intent event = new Intent(ACTION_SHARED_CONTROL);
+        event.setPackage(getPackageName());
+        event.putExtra(EXTRA_CONTROL_ACTION, action);
+        if ("seek".equals(action)) event.putExtra(EXTRA_SEEK_POSITION, positionMs);
+        sendBroadcast(event);
+    }
+
+    private String stateName(int state) {
+        if (state == PlaybackState.STATE_PLAYING) return "playing";
+        if (state == PlaybackState.STATE_PAUSED) return "paused";
+        if (state == PlaybackState.STATE_ERROR) return "error";
+        if (state == PlaybackState.STATE_STOPPED) return "idle";
+        return "loading";
     }
 
     private void startForegroundCompat(Notification notification) {
@@ -427,6 +576,7 @@ public final class PlaybackService extends Service {
 
     @Override
     public void onDestroy() {
+        handler.removeCallbacks(playbackTicker);
         releasePlayer();
         if (mediaSession != null) {
             mediaSession.setActive(false);

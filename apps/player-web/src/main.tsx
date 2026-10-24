@@ -20,6 +20,7 @@ import { isInstalledPwa, isMobilePhone, shouldShowStartupSplash, STARTUP_SPLASH_
 import { getPlayerGestureDestination } from "./player-gesture";
 import { getMiniPlayerOpeningOrigin, shouldShowMiniPlayer, type Destination, type PlayerOpenBounds } from "./mini-player-state";
 import { CONTACT_LINKS } from "./contact-links";
+import { AndroidMediaPlaybackEngine } from "./android-media-playback-engine";
 import {
   createCategoryAssignments,
   getCategoryTracks,
@@ -55,15 +56,6 @@ const musicCategories = [
 const automaticCategoryNames = musicCategories.flatMap((category) => "term" in category ? [category.name] : []);
 const categoryAssignmentsStorageKey = "offline-music-category-assignments";
 
-declare global {
-  interface Window {
-    OfflineMusicAndroid?: {
-      saveMetadataBackup(backupJson: string): void;
-      setTheme(lightMode: boolean): void;
-    };
-  }
-}
-
 function destinationFromHash(): Destination {
   const value = window.location.hash.slice(1);
   return destinations.includes(value as Destination) ? value as Destination : "home";
@@ -73,7 +65,7 @@ interface AppRuntime {
   readonly files: BrowserAudioFileSource;
   readonly repository: IndexedDbLibraryRepository;
   readonly library: LibraryController;
-  readonly audio: HtmlAudioPlaybackEngine;
+  readonly audio: HtmlAudioPlaybackEngine | AndroidMediaPlaybackEngine;
   readonly playback: PlaybackController;
 }
 
@@ -544,10 +536,32 @@ export function App(): ReactNode {
       androidPackagedAssets ? "android" : "ios-pwa",
     );
     const libraryController = new LibraryController(repository, files);
-    const audio = new HtmlAudioPlaybackEngine(files);
+    const androidBridge = androidPackagedAssets ? window.OfflineMusicAndroid : undefined;
+    if (androidPackagedAssets && !androidBridge) {
+      setNotice("Android native playback is unavailable. Restart the app to restore media controls.");
+      setLoading(false);
+      return;
+    }
+    const audio = androidBridge
+      ? new AndroidMediaPlaybackEngine(androidBridge, (file) => files.getFile(file.reference))
+      : new HtmlAudioPlaybackEngine(files);
     const playback = new PlaybackController(audio, (trackId) => libraryController.getFile(trackId));
     runtime.current = { files, repository, library: libraryController, audio, playback };
     const playbackSubscription = playback.subscribe(setPlayer);
+    const onNativeControl = (event: Event): void => {
+      const detail = (event as CustomEvent<{ readonly action?: string; readonly positionMs?: number }>).detail;
+      const operation = detail?.action === "next" ? playback.next()
+        : detail?.action === "previous" ? playback.previous()
+        : detail?.action === "seek" && typeof detail.positionMs === "number"
+          ? playback.seek(detail.positionMs)
+          : undefined;
+      if (operation) void operation.catch((error: unknown) => setNotice(errorMessage(error)));
+    };
+    const onNativePermissionDenied = (): void => {
+      setNotice("Notification permission is off. Audio will play, but Android may hide the player notification and lock-screen controls.");
+    };
+    window.addEventListener("offline-music-native-control", onNativeControl);
+    window.addEventListener("offline-music-native-playback-permission", onNativePermissionDenied);
     let mounted = true;
     const mediaSession = navigator.mediaSession;
     const registeredMediaActions: MediaSessionAction[] = [];
@@ -606,6 +620,8 @@ export function App(): ReactNode {
       playbackSubscription.unsubscribe();
       playback.dispose();
       audio.dispose();
+      window.removeEventListener("offline-music-native-control", onNativeControl);
+      window.removeEventListener("offline-music-native-playback-permission", onNativePermissionDenied);
       if (mediaSession) {
         for (const action of registeredMediaActions) mediaSession.setActionHandler(action, null);
       }
