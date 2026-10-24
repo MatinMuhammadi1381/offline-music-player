@@ -5,6 +5,33 @@ import { isInstalledPwa, isMobilePhone, shouldShowStartupSplash, STARTUP_SPLASH_
 
 const pwaUiCss = readFileSync(new URL("../src/pwa-ui.css", import.meta.url), "utf8");
 const sharedUiCss = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+const pwaManifest = JSON.parse(readFileSync(new URL("../public/manifest.webmanifest", import.meta.url), "utf8")) as {
+  icons: { src: string; sizes: string; type: string }[];
+};
+const appHtml = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+
+test("provides standard raster icons for PWA installation and iOS Home Screen", () => {
+  for (const size of [192, 512]) {
+    const icon = pwaManifest.icons.find((entry) => entry.src === `./icon-${size}.png`);
+    assert.deepEqual(icon, {
+      src: `./icon-${size}.png`,
+      sizes: `${size}x${size}`,
+      type: "image/png",
+      purpose: "any",
+    });
+
+    const png = readFileSync(new URL(`../public/icon-${size}.png`, import.meta.url));
+    assert.equal(png.toString("hex", 0, 8), "89504e470d0a1a0a");
+    assert.equal(png.readUInt32BE(16), size);
+    assert.equal(png.readUInt32BE(20), size);
+  }
+
+  const appleTouchIcon = readFileSync(new URL("../public/icon-180.png", import.meta.url));
+  assert.equal(appleTouchIcon.toString("hex", 0, 8), "89504e470d0a1a0a");
+  assert.equal(appleTouchIcon.readUInt32BE(16), 180);
+  assert.equal(appleTouchIcon.readUInt32BE(20), 180);
+  assert.match(appHtml, /<link rel="apple-touch-icon" sizes="180x180" href="\.\/icon-180\.png"\s*\/>/);
+});
 
 test("recognizes the standard standalone display mode", () => {
   assert.equal(isInstalledPwa(true, false), true);
