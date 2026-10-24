@@ -8,14 +8,18 @@ import {
   ListMusic,
   ListVideo,
   Image,
+  Globe2,
   Music2,
+  MoreVertical,
   Pause,
   Play,
   Plus,
   Repeat,
   Search,
+  Share2,
   Settings,
   Shuffle,
+  Check,
   SkipBack,
   SkipForward,
   Trash2,
@@ -25,7 +29,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 
-export type IconName = "home" | "library" | "playlist" | "queue" | "settings" | "play" | "pause" | "next" | "previous" | "search" | "plus" | "shuffle" | "repeat" | "close" | "music" | "back" | "download" | "upload" | "sort" | "chevron-down" | "image" | "delete";
+export type IconName = "home" | "library" | "playlist" | "queue" | "settings" | "play" | "pause" | "next" | "previous" | "search" | "plus" | "shuffle" | "repeat" | "close" | "music" | "back" | "download" | "upload" | "sort" | "chevron-down" | "image" | "delete" | "share" | "menu" | "globe" | "check";
 const icons: Record<IconName, LucideIcon> = {
   home: House,
   library: Library,
@@ -49,6 +53,10 @@ const icons: Record<IconName, LucideIcon> = {
   "chevron-down": ChevronDown,
   image: Image,
   delete: Trash2,
+  share: Share2,
+  menu: MoreVertical,
+  globe: Globe2,
+  check: Check,
 };
 
 export function Icon({ name, size = 21 }: { readonly name: IconName; readonly size?: number }): ReactNode {

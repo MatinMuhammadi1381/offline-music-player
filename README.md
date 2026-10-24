@@ -3,7 +3,7 @@
 **A private, offline-first music player for Android and iPhone.** Your original audio files stay in the locations you choose; the app does not upload your music.
 
 [![Deploy to GitHub Pages](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/MatinMuhammadi1381/offline-music-player/actions/workflows/deploy-pages.yml)
-[![Version](https://img.shields.io/badge/version-1.9.3-1687ff)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.9.4-1687ff)](VERSION)
 
 **Web app:** [Open Offline Music Player](https://matinmuhammadi1381.github.io/offline-music-player/)
 
@@ -61,7 +61,7 @@ APK فعلی با کلید توسعه امضا شده است. ممکن است An
 
 ## وضعیت پروژه و محدودیت‌ها
 
-- نسخهٔ پروژه: **1.9.3**.
+- نسخهٔ پروژه: **1.9.4**.
 - انتشار روی GitHub Pages به معنی تأیید نهایی یا آمادگی production نیست.
 - Android در اجرای اول پس از دریافت مجوز audio library، آهنگ‌های MediaStore را به کتابخانهٔ مشترک وارد می‌کند؛ در صورت قطع‌شدن، واردکردن دوباره با شناسه‌های پایدار از تکرار آهنگ جلوگیری می‌کند.
 - پخش پس‌زمینهٔ Android از media notification و کنترل‌های صفحهٔ قفل سیستم، فرادادهٔ آهنگ، کاور جاسازی‌شدهٔ MP3 در صورت وجود و نمایش پیشرفت استفاده می‌کند. Android 13+ برای نمایش اعلان در نوار اعلان‌ها به مجوز notification نیاز دارد.
@@ -109,7 +109,7 @@ Open the [web app](https://matinmuhammadi1381.github.io/offline-music-player/) i
 
 ### Project status and limitations
 
-- Project version: **1.9.3**.
+- Project version: **1.9.4**.
 - GitHub Pages availability does not mean the app has passed production or final acceptance.
 - Android background playback, system media notifications, lock-screen controls, and playback progress are connected to the shared player. Android supplies the notification and lock-screen layout; the app provides track metadata, embedded MP3 artwork when available, a blue accent, and standard media controls. Android 13+ requires notification permission for the notification drawer.
 - iOS may evict browser storage or the user may clear site data; this is not a months-long retention guarantee. Keep original audio files. Android stores selected audio in app-private WebView storage and retains the picker-granted URI needed by native background playback; clearing app data or uninstalling removes those copies and permissions. JSON backups include metadata and playlists, not audio.

@@ -155,6 +155,16 @@ html.pwa-ui-enabled select:focus-visible {
   letter-spacing: 0.02em;
 }
 
+.startup-splash-credit {
+  position: absolute;
+  right: 0;
+  bottom: max(24px, env(safe-area-inset-bottom, 0px));
+  left: 0;
+  color: #aab6c8;
+  font-size: 13px;
+  text-align: center;
+}
+
 .app-shell.pwa-ui {
   position: relative;
   display: grid;

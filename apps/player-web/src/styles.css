@@ -931,6 +931,20 @@ button:disabled {
   flex: 1;
 }
 
+.loading-state {
+  position: relative;
+  padding-bottom: 42px;
+}
+
+.loading-credit {
+  position: absolute;
+  right: 0;
+  bottom: max(10px, var(--safe-bottom, 0px));
+  left: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
 .compact-empty {
   min-height: 240px;
 }
@@ -3205,7 +3219,10 @@ button:disabled {
 }
 
 .install-content {
+  display: flex;
   width: min(100%, 620px);
+  min-height: calc(100dvh - 60px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+  flex-direction: column;
   margin: auto;
 }
 
@@ -3213,10 +3230,17 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 0 0 24px 4px;
+  margin: 0 0 25px;
   font-size: 16px;
   font-weight: 680;
   letter-spacing: -0.025em;
+}
+
+.install-brand h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 680;
+  letter-spacing: -0.035em;
 }
 
 .install-brand-mark {
@@ -3249,108 +3273,76 @@ button:disabled {
   text-align: left;
 }
 
-.install-eyebrow {
-  margin: 0 0 10px;
-  color: var(--color-accent);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-}
-
-.install-card h1 {
-  max-width: 480px;
-  margin: 0;
-  font-size: clamp(26px, 6vw, 38px);
-  font-weight: 680;
-  letter-spacing: -0.045em;
-  line-height: 1.12;
-}
-
-.install-intro {
-  max-width: 500px;
-  margin: 16px 0 0;
-  color: var(--color-text-secondary);
-  font-size: 14px;
-  line-height: 1.65;
-}
-
-.install-primary-button {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  margin: 20px auto 0 0;
-  padding: 0 18px;
-  border: 0;
-  border-radius: 14px;
-  color: #fff;
-  background: linear-gradient(135deg, #3296ff, #126bc7);
-  box-shadow: 0 10px 26px rgba(21, 115, 220, 0.24);
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 650;
-}
-
-.install-primary-button:hover {
-  background: linear-gradient(135deg, #53a8ff, #2180df);
-}
-
-.install-help-link {
-  display: flex;
-  width: fit-content;
-  min-height: 44px;
-  align-items: center;
-  gap: 9px;
-  margin-top: 13px;
-  color: var(--color-text-secondary);
-  font-size: 14px;
-  text-decoration: none;
-}
-
-.install-help-link:hover {
-  color: var(--color-text-primary);
-}
-
-.install-help-link svg {
-  color: var(--color-accent);
-}
-
-.install-help {
-  margin-top: 17px;
-  padding-top: 23px;
-  border-top: 1px solid var(--color-separator);
-  scroll-margin-top: 18px;
-}
-
-.install-help h2 {
-  margin: 0 0 13px;
-  font-size: 17px;
-  font-weight: 650;
-}
-
-.install-help ol {
+.install-steps {
   display: grid;
-  gap: 11px;
+  gap: 15px;
   margin: 0;
-  padding-left: 23px;
+  padding: 0;
+  list-style: none;
+  counter-reset: install-step;
   color: var(--color-text-secondary);
   font-size: 14px;
   line-height: 1.6;
 }
 
-.install-help li {
-  padding-left: 3px;
+.install-steps li {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 12px;
 }
 
-.install-help strong {
+.install-step-number {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.install-step-content {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+.install-step-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   color: var(--color-text-primary);
   font-weight: 650;
 }
 
-.install-note,
+.install-step-action svg,
+.install-step-button svg {
+  flex: 0 0 auto;
+  color: var(--color-accent);
+}
+
+.install-step-button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid var(--surface-glass-border);
+  border-radius: 11px;
+  color: var(--color-text-primary);
+  background: var(--color-accent-soft);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+}
+
 .install-error {
-  margin: 17px 0 0;
+  margin: 20px 0 0;
   padding: 12px 14px;
   border-radius: 13px;
   color: var(--color-text-secondary);
@@ -3365,7 +3357,8 @@ button:disabled {
 }
 
 .install-footer {
-  margin: 18px 4px 0;
+  margin: auto 4px 0;
+  padding-top: 24px;
   color: var(--color-text-muted);
   font-size: 12px;
   line-height: 1.5;

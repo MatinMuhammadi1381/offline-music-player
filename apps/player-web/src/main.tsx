@@ -314,6 +314,7 @@ function AppBootstrap(): ReactNode {
         <div className="startup-splash" role="status">
           <span className="startup-splash-mark"><Icon name="music" size={38} /></span>
           <span className="startup-splash-title">Offline Music</span>
+          <span className="startup-splash-credit">Matin Muhammadi</span>
         </div>,
         document.body,
       )}
@@ -1226,7 +1227,7 @@ export function App(): ReactNode {
 
         {notice && <div className="toast" role="status"><span>{notice}</span><IconButton label="Dismiss message" icon="close" onClick={() => setNotice("")} /></div>}
         {loading ? (
-          <section className="loading-state" aria-live="polite"><span className="loading-orb" /><p>Opening your local library…</p></section>
+          <section className="loading-state" aria-live="polite"><span className="loading-orb" /><p>Opening your local library…</p><span className="loading-credit">Matin Muhammadi</span></section>
         ) : !library ? (
           <section className="error-state"><h2>Your library could not be opened</h2><p>{notice || "Reload the app to try again."}</p></section>
         ) : (
@@ -1720,6 +1721,9 @@ export function App(): ReactNode {
                           </a>
                         ))}
                       </div>
+                    </div>
+                    <div className="setting-row">
+                      <span><strong>Product by</strong><small>Matin Muhammadi</small></span>
                     </div>
                   </div>
                 </div>

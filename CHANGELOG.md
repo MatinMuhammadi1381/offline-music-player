@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.4 - 2026-10-24 (PWA install guide and product credit)
+
+- Replace the long platform installation directions with four icon-labeled steps and add Matin Muhammadi to the install guide, loading/splash UI, and Settings contact section.
+- Remove the agent-only `music-player-uiux-spec` directory.
+- Align the project and workspace packages at `1.9.4`; increment Android `versionCode` to 59 and the PWA shell cache to v46. No library data or backup migration is required.
+
 ## 1.9.3 - 2026-10-24 (Android playback and library scan)
 
 - Connect Android playback to a foreground media service with system notification, lock-screen controls, track metadata, available MP3 artwork, and playback progress.
