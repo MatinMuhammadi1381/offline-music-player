@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.1 - 2026-10-24 (Settings contact icons)
+
+- Enlarge Contact icons in Settings by about 30%, from 24px to 31px, without changing other icons.
+- Align the project, workspace packages, and Android version at `1.9.1`; increment Android `versionCode` to 56 and the PWA shell cache to v43. No library data or backup migration is required.
+
 ## 1.9.0 - 2026-10-24 (Settings cleanup)
 
 - Remove Library backup and Browser storage from the Settings list while keeping the other Settings groups unchanged.
