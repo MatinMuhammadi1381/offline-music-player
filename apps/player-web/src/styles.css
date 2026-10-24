@@ -1410,17 +1410,36 @@ button:disabled {
 
 .contact-links {
   display: grid;
+  gap: 14px;
+}
+
+.contact-social-links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.contact-phone-links {
+  display: grid;
 }
 
 .contact-link {
   display: flex;
-  min-height: 68px;
+  min-height: 48px;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   border-top: 1px solid rgba(218, 232, 255, 0.07);
   color: var(--color-text);
   text-decoration: none;
   transition: background-color 160ms ease;
+}
+
+.contact-link-social {
+  width: 48px;
+  height: 48px;
+  justify-content: center;
+  border: 1px solid rgba(218, 232, 255, 0.1);
+  border-radius: 12px;
 }
 
 .contact-link:hover {
@@ -1433,20 +1452,6 @@ button:disabled {
   border-radius: 8px;
   outline: 2px solid var(--color-accent);
   outline-offset: -2px;
-}
-
-.contact-link > span:last-child {
-  display: grid;
-  gap: 5px;
-}
-
-.contact-link strong {
-  font-size: 14px;
-}
-
-.contact-link small {
-  color: var(--color-text-secondary);
-  font-size: 13px;
 }
 
 .contact-link-icon {

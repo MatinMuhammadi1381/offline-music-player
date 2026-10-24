@@ -1548,18 +1548,34 @@ export function App(): ReactNode {
                   <div className="settings-group">
                     <h3>Contact</h3>
                     <div className="contact-links">
-                      {CONTACT_LINKS.map((contact) => (
-                        <a
-                          key={contact.href}
-                          className={`contact-link contact-link-${contact.platform}`}
-                          href={contact.href}
-                          target={contact.external ? "_blank" : undefined}
-                          rel={contact.external ? "noreferrer" : undefined}
-                        >
-                          <span className="contact-link-icon"><ContactPlatformIcon platform={contact.platform} /></span>
-                          <span><strong>{contact.label}</strong><small>{contact.value}</small></span>
-                        </a>
-                      ))}
+                      <div className="contact-social-links" role="group" aria-label="Social media links">
+                        {CONTACT_LINKS.filter((contact) => contact.platform !== "phone").map((contact) => (
+                          <a
+                            key={contact.href}
+                            className={`contact-link contact-link-social contact-link-${contact.platform}`}
+                            href={contact.href}
+                            target={contact.external ? "_blank" : undefined}
+                            rel={contact.external ? "noreferrer" : undefined}
+                            aria-label={`${contact.label}: ${contact.value}`}
+                            title={`${contact.label}: ${contact.value}`}
+                          >
+                            <span className="contact-link-icon" aria-hidden="true"><ContactPlatformIcon platform={contact.platform} /></span>
+                          </a>
+                        ))}
+                      </div>
+                      <div className="contact-phone-links">
+                        {CONTACT_LINKS.filter((contact) => contact.platform === "phone").map((contact) => (
+                          <a
+                            key={contact.href}
+                            className="contact-link contact-link-phone"
+                            href={contact.href}
+                            aria-label={`${contact.label}: ${contact.value}`}
+                          >
+                            <span className="contact-link-icon" aria-hidden="true"><ContactPlatformIcon platform={contact.platform} /></span>
+                            <span>{contact.value}</span>
+                          </a>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
