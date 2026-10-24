@@ -779,10 +779,6 @@ button:disabled {
   object-fit: cover;
 }
 
-.artwork-label {
-  z-index: 3;
-}
-
 .track-copy {
   display: flex;
   min-width: 0;
@@ -1001,7 +997,7 @@ button:disabled {
 
 .player-view-opening {
   transform-origin: var(--player-open-origin-x, 50%) var(--player-open-origin-y, 100%);
-  animation: player-open-from-mini 1500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: player-open-from-mini 1000ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .player-view::-webkit-scrollbar {
@@ -1013,30 +1009,8 @@ button:disabled {
   width: 100%;
   min-height: 44px;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   margin-bottom: 14px;
-}
-
-.player-return-button {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  gap: 6px;
-  padding: 0 13px 0 9px;
-  border: 1px solid var(--surface-glass-border);
-  border-radius: 999px;
-  color: var(--color-text-secondary);
-  background: rgba(255, 255, 255, 0.045);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease;
-}
-
-.player-return-button:hover {
-  border-color: rgba(77, 165, 255, 0.42);
-  color: var(--color-text-primary);
-  background: var(--color-accent-soft);
 }
 
 .player-drag-hint {
@@ -1074,17 +1048,6 @@ button:disabled {
   border-radius: 28px;
   border: 1px solid rgba(206, 228, 255, 0.16);
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-}
-
-.artwork-label {
-  position: relative;
-  z-index: 1;
-  max-width: 80%;
-  overflow: hidden;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .player-track {
@@ -3390,12 +3353,6 @@ button:disabled {
     :root[data-theme="light"] .bottom-nav-item.selected {
       color: #fff;
       background: #3979df;
-    }
-
-    :root[data-theme="light"] .player-return-button {
-      border-color: rgba(48, 75, 112, 0.16);
-      color: #43536a;
-      background: rgba(255, 255, 255, 0.86);
     }
 
     :root[data-theme="light"] .progress-control {

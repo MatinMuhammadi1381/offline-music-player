@@ -254,7 +254,6 @@ function Artwork({ track, file, large = false }: { readonly track?: TrackMetadat
       {coverUrl && <img className="artwork-cover" src={coverUrl} alt="" />}
       <span className="artwork-shine" aria-hidden="true" />
       {!coverUrl && <Icon name="music" size={large ? 54 : 23} />}
-      {large && <span className="artwork-label">{track?.album ?? "Local collection"}</span>}
     </div>
   );
 }
@@ -1063,11 +1062,10 @@ export function App(): ReactNode {
       </aside>
 
       <main id="main-content" className={`main-content${showMiniPlayer ? " has-mini-player" : ""}`} tabIndex={-1}>
-        {destination !== "home" && destination !== "library" && <header className="topbar">
+        {destination !== "home" && destination !== "library" && destination !== "player" && <header className="topbar">
           <div className="topbar-heading">
-            {destination === "player" && <IconButton label="Back to library" icon="back" onClick={() => setDestination("library")} />}
             {destination === "playlists" && selectedPlaylist && <IconButton label="Back to playlists" icon="back" onClick={() => setSelectedPlaylistId(null)} />}
-            <h1>{destination === "player" ? "Now Playing" : destination === "search" ? "Search" : destination === "playlists" ? "Playlists" : destination === "queue" ? "Queue" : "Settings"}</h1>
+            <h1>{destination === "search" ? "Search" : destination === "playlists" ? "Playlists" : destination === "queue" ? "Queue" : "Settings"}</h1>
           </div>
         </header>}
 
@@ -1288,7 +1286,6 @@ export function App(): ReactNode {
                 onTouchCancel={onPlayerTouchCancel}
               >
                 <div className="player-dismiss-row">
-                  <button type="button" className="player-return-button" onClick={() => setDestination("library", true)} aria-label="Back to library"><Icon name="back" size={18} /> Library</button>
                   <div className="player-drag-hint" aria-hidden="true"><span className="player-drag-indicator" /> Pull down to return</div>
                 </div>
                 {currentTrack ? (

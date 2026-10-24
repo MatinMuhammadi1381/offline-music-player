@@ -699,13 +699,6 @@ html.pwa-ui-enabled[data-theme="dark"] .pwa-ui .scroll-panel {
   margin: 0 0 12px;
 }
 
-.pwa-ui .player-return-button {
-  min-height: 40px;
-  border-color: var(--color-separator);
-  color: var(--color-text-secondary);
-  background: var(--color-surface);
-}
-
 .pwa-ui .player-drag-hint {
   color: var(--color-text-muted);
 }

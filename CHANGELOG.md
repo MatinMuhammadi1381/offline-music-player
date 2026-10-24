@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.4 - 2026-10-24 (Mini player polish)
+
+- Shorten the mini-player expansion animation to one second, remove the Now Playing and Library controls, and remove the artwork's Local collection overlay.
+- Align the project, workspace packages, and Android version at `1.8.4`; increment Android `versionCode` to 49 and the PWA shell cache to v36. No library data or backup migration is required.
+
 ## 1.8.3 - 2026-10-24 (Playlist music flows)
 
 - Replace the playlist track dropdown with an Add music dialog that lists library tracks, stages selections without duplicates, and saves them together.
